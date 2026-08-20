@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="The Toast Trek/The Toast Trek.vcxproj" Id="7d9245b8-1273-49fc-aefb-859e8244eaab" />
+</Solution>
