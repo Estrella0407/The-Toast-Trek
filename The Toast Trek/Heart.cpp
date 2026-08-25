@@ -5,6 +5,7 @@
 Heart::Heart(IDirect3DDevice9* d3dDevice) {
 	moveSpeed = 3.0f;
 	health = 20;
+	maxHealth = 20;
 
 	boundaryLeft = 0.0f;
 	boundaryRight = 0.0f;
@@ -23,16 +24,17 @@ Heart::~Heart() {
 void Heart::Update(BYTE* keys) {
 	D3DXVECTOR2 position = sprite->GetPosition();
 
-	if (GetAsyncKeyState('A') & 0x8000)
+	// Arrow keys and WASD both steer the heart.
+	if ((GetAsyncKeyState('A') & 0x8000) || (GetAsyncKeyState(VK_LEFT) & 0x8000))
 		position.x -= moveSpeed;
 
-	if (GetAsyncKeyState('D') & 0x8000)
+	if ((GetAsyncKeyState('D') & 0x8000) || (GetAsyncKeyState(VK_RIGHT) & 0x8000))
 		position.x += moveSpeed;
 
-	if (GetAsyncKeyState('W') & 0x8000)
+	if ((GetAsyncKeyState('W') & 0x8000) || (GetAsyncKeyState(VK_UP) & 0x8000))
 		position.y -= moveSpeed;
 
-	if (GetAsyncKeyState('S') & 0x8000)
+	if ((GetAsyncKeyState('S') & 0x8000) || (GetAsyncKeyState(VK_DOWN) & 0x8000))
 		position.y += moveSpeed;
 
 	sprite->SetPosition(position.x, position.y);
@@ -91,6 +93,16 @@ void Heart::TakeDamage(int damage) {
 		health = 0;
 }
 
+void Heart::Heal(int amount) {
+	health += amount;
+	if (health > maxHealth)
+		health = maxHealth;
+}
+
 int Heart::GetHealth() const {
 	return health;
+}
+
+int Heart::GetMaxHealth() const {
+	return maxHealth;
 }

@@ -15,7 +15,7 @@
 #include "Physics.h"
 #include "TileMap.h"
 #include "GameState.h"
-#include "Battlefield.h";
+#include "Battlefield.h"
 #include "Heart.h"
 
 //--------------------------------------------------------------------
@@ -40,6 +40,7 @@ FrameTimer* gameTimer = new FrameTimer();
 BYTE  diKeys[256];
 
 TileMap* forestMap = NULL;
+TileMap* mazeMap = NULL;
 Sprite* pochi = NULL;
 GameContext gameContext = {};
 GameStateManager* gameStates = NULL;
@@ -232,12 +233,15 @@ void CreateSprite()
 {
 	HRESULT hr = D3DXCreateSprite(d3dDevice, &spriteBrush);
 
-	forestMap = new TileMap(d3dDevice, "Assets/Forest/Forest.tmx", "Assets/Forest/");
+	forestMap = new TileMap(d3dDevice, "Assets/TileMap/Forest.tmx", "Assets/TileMap/");
 	forestMap->SetDebugForceSingleTile(false);
 
 	forestMap->SetSolidLayers({ "Tree", "Rock" });
 
-	pochi = new Sprite(d3dDevice, "Assets/Pochi.png", 250, 60, 5, 2, 10, 100.0f, 380.0f);
+	mazeMap = new TileMap(d3dDevice, "Assets/TileMap/Maze.tmx", "Assets/TileMap/");
+	mazeMap->SetSolidLayers({ "Maze" });
+
+	pochi = new Sprite(d3dDevice, "Assets/Characters/Pochi.png", 250, 60, 5, 2, 10, 100.0f, 380.0f);
 	if (pochi != nullptr) {
 		pochi->CropToFrame(0);
 		pochi->SetScale(2.0f);
@@ -282,6 +286,15 @@ void GetInput()
 		dInputKeyboardDevice->Acquire();
 		dInputMouseDevice->Acquire();
 	}
+
+	// DIMOUSESTATE above is relative motion (deltas), not an absolute
+	// position, so button hit-testing reads the cursor directly instead.
+	POINT cursor;
+	GetCursorPos(&cursor);
+	ScreenToClient(g_hWnd, &cursor);
+	gameContext.mouseX = (float)cursor.x;
+	gameContext.mouseY = (float)cursor.y;
+	gameContext.mouseLeftDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
 }
 
 void Render()
@@ -316,6 +329,7 @@ void Render()
 void CleanupSprite()
 {
 	if (forestMap) { delete forestMap; forestMap = nullptr; }
+	if (mazeMap) { delete mazeMap; mazeMap = nullptr; }
 	if (pochi) { delete pochi;     pochi = nullptr; }
 
 	if (spriteBrush) {
@@ -372,6 +386,7 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nSho
 	gameContext.spriteBrush = spriteBrush;
 	gameContext.pochi = pochi;
 	gameContext.forestMap = forestMap;
+	gameContext.mazeMap = mazeMap;
 	gameContext.keys = diKeys;
 	gameContext.moveSpeed = spriteVelocity;
 	gameStates = new GameStateManager(gameContext);

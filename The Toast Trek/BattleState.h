@@ -7,8 +7,11 @@
 class BattleState : public GameState {
 private:
 	std::unique_ptr<Battlefield> battlefield;
+	BossId bossId;
 
 public:
+	explicit BattleState(BossId bossId) : bossId(bossId) {}
+
 	void Initialize(GameContext& context) override;
 	void HandleInput(GameContext& context, GameStateManager& manager) override;
 	void Update(GameContext& context, GameStateManager& manager) override;

@@ -57,6 +57,26 @@ AABB Physics::GetBounds(Sprite* sprite) {
     return box;
 }
 
+AABB Physics::GetFootBounds(Sprite* sprite, float widthRatio, float heightRatio) {
+    AABB full = GetBounds(sprite);
+
+    if (widthRatio >= 1.0f && heightRatio >= 1.0f) return full;
+
+    float fullWidth = full.right - full.left;
+    float fullHeight = full.bottom - full.top;
+
+    float footWidth = fullWidth * widthRatio;
+    float footHeight = fullHeight * heightRatio;
+
+    AABB box;
+    box.left = full.left + (fullWidth - footWidth) * 0.5f;
+    box.right = box.left + footWidth;
+    box.bottom = full.bottom; // anchored at the feet
+    box.top = box.bottom - footHeight;
+
+    return box;
+}
+
 AABB Physics::GetHeartBounds(Sprite* sprite) {
     AABB box = { 0.0f, 0.0f, 0.0f, 0.0f };
 
@@ -102,7 +122,8 @@ void Physics::ClampToBounds(Sprite* sprite, float minX, float minY, float maxX, 
     sprite->SetPosition(pos.x + moveX, pos.y + moveY);
 }
 
-bool Physics::ResolveCollisionShapes(Sprite* sprite, const TileMap* map) {
+bool Physics::ResolveCollisionShapes(Sprite* sprite, const TileMap* map,
+    float footWidthRatio, float footHeightRatio) {
     if (sprite == NULL || map == NULL) return false;
 
     int tileWidth = map->GetTileWidth();
@@ -118,7 +139,7 @@ bool Physics::ResolveCollisionShapes(Sprite* sprite, const TileMap* map) {
     const int kMaxPasses = 4;
 
     for (int pass = 0; pass < kMaxPasses; ++pass) {
-        AABB box = GetBounds(sprite);
+        AABB box = GetFootBounds(sprite, footWidthRatio, footHeightRatio);
 
         int minTileX = (int)floorf(box.left / (float)tileWidth);
         int maxTileX = (int)floorf((box.right - 0.0001f) / (float)tileWidth);

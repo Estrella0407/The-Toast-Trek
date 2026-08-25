@@ -6,7 +6,7 @@
 #include <cstdlib>
 
 
-Battlefield::Battlefield(IDirect3DDevice9* d3dDevice) {
+Battlefield::Battlefield(IDirect3DDevice9* d3dDevice, BossId bossId) {
 	this->d3dDevice = d3dDevice;
 
 	posX = 300.0f;
@@ -26,18 +26,22 @@ Battlefield::Battlefield(IDirect3DDevice9* d3dDevice) {
 	heart = new Heart(d3dDevice);
 	heart->SetPosition(posX + width / 2.0f - 32.0f, posY + height / 2.0f - 32.0f);
 
-	enemy = new Enemy(d3dDevice, "Assets/characters/skullBones.png", 600.0f, 50.0f, 50);
+	enemy = CreateBossEnemy(d3dDevice, bossId, 600.0f, 50.0f);
 	fightButton = new Sprite(d3dDevice, "Assets/UI/fightButton1.png", 256, 256, 1, 1, 1, 220.0f, 450.0f);
 	actButton = new Sprite(d3dDevice, "Assets/UI/actButton1.png", 256, 256, 1, 1, 1, 420.0f, 450.0f);
 	itemButton = new Sprite(d3dDevice, "Assets/UI/itemButton1.png", 256, 256, 1, 1, 1, 620.0f, 450.0f);
 	mercyButton = new Sprite(d3dDevice, "Assets/UI/mercyButton1.png", 256, 256, 1, 1, 1, 820.0f, 450.0f);
 
-	//Button when hover 
+	//Button when hover
 	fightHovered = false;
 	actHovered = false;
 	itemHovered = false;
 	mercyHovered = false;
 
+	mouseWasDown = false;
+	fled = false;
+	fightDamage = 10;
+	itemHealAmount = 5;
 }
 
 void Battlefield::SpawnProjectile(IDirect3DDevice9* d3dDevice, float x, float y, float velocityX, float velocityY) {
@@ -84,11 +88,57 @@ void Battlefield::Init() {
 
 }
 
-void Battlefield::Update(BYTE* keys) {
-	heart->Update(keys);
+bool Battlefield::IsPointOverButton(float pointX, float pointY, Sprite* button) const {
+	if (button == nullptr) return false;
+
+	// Button art is a 256x256 canvas with a much smaller pill-shaped label
+	// centered in it; hit-testing the full canvas would make adjacent
+	// buttons' clickable areas overlap (they're only spaced 200px apart).
+	const float hitWidth = 180.0f;
+	const float hitHeight = 100.0f;
+
+	D3DXVECTOR2 topLeft = button->GetPosition();
+	float centerX = topLeft.x + 128.0f;
+	float centerY = topLeft.y + 128.0f;
+
+	return pointX >= centerX - hitWidth * 0.5f && pointX <= centerX + hitWidth * 0.5f &&
+		pointY >= centerY - hitHeight * 0.5f && pointY <= centerY + hitHeight * 0.5f;
+}
+
+void Battlefield::UpdateMenuButtons(GameContext& context) {
+	fightHovered = IsPointOverButton(context.mouseX, context.mouseY, fightButton);
+	actHovered = IsPointOverButton(context.mouseX, context.mouseY, actButton);
+	itemHovered = IsPointOverButton(context.mouseX, context.mouseY, itemButton);
+	mercyHovered = IsPointOverButton(context.mouseX, context.mouseY, mercyButton);
+
+	bool clicked = context.mouseLeftDown && !mouseWasDown;
+	mouseWasDown = context.mouseLeftDown;
+
+	if (!clicked) return;
+
+	if (fightHovered) {
+		enemy->TakeDamage(fightDamage);
+		OutputDebugStringA(("Enemy hit for " + std::to_string(fightDamage) +
+			", health now " + std::to_string(enemy->GetHealth()) + "\n").c_str());
+	}
+	else if (itemHovered) {
+		heart->Heal(itemHealAmount);
+	}
+	else if (mercyHovered) {
+		fled = true;
+	}
+	else if (actHovered) {
+		// ACT has no per-boss dialogue/options defined yet - clickable, but a no-op for now.
+	}
+}
+
+void Battlefield::Update(GameContext& context) {
+	heart->Update(context.keys);
 
 	heart->ClampToBoundary(posX, posY, posX + width, posY + height);
 	AABB heartBounds = Physics::GetHeartBounds(heart->GetSprite());
+
+	UpdateMenuButtons(context);
 
 
 		for (Projectile* projectile : projectiles) {
@@ -186,6 +236,18 @@ void Battlefield::Update(BYTE* keys) {
 		//}
 	}
 
+bool Battlefield::IsPlayerDefeated() const {
+	return heart->GetHealth() <= 0;
+}
+
+bool Battlefield::IsEnemyDefeated() const {
+	return enemy != nullptr && !enemy->isAlive();
+}
+
+bool Battlefield::HasFled() const {
+	return fled;
+}
+
 void Battlefield::Render(LPD3DXSPRITE sharedBrush) {
 	D3DCOLOR black = D3DCOLOR_XRGB(0, 0, 0);
 	topLine->Draw(black);
@@ -200,9 +262,11 @@ void Battlefield::Render(LPD3DXSPRITE sharedBrush) {
 	}
 
 	enemy->Render(sharedBrush);
-	fightButton->Draw(sharedBrush);
-	actButton->Draw(sharedBrush);
-	itemButton->Draw(sharedBrush);
-	mercyButton->Draw(sharedBrush);
-	
+
+	D3DCOLOR normalTint = D3DCOLOR_XRGB(255, 255, 255);
+	D3DCOLOR hoverTint = D3DCOLOR_XRGB(255, 225, 120);
+	fightButton->Draw(sharedBrush, fightHovered ? hoverTint : normalTint);
+	actButton->Draw(sharedBrush, actHovered ? hoverTint : normalTint);
+	itemButton->Draw(sharedBrush, itemHovered ? hoverTint : normalTint);
+	mercyButton->Draw(sharedBrush, mercyHovered ? hoverTint : normalTint);
 }
