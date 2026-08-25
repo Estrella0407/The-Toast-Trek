@@ -6,6 +6,7 @@
 #include "Line.h"
 #include "Projectile.h"
 #include "Enemy.h"
+#include "GameState.h" // GameContext (mouse input)
 
 class Battlefield {
 private:
@@ -36,11 +37,18 @@ private:
 	bool itemHovered;
 	bool mercyHovered;
 
+	bool mouseWasDown;
+	bool fled;
+	int fightDamage;
+	int itemHealAmount;
+
 	float projectileTimer;
 	float projectileSpawnInterval;
 	float horizontalSweepTimer;
 	float horizontalSweepInterval;
-	
+
+	bool IsPointOverButton(float pointX, float pointY, Sprite* button) const;
+	void UpdateMenuButtons(GameContext& context);
 
 	void FourDirectionAttack();
 	void SpawnProjectile(
@@ -58,11 +66,14 @@ private:
 		float speed);
 	
 public:
-	Battlefield(IDirect3DDevice9* d3dDevice);
+	Battlefield(IDirect3DDevice9* d3dDevice, BossId bossId);
 	~Battlefield();
 
 	void Init();
-	void Update(BYTE* keys);
+	void Update(GameContext& context);
 	void Render(LPD3DXSPRITE sharedBrush);
-	
+
+	bool IsPlayerDefeated() const;
+	bool IsEnemyDefeated() const;
+	bool HasFled() const;
 };

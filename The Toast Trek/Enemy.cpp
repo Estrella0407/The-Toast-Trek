@@ -1,11 +1,12 @@
 #include "Enemy.h"
 
-Enemy::Enemy(IDirect3DDevice9* d3dDevice, const char* spritePath, float startX, float startY, int health) {
+Enemy::Enemy(IDirect3DDevice9* d3dDevice, const char* spritePath, float startX, float startY, int health,
+	int texWidth, int texHeight, int cols, int rows, int maxFrames) {
 	this->health = health;
 	this->maxHealth = health;
 
-	sprite = new Sprite(d3dDevice, spritePath, 128, 128, 1, 1, 1, startX, startY);
-
+	sprite = new Sprite(d3dDevice, spritePath, texWidth, texHeight, cols, rows, maxFrames, startX, startY);
+	if (sprite != nullptr) sprite->CropToFrame(0);
 }
 
 Enemy::~Enemy() {
@@ -37,4 +38,23 @@ Sprite* Enemy::GetSprite() const {
 
 bool Enemy::isAlive() const{
 	return health > 0;
+}
+
+Enemy* CreateBossEnemy(IDirect3DDevice9* d3dDevice, BossId bossId, float startX, float startY) {
+	// Both boss images are full-body art on a large, mostly-transparent
+	// square-ish canvas (well over 1000px). Request the texture pre-scaled
+	// straight to its on-screen size (matching each file's real aspect
+	// ratio) instead of loading full-res and calling Sprite::SetScale() -
+	// SetScale() shrinks around the sprite's own center, so on a canvas
+	// this big it visibly drags the sprite away from (startX, startY)
+	// (that's what was sending Goblin toward the bottom-right corner).
+	switch (bossId) {
+	case BossId::Goblin: // real art is 1346x1168
+		return new Enemy(d3dDevice, "Assets/characters/goblin.png", startX, startY, 80,
+			100, 87, 1, 1, 1);
+	case BossId::SkullBones: // real art is 1254x1254
+	default:
+		return new Enemy(d3dDevice, "Assets/characters/skullBones.png", startX, startY, 50,
+			100, 100, 1, 1, 1);
+	}
 }

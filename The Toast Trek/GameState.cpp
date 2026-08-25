@@ -15,17 +15,44 @@ namespace {
         return pressed;
     }
 
-    void ResolveWorldCollisions(GameContext& context) {
-        if (context.pochi == NULL || context.forestMap == NULL) return;
+    bool IsKeyDown(BYTE* keys, int key) {
+        return keys != NULL && (keys[key] & 0x80) != 0;
+    }
+
+    // Arrow keys and WASD both drive movement, everywhere movement happens.
+    struct MoveInput {
+        bool left, right, up, down;
+    };
+
+    MoveInput ReadMoveInput(BYTE* keys) {
+        MoveInput input;
+        input.left = IsKeyDown(keys, DIK_LEFT) || IsKeyDown(keys, DIK_A);
+        input.right = IsKeyDown(keys, DIK_RIGHT) || IsKeyDown(keys, DIK_D);
+        input.up = IsKeyDown(keys, DIK_UP) || IsKeyDown(keys, DIK_W);
+        input.down = IsKeyDown(keys, DIK_DOWN) || IsKeyDown(keys, DIK_S);
+        return input;
+    }
+
+    // Pochi's sprite canvas (scaled ~100x60) is much bigger than her actual
+    // standing pose, so colliding tiles against the full canvas made gaps
+    // that look easily walkable (a maze corridor, two rocks either side of
+    // a path) feel blocked. Collide a smaller box at her feet instead.
+    constexpr float kPochiFootWidthRatio = 0.5f;
+    constexpr float kPochiFootHeightRatio = 0.6f;
+
+    void ResolveWorldCollisions(GameContext& context, TileMap* map) {
+        if (context.pochi == NULL || map == NULL) return;
 
         Physics::ClampToBounds(context.pochi, 0.0f, 0.0f,
-            (float)context.forestMap->GetWidthPixels(), (float)context.forestMap->GetHeightPixels());
+            (float)map->GetWidthPixels(), (float)map->GetHeightPixels());
 
-        Physics::ResolveCollisionShapes(context.pochi, context.forestMap);
+        Physics::ResolveCollisionShapes(context.pochi, map, kPochiFootWidthRatio, kPochiFootHeightRatio);
     }
 
     class TutorialState;
     std::unique_ptr<GameState> CreateTutorialState();
+
+    class MazeState;
 
     class Level1State;
     std::unique_ptr<GameState> CreateLevel1State();
@@ -99,43 +126,59 @@ namespace {
         TutorialState() : gameOverWasDown(false) {}
 
         void Initialize(GameContext& context) override {
+            // MainMenu parks the shared Pochi sprite at its menu pose; reset
+            // it to the tutorial's spawn point every time this state starts.
+            if (context.pochi != NULL) {
+                context.pochi->SetPosition(250.0f, 360.0f);
+                context.pochi->CropToFrame(0);
+            }
         }
 
         void HandleInput(GameContext& context, GameStateManager& manager) override {
+            // Debug shortcut straight to a fight, bypassing the walk to the maze.
             if (JustPressed(context.keys,DIK_P, gameOverWasDown)) {
-                manager.Push(CreateBattleState());
+                manager.Push(CreateBattleState(BossId::SkullBones));
                 return;
             }
         }
 
-        void Update(GameContext& context, GameStateManager&) override {
+        void Update(GameContext& context, GameStateManager& manager) override {
             if (context.pochi == NULL) return;
 
             D3DXVECTOR2 beforeMove = context.pochi->GetPosition();
+            MoveInput input = ReadMoveInput(context.keys);
             bool isMoving = false;
-            if (context.keys[DIK_LEFT] & 0x80) {
+            if (input.left) {
                 context.pochi->Move((float)-context.moveSpeed, 0.0f);
                 context.pochi->AnimateWalk(LEFT);
                 isMoving = true;
             }
-            else if (context.keys[DIK_RIGHT] & 0x80) {
+            else if (input.right) {
                 context.pochi->Move((float)context.moveSpeed, 0.0f);
                 context.pochi->AnimateWalk(RIGHT);
                 isMoving = true;
             }
-            if (context.keys[DIK_UP] & 0x80) {
+            if (input.up) {
                 context.pochi->Move(0.0f, (float)-context.moveSpeed);
                 context.pochi->AnimateWalk();
                 isMoving = true;
             }
-            else if (context.keys[DIK_DOWN] & 0x80) {
+            else if (input.down) {
                 context.pochi->Move(0.0f, (float)context.moveSpeed);
                 context.pochi->AnimateWalk();
                 isMoving = true;
             }
             if (!isMoving) context.pochi->SetIdlePose();
 
-            ResolveWorldCollisions(context);
+            ResolveWorldCollisions(context, context.forestMap);
+
+            // Walking off the right edge of the forest leads into the maze.
+            if (context.forestMap != NULL) {
+                AABB pochiBounds = Physics::GetBounds(context.pochi);
+                if (pochiBounds.right >= (float)context.forestMap->GetWidthPixels() - 5.0f) {
+                    manager.Push(CreateMazeState());
+                }
+            }
         }
 
         void Render(GameContext& context) override {
@@ -143,6 +186,137 @@ namespace {
             if (context.forestMap != NULL) context.forestMap->DrawExcludingLayers(context.spriteBrush, { "Tree_Leaf" });
             if (context.pochi != NULL) context.pochi->Draw(context.spriteBrush);
             if (context.forestMap != NULL) context.forestMap->DrawOnlyLayers(context.spriteBrush, { "Tree_Leaf" });
+        }
+
+        D3DCOLOR ClearColor() const override { return D3DCOLOR_XRGB(0, 0, 0); }
+    };
+
+    class MazeState : public GameState {
+    private:
+        bool interactWasDown;
+        bool level1Cleared;
+        bool level2Cleared;
+        Enemy* skullBonesEnemy;
+        Enemy* goblinEnemy;
+        Font* interactPrompt;
+
+        static constexpr float kMazeEntranceX = 10.0f;
+        static constexpr float kSkullBonesX = 140.0f;
+        static constexpr float kSkullBonesY = 35.0f;
+        static constexpr float kGoblin1X = 760.0f;
+        static constexpr float kGoblin1Y = 315.0f;
+        static constexpr float kInteractRadius = 90.0f;
+
+        static bool IsNear(const D3DXVECTOR2& a, const D3DXVECTOR2& b, float radius) {
+            float dx = a.x - b.x;
+            float dy = a.y - b.y;
+            return (dx * dx + dy * dy) <= (radius * radius);
+        }
+
+        bool IsNearActiveBoss(const D3DXVECTOR2& pochiPos) const {
+            if (!level1Cleared && skullBonesEnemy != NULL &&
+                IsNear(pochiPos, skullBonesEnemy->GetSprite()->GetPosition(), kInteractRadius)) return true;
+            if (!level2Cleared && goblinEnemy != NULL &&
+                IsNear(pochiPos, goblinEnemy->GetSprite()->GetPosition(), kInteractRadius)) return true;
+            return false;
+        }
+
+    public:
+        MazeState()
+            : interactWasDown(false), level1Cleared(false), level2Cleared(false),
+              skullBonesEnemy(NULL), goblinEnemy(NULL), interactPrompt(NULL) {}
+
+        ~MazeState() {
+            delete skullBonesEnemy;
+            delete goblinEnemy;
+            delete interactPrompt;
+        }
+
+        void Initialize(GameContext& context) override {
+            // Keep Pochi's Y from the forest exit and only reset X to the
+            // maze's left edge, so crossing the seam between the two maps
+            // is seamless instead of snapping to a fixed spawn point.
+            if (context.pochi != NULL) {
+                D3DXVECTOR2 currentPosition = context.pochi->GetPosition();
+                context.pochi->SetPosition(kMazeEntranceX, currentPosition.y);
+                context.pochi->CropToFrame(0);
+            }
+
+            skullBonesEnemy = CreateBossEnemy(context.device, BossId::SkullBones, kSkullBonesX, kSkullBonesY);
+            goblinEnemy = CreateBossEnemy(context.device, BossId::Goblin, kGoblin1X, kGoblin1Y);
+
+            interactPrompt = new Font(context.device, 0.0f, 20.0f, 1280, 40, 20, "Arial");
+        }
+
+        void HandleInput(GameContext& context, GameStateManager& manager) override {
+            if (context.pochi == NULL) return;
+            if (!JustPressed(context.keys, DIK_F, interactWasDown)) return;
+
+            D3DXVECTOR2 pochiPos = context.pochi->GetPosition();
+
+            if (!level1Cleared && skullBonesEnemy != NULL &&
+                IsNear(pochiPos, skullBonesEnemy->GetSprite()->GetPosition(), kInteractRadius)) {
+                manager.Push(CreateBattleState(BossId::SkullBones));
+                return;
+            }
+
+            if (!level2Cleared && goblinEnemy != NULL &&
+                IsNear(pochiPos, goblinEnemy->GetSprite()->GetPosition(), kInteractRadius)) {
+                manager.Push(CreateBattleState(BossId::Goblin));
+                return;
+            }
+        }
+
+        void Update(GameContext& context, GameStateManager&) override {
+            // Pick up the result of whichever battle we just returned from -
+            // BattleState sets this right before popping itself.
+            if (context.lastBattleOutcome == BattleOutcome::Victory) {
+                if (context.lastBattleBoss == BossId::SkullBones) level1Cleared = true;
+                else if (context.lastBattleBoss == BossId::Goblin) level2Cleared = true;
+            }
+            context.lastBattleOutcome = BattleOutcome::None;
+
+            if (context.pochi == NULL) return;
+
+            MoveInput input = ReadMoveInput(context.keys);
+            bool isMoving = false;
+            if (input.left) {
+                context.pochi->Move((float)-context.moveSpeed, 0.0f);
+                context.pochi->AnimateWalk(LEFT);
+                isMoving = true;
+            }
+            else if (input.right) {
+                context.pochi->Move((float)context.moveSpeed, 0.0f);
+                context.pochi->AnimateWalk(RIGHT);
+                isMoving = true;
+            }
+            if (input.up) {
+                context.pochi->Move(0.0f, (float)-context.moveSpeed);
+                context.pochi->AnimateWalk();
+                isMoving = true;
+            }
+            else if (input.down) {
+                context.pochi->Move(0.0f, (float)context.moveSpeed);
+                context.pochi->AnimateWalk();
+                isMoving = true;
+            }
+            if (!isMoving) context.pochi->SetIdlePose();
+
+            ResolveWorldCollisions(context, context.mazeMap);
+        }
+
+        void Render(GameContext& context) override {
+            if (context.mazeMap != NULL) context.mazeMap->Draw(context.spriteBrush);
+
+            if (!level1Cleared && skullBonesEnemy != NULL) skullBonesEnemy->Render(context.spriteBrush);
+            if (!level2Cleared && goblinEnemy != NULL) goblinEnemy->Render(context.spriteBrush);
+
+            if (context.pochi != NULL) context.pochi->Draw(context.spriteBrush);
+
+            if (context.pochi != NULL && interactPrompt != NULL &&
+                IsNearActiveBoss(context.pochi->GetPosition())) {
+                interactPrompt->Draw("PRESS F TO FIGHT", D3DCOLOR_XRGB(255, 255, 255));
+            }
         }
 
         D3DCOLOR ClearColor() const override { return D3DCOLOR_XRGB(0, 0, 0); }
@@ -169,29 +343,30 @@ namespace {
             if (context.pochi == NULL) return;
 
             D3DXVECTOR2 beforeMove = context.pochi->GetPosition();
+            MoveInput input = ReadMoveInput(context.keys);
             bool isMoving = false;
-            if (context.keys[DIK_LEFT] & 0x80) {
+            if (input.left) {
                 context.pochi->Move((float)-context.moveSpeed, 0.0f);
                 context.pochi->AnimateWalk(LEFT);
                 isMoving = true;
             }
-            else if (context.keys[DIK_RIGHT] & 0x80) {
+            else if (input.right) {
                 context.pochi->Move((float)context.moveSpeed, 0.0f);
                 context.pochi->AnimateWalk(RIGHT);
                 isMoving = true;
             }
-            if (context.keys[DIK_UP] & 0x80) {
+            if (input.up) {
                 context.pochi->Move(0.0f, (float)-context.moveSpeed);
                 context.pochi->AnimateWalk();
                 isMoving = true;
             }
-            else if (context.keys[DIK_DOWN] & 0x80) {
+            else if (input.down) {
                 context.pochi->Move(0.0f, (float)context.moveSpeed);
                 context.pochi->AnimateWalk();
                 isMoving = true;
             }
             if (!isMoving) context.pochi->SetIdlePose();
-            ResolveWorldCollisions(context);
+            ResolveWorldCollisions(context, context.forestMap);
         }
 
         void Render(GameContext& context) override {
@@ -283,6 +458,10 @@ std::unique_ptr<GameState> CreateMainMenuState() {
     return std::make_unique<MainMenuState>();
 }
 
-std::unique_ptr<GameState> CreateBattleState() {
-    return std::make_unique<BattleState>();
+std::unique_ptr<GameState> CreateMazeState() {
+    return std::make_unique<MazeState>();
+}
+
+std::unique_ptr<GameState> CreateBattleState(BossId bossId) {
+    return std::make_unique<BattleState>(bossId);
 }

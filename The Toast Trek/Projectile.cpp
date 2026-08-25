@@ -8,7 +8,7 @@ Projectile::Projectile(IDirect3DDevice9* d3dDevice, float startX, float startY, 
 
 	active = true;
 
-	sprite = new Sprite(d3dDevice, "Assets/attack/fire.png", 32, 32, 1, 1, 1, startX, startY);
+	sprite = new Sprite(d3dDevice, "Assets/Attack/fire.png", 32, 32, 1, 1, 1, startX, startY);
 }
 
 Projectile::~Projectile() {
