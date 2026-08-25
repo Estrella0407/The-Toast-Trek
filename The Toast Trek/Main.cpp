@@ -15,6 +15,9 @@
 #include "Physics.h"
 #include "TileMap.h"
 #include "GameState.h"
+#include "Battlefield.h";
+#include "Heart.h"
+
 //--------------------------------------------------------------------
 //	Window handle
 HWND g_hWnd = NULL;
@@ -40,6 +43,8 @@ TileMap* forestMap = NULL;
 Sprite* pochi = NULL;
 GameContext gameContext = {};
 GameStateManager* gameStates = NULL;
+
+Battlefield* battlefield;
 
 int red = 0;
 int green = 0;

@@ -54,4 +54,5 @@ public:
 };
 
 std::unique_ptr<GameState> CreateMainMenuState();
+std::unique_ptr<GameState> CreateBattleState();
 
