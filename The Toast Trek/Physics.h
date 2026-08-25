@@ -14,6 +14,13 @@ public:
     // Keeps "sprite" fully inside [minX, minY, maxX, maxY] (e.g. the 1280x720
     // window, or the edges of the loaded map). Call this after moving a
     // sprite so it can't walk off the background.
+
+    //Heart hitbox accurately
+    static AABB GetHeartBounds(Sprite* sprite);
+
+    //Heart and Projectile collision
+    static bool CheckAABBCollision(const AABB& a, const AABB& b);
+
     static void ClampToBounds(Sprite* sprite, float minX, float minY, float maxX, float maxY);
 
     // Resolves "sprite" against whichever tiles the map has marked solid via

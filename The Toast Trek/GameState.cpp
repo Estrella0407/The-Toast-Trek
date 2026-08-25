@@ -4,6 +4,7 @@
 #include "Physics.h"
 #include "Sprite.h"
 #include "TileMap.h"
+#include "BattleState.h"
 #include <dinput.h>
 
 namespace {
@@ -101,7 +102,10 @@ namespace {
         }
 
         void HandleInput(GameContext& context, GameStateManager& manager) override {
-
+            if (JustPressed(context.keys,DIK_P, gameOverWasDown)) {
+                manager.Push(CreateBattleState());
+                return;
+            }
         }
 
         void Update(GameContext& context, GameStateManager&) override {
@@ -277,4 +281,8 @@ D3DCOLOR GameStateManager::ClearColor() const {
 
 std::unique_ptr<GameState> CreateMainMenuState() {
     return std::make_unique<MainMenuState>();
+}
+
+std::unique_ptr<GameState> CreateBattleState() {
+    return std::make_unique<BattleState>();
 }

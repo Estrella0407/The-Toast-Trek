@@ -57,6 +57,33 @@ AABB Physics::GetBounds(Sprite* sprite) {
     return box;
 }
 
+AABB Physics::GetHeartBounds(Sprite* sprite) {
+    AABB box = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+    if (sprite == NULL) return box;
+    D3DXVECTOR2 position = sprite->GetPosition();
+
+    const float offsetX = 11.0f;
+    const float offsetY = 16.5f;
+
+    const float heartWidth = 42.0f;
+    const float heartHeight = 31.0f;
+
+    box.left = position.x + offsetX;
+    box.top = position.y + offsetY;
+    box.right = box.left + heartWidth;
+    box.bottom = box.top + heartHeight;
+
+    return box;
+}
+
+bool Physics::CheckAABBCollision(const AABB& a, const AABB& b) {
+    return(a.left < b.right &&
+        a.right > b.left &&
+        a.top < b.bottom &&
+        a.bottom > b.top);
+}
+
 void Physics::ClampToBounds(Sprite* sprite, float minX, float minY, float maxX, float maxY) {
     if (sprite == NULL) return;
 
