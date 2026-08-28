@@ -3,11 +3,12 @@
 #include <d3dx9.h>
 #include <vector>
 #include "Heart.h"
-#include "Line.h"
 #include "Projectile.h"
 #include "Enemy.h"
+#include "BattleUI.h"
 #include "GameState.h" // GameContext (mouse input)
 
+class BattleUI;
 class Battlefield {
 private:
 	IDirect3DDevice9* d3dDevice;
@@ -18,20 +19,12 @@ private:
 	float width;
 	float height;
 
-	Line* topLine;
-	Line* bottomLine;
-	Line* leftLine;
-	Line* rightLine;
-
 	Heart* heart;
 	std::vector<Projectile*> projectiles;
 	Enemy* enemy;
-	Sprite* fightButton;
-	Sprite* actButton;
-	Sprite* itemButton;
-	Sprite* mercyButton;
+	BattleUI* battleUI;
 
-	//Button when hover
+	////Button when hover
 	bool fightHovered;
 	bool actHovered;
 	bool itemHovered;
@@ -44,11 +37,14 @@ private:
 
 	float projectileTimer;
 	float projectileSpawnInterval;
-	float horizontalSweepTimer;
-	float horizontalSweepInterval;
+	bool showProjectiles;
+	bool projectileAttackFinished;
+	//when to display projectile
+	int spawningProjectile;
+	int maxProjectiles;
 
-	bool IsPointOverButton(float pointX, float pointY, Sprite* button) const;
-	void UpdateMenuButtons(GameContext& context);
+	bool IsPointOverButton(float pointX, float pointY, BattleButton* button) const;
+	//void UpdateMenuButtons(GameContext& context);
 
 	void FourDirectionAttack();
 	void SpawnProjectile(
@@ -66,12 +62,17 @@ private:
 		float speed);
 	
 public:
-	Battlefield(IDirect3DDevice9* d3dDevice, BossId bossId);
+	Battlefield(IDirect3DDevice9* d3dDevice, BattleUI* battleUI, Enemy* enemy);
 	~Battlefield();
 
 	void Init();
 	void Update(GameContext& context);
 	void Render(LPD3DXSPRITE sharedBrush);
+	int GetSelectButton(GameContext& context);
+	void UpdateMenuButtons(GameContext& context);
+	void PerformFight();
+	void SetShowProjectiles(bool show);
+	bool IsProjectileAttackFinished() const;
 
 	bool IsPlayerDefeated() const;
 	bool IsEnemyDefeated() const;

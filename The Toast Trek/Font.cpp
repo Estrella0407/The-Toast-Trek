@@ -39,7 +39,7 @@ void Font::Draw(const char* text, D3DCOLOR color) {
             text,
             -1, // Count
             &rect,
-            DT_CENTER | DT_NOCLIP,
+            DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOCLIP,
             color
         );
     }

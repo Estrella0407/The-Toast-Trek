@@ -19,8 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="BattleButton.cpp" />
     <ClCompile Include="Battlefield.cpp" />
     <ClCompile Include="BattleState.cpp" />
+    <ClCompile Include="BattleUI.cpp" />
     <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="Font.cpp" />
     <ClCompile Include="FrameTimer.cpp" />
@@ -35,8 +37,10 @@
     <ClCompile Include="TileMap.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BattleButton.h" />
     <ClInclude Include="Battlefield.h" />
     <ClInclude Include="BattleState.h" />
+    <ClInclude Include="BattleUI.h" />
     <ClInclude Include="Enemy.h" />
     <ClInclude Include="Font.h" />
     <ClInclude Include="FrameTimer.h" />
