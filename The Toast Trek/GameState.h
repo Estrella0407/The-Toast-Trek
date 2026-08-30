@@ -7,6 +7,8 @@
 
 class Sprite;
 class TileMap;
+class Pochi;
+class Inventory;
 
 // How BattleState's last fight ended, so whichever state pushed it (the
 // maze) can react once it's back on top of the stack. Set by BattleState
@@ -25,6 +27,8 @@ struct GameContext {
     Sprite* pochi;
     TileMap* forestMap;
     TileMap* mazeMap;
+	Pochi* playerStats;
+	Inventory* inventory;
     BYTE* keys;
     int moveSpeed;
 

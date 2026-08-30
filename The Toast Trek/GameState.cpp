@@ -5,6 +5,7 @@
 #include "Sprite.h"
 #include "TileMap.h"
 #include "BattleState.h"
+#include "Inventory.h"
 #include <dinput.h>
 
 namespace {
@@ -194,11 +195,17 @@ namespace {
     class MazeState : public GameState {
     private:
         bool interactWasDown;
+		bool pickupWasDown;
         bool level1Cleared;
         bool level2Cleared;
+		bool healthPotionPickedUp;
+		bool bonePickedUp;
         Enemy* skullBonesEnemy;
         Enemy* goblinEnemy;
+		Sprite* healthPotion;
+		Sprite* bone;
         Font* interactPrompt;
+		Font* itemPrompt;
 
         static constexpr float kMazeEntranceX = 10.0f;
         static constexpr float kSkullBonesX = 140.0f;
@@ -206,6 +213,10 @@ namespace {
         static constexpr float kGoblin1X = 760.0f;
         static constexpr float kGoblin1Y = 315.0f;
         static constexpr float kInteractRadius = 90.0f;
+		static constexpr float kHealthPotionX = 528.0f;
+		static constexpr float kHealthPotionY = 360.0f;
+		static constexpr float kBoneX = 1104.0f;
+		static constexpr float kBoneY = 97.0f;
 
         static bool IsNear(const D3DXVECTOR2& a, const D3DXVECTOR2& b, float radius) {
             float dx = a.x - b.x;
@@ -221,15 +232,26 @@ namespace {
             return false;
         }
 
+		bool IsTouchingItem(Sprite* pochiSprite, Sprite* item) const {
+			if (pochiSprite == NULL || item == NULL) return false;
+			return Physics::CheckAABBCollision(
+				Physics::GetFootBounds(pochiSprite, kPochiFootWidthRatio, kPochiFootHeightRatio),
+				Physics::GetBounds(item));
+		}
+
     public:
         MazeState()
-            : interactWasDown(false), level1Cleared(false), level2Cleared(false),
-              skullBonesEnemy(NULL), goblinEnemy(NULL), interactPrompt(NULL) {}
+            : interactWasDown(false), pickupWasDown(false), level1Cleared(false), level2Cleared(false),
+			healthPotionPickedUp(false), bonePickedUp(false), skullBonesEnemy(NULL), goblinEnemy(NULL),
+			healthPotion(NULL), bone(NULL), interactPrompt(NULL), itemPrompt(NULL) {}
 
         ~MazeState() {
             delete skullBonesEnemy;
             delete goblinEnemy;
+			delete healthPotion;
+			delete bone;
             delete interactPrompt;
+			delete itemPrompt;
         }
 
         void Initialize(GameContext& context) override {
@@ -244,12 +266,32 @@ namespace {
 
             skullBonesEnemy = CreateBossEnemy(context.device, BossId::SkullBones, kSkullBonesX, kSkullBonesY);
             goblinEnemy = CreateBossEnemy(context.device, BossId::Goblin, kGoblin1X, kGoblin1Y);
+			healthPotion = new Sprite(context.device, "Assets/Item/heathPotion.png", 18, 20, 1, 1, 1,
+				kHealthPotionX, kHealthPotionY);
+			bone = new Sprite(context.device, "Assets/Item/bone.png", 32, 32, 1, 1, 1,
+				kBoneX, kBoneY);
+			healthPotion->SetScale(2.0f);
+			bone->SetScale(1.5f);
 
             interactPrompt = new Font(context.device, 0.0f, 20.0f, 1280, 40, 20, "Arial");
+			itemPrompt = new Font(context.device, 0.0f, 0.0f, 250, 30, 18, "Arial");
         }
 
         void HandleInput(GameContext& context, GameStateManager& manager) override {
             if (context.pochi == NULL) return;
+
+			if (JustPressed(context.keys, DIK_E, pickupWasDown)) {
+				if (!healthPotionPickedUp && IsTouchingItem(context.pochi, healthPotion)) {
+					healthPotionPickedUp = true;
+					if (context.inventory != NULL) context.inventory->Add(ItemType::HealthPotion);
+					return;
+				}
+				if (!bonePickedUp && IsTouchingItem(context.pochi, bone)) {
+					bonePickedUp = true;
+					if (context.inventory != NULL) context.inventory->Add(ItemType::Bone);
+					return;
+				}
+			}
             if (!JustPressed(context.keys, DIK_F, interactWasDown)) return;
 
             D3DXVECTOR2 pochiPos = context.pochi->GetPosition();
@@ -271,9 +313,19 @@ namespace {
             // Pick up the result of whichever battle we just returned from -
             // BattleState sets this right before popping itself.
             if (context.lastBattleOutcome == BattleOutcome::Victory) {
-                if (context.lastBattleBoss == BossId::SkullBones) level1Cleared = true;
-                else if (context.lastBattleBoss == BossId::Goblin) level2Cleared = true;
+				if (context.lastBattleBoss == BossId::SkullBones) {
+					level1Cleared = true;
+					if (context.playerStats != NULL) context.playerStats->SetLevel(2);
+				}
+				else if (context.lastBattleBoss == BossId::Goblin) {
+					level2Cleared = true;
+					if (context.playerStats != NULL) context.playerStats->SetLevel(3);
+				}
             }
+			else if (context.lastBattleOutcome == BattleOutcome::Defeat && context.playerStats != NULL) {
+				context.playerStats->RestoreFull();
+			}
+			if (context.lastBattleOutcome != BattleOutcome::None) interactWasDown = false;
             context.lastBattleOutcome = BattleOutcome::None;
 
             if (context.pochi == NULL) return;
@@ -310,8 +362,30 @@ namespace {
 
             if (!level1Cleared && skullBonesEnemy != NULL) skullBonesEnemy->Render(context.spriteBrush);
             if (!level2Cleared && goblinEnemy != NULL) goblinEnemy->Render(context.spriteBrush);
+			if (!healthPotionPickedUp && healthPotion != NULL) healthPotion->Draw(context.spriteBrush);
+			if (!bonePickedUp && bone != NULL) bone->Draw(context.spriteBrush);
 
             if (context.pochi != NULL) context.pochi->Draw(context.spriteBrush);
+
+			if (context.pochi != NULL && itemPrompt != NULL) {
+				Sprite* nearbyItem = NULL;
+				const char* itemName = NULL;
+				if (!healthPotionPickedUp && IsTouchingItem(context.pochi, healthPotion)) {
+					nearbyItem = healthPotion;
+					itemName = "Health Potion - recover health 3";
+				}
+				else if (!bonePickedUp && IsTouchingItem(context.pochi, bone)) {
+					nearbyItem = bone;
+					itemName = "Bone - recover armor 2";
+				}
+				if (nearbyItem != NULL) {
+					D3DXVECTOR2 position = nearbyItem->GetPosition();
+					itemPrompt->Draw(itemName, position.x - 90.0f, position.y - 48.0f,
+						D3DCOLOR_XRGB(255, 255, 255));
+					itemPrompt->Draw("Press E to pick up", position.x - 90.0f, position.y - 25.0f,
+						D3DCOLOR_XRGB(255, 255, 255));
+				}
+			}
 
             if (context.pochi != NULL && interactPrompt != NULL &&
                 IsNearActiveBoss(context.pochi->GetPosition())) {

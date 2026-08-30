@@ -28,10 +28,12 @@
     <ClCompile Include="FrameTimer.cpp" />
     <ClCompile Include="GameState.cpp" />
     <ClCompile Include="Heart.cpp" />
+	<ClCompile Include="Inventory.cpp" />
     <ClCompile Include="Line.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="MainMenu.cpp" />
     <ClCompile Include="Physics.cpp" />
+    <ClCompile Include="Pochi.cpp" />
     <ClCompile Include="Projectile.cpp" />
     <ClCompile Include="Sprite.cpp" />
     <ClCompile Include="TileMap.cpp" />
@@ -46,9 +48,11 @@
     <ClInclude Include="FrameTimer.h" />
     <ClInclude Include="GameState.h" />
     <ClInclude Include="Heart.h" />
+	<ClInclude Include="Inventory.h" />
     <ClInclude Include="Line.h" />
     <ClInclude Include="MainMenu.h" />
     <ClInclude Include="Physics.h" />
+    <ClInclude Include="Pochi.h" />
     <ClInclude Include="Projectile.h" />
     <ClInclude Include="Sprite.h" />
     <ClInclude Include="TileMap.h" />

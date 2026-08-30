@@ -57,6 +57,18 @@
     <ClCompile Include="Enemy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="BattleButton.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BattleUI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Pochi.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+	<ClCompile Include="Inventory.cpp">
+	  <Filter>Source Files</Filter>
+	</ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TileMap.h">
@@ -98,5 +110,17 @@
     <ClInclude Include="Enemy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="BattleButton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BattleUI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Pochi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+	<ClInclude Include="Inventory.h">
+	  <Filter>Header Files</Filter>
+	</ClInclude>
   </ItemGroup>
 </Project>
