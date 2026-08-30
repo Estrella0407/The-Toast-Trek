@@ -6,6 +6,9 @@
 #include "TileMap.h"
 #include "BattleState.h"
 #include <dinput.h>
+#include "SettingsState.h"
+#include "LevelSelectState.h"
+#include "GameOverState.h"
 
 namespace {
     bool JustPressed(BYTE* keys, int key, bool& wasDown) {

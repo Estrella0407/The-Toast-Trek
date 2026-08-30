@@ -140,4 +140,4 @@ void LevelSelectState::Render(GameContext& context) {
 
 D3DCOLOR LevelSelectState::ClearColor() const {
     return D3DCOLOR_XRGB(20, 30, 50);
-}
+} 
