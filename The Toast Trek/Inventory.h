@@ -1,0 +1,22 @@
+#pragma once
+
+enum class ItemType {
+	HealthPotion,
+	Bone,
+	Toast
+};
+
+class Inventory {
+private:
+	int healthPotions;
+	int bones;
+	int toast;
+
+public:
+	Inventory();
+
+	void Add(ItemType item);
+	bool Has(ItemType item) const;
+	bool Consume(ItemType item);
+	int GetCount(ItemType item) const;
+};

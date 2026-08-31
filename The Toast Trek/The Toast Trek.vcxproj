@@ -19,13 +19,16 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="BattleButton.cpp" />
     <ClCompile Include="Battlefield.cpp" />
     <ClCompile Include="BattleState.cpp" />
+    <ClCompile Include="BattleUI.cpp" />
     <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="Font.cpp" />
     <ClCompile Include="FrameTimer.cpp" />
     <ClCompile Include="GameState.cpp" />
     <ClCompile Include="Heart.cpp" />
+	<ClCompile Include="Inventory.cpp" />
     <ClCompile Include="LevelSelectState.cpp" />
     <ClCompile Include="Line.cpp" />
     <ClCompile Include="Main.cpp" />
@@ -33,6 +36,7 @@
     <ClCompile Include="MainMenuState.cpp" />
     <ClCompile Include="OverworldState.cpp" />
     <ClCompile Include="Physics.cpp" />
+    <ClCompile Include="Pochi.cpp" />
     <ClCompile Include="Projectile.cpp" />
     <ClCompile Include="SettingsState.cpp" />
     <ClCompile Include="SoundManage.cpp" />
@@ -40,18 +44,22 @@
     <ClCompile Include="TileMap.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BattleButton.h" />
     <ClInclude Include="Battlefield.h" />
     <ClInclude Include="BattleState.h" />
+    <ClInclude Include="BattleUI.h" />
     <ClInclude Include="Enemy.h" />
     <ClInclude Include="Font.h" />
     <ClInclude Include="FrameTimer.h" />
     <ClInclude Include="GameState.h" />
     <ClInclude Include="Heart.h" />
+	<ClInclude Include="Inventory.h" />
     <ClInclude Include="LevelSelectState.h" />
     <ClInclude Include="Line.h" />
     <ClInclude Include="MainMenu.h" />
     <ClInclude Include="OverworldState.h" />
     <ClInclude Include="Physics.h" />
+    <ClInclude Include="Pochi.h" />
     <ClInclude Include="Projectile.h" />
     <ClInclude Include="SettingsState.h" />
     <ClInclude Include="SoundManage.h" />

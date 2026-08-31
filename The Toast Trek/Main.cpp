@@ -17,6 +17,8 @@
 #include "GameState.h"
 #include "Battlefield.h"
 #include "Heart.h"
+#include "Inventory.h"
+#include "Pochi.h"
 
 //--------------------------------------------------------------------
 //	Window handle
@@ -46,6 +48,8 @@ TileMap* ruinsInteriorMap = NULL;
 Sprite* pochi = NULL;
 GameContext gameContext = {};
 GameStateManager* gameStates = NULL;
+Inventory* playerInventory = NULL;
+Pochi* playerStats = NULL;
 
 Battlefield* battlefield;
 
@@ -290,15 +294,18 @@ void GetInput()
 {
 	// Get immediate Keyboard Data.
 	HRESULT hr = dInputKeyboardDevice->GetDeviceState(256, diKeys);
+	if (hr == DIERR_INPUTLOST || hr == DIERR_NOTACQUIRED) {
+		dInputKeyboardDevice->Acquire();
+		hr = dInputKeyboardDevice->GetDeviceState(256, diKeys);
+	}
+	if (FAILED(hr)) ZeroMemory(diKeys, sizeof(diKeys));
 
 	// Get immediate Mouse Data.
 	hr = dInputMouseDevice->GetDeviceState(sizeof(DIMOUSESTATE), &mouseState);
 
-	if (hr == DIERR_INPUTLOST || hr == DIERR_NOTACQUIRED)
-	{
-		// Reacquire the devices
-		dInputKeyboardDevice->Acquire();
+	if (hr == DIERR_INPUTLOST || hr == DIERR_NOTACQUIRED) {
 		dInputMouseDevice->Acquire();
+		hr = dInputMouseDevice->GetDeviceState(sizeof(DIMOUSESTATE), &mouseState);
 	}
 
 	// DIMOUSESTATE above is relative motion (deltas), not an absolute
@@ -306,8 +313,12 @@ void GetInput()
 	POINT cursor;
 	GetCursorPos(&cursor);
 	ScreenToClient(g_hWnd, &cursor);
-	gameContext.mouseX = (float)cursor.x;
-	gameContext.mouseY = (float)cursor.y;
+	RECT clientRect = {};
+	GetClientRect(g_hWnd, &clientRect);
+	const float clientWidth = (float)(clientRect.right - clientRect.left);
+	const float clientHeight = (float)(clientRect.bottom - clientRect.top);
+	gameContext.mouseX = clientWidth > 0.0f ? cursor.x * d3dPP.BackBufferWidth / clientWidth : 0.0f;
+	gameContext.mouseY = clientHeight > 0.0f ? cursor.y * d3dPP.BackBufferHeight / clientHeight : 0.0f;
 	gameContext.mouseLeftDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
 }
 
@@ -403,6 +414,10 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nSho
 	gameContext.pochi = pochi;
 	gameContext.forestMap = forestMap;
 	gameContext.mazeMap = mazeMap;
+	playerInventory = new Inventory();
+	playerStats = new Pochi(1);
+	gameContext.inventory = playerInventory;
+	gameContext.playerStats = playerStats;
 	gameContext.ruinsExteriorMap = ruinsExteriorMap;
 	gameContext.ruinsInteriorMap = ruinsInteriorMap;
 	gameContext.keys = diKeys;
@@ -433,6 +448,10 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nSho
 
 	delete gameStates;
 	gameStates = NULL;
+	delete playerInventory;
+	playerInventory = NULL;
+	delete playerStats;
+	playerStats = NULL;
 	CleanupSprite();
 	CleanupDirectInput();
 	CleanupDirectX();
