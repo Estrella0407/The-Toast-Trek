@@ -17,6 +17,9 @@
 #include "GameState.h"
 #include "Battlefield.h"
 #include "Heart.h"
+#include "SoundManage.h"
+#include "InventorySystem.h"
+#include "UnifiedMenu.h"
 
 //--------------------------------------------------------------------
 //	Window handle
@@ -46,6 +49,15 @@ GameContext gameContext = {};
 GameStateManager* gameStates = NULL;
 
 Battlefield* battlefield;
+
+// Sound Manager
+SoundManage* g_soundManager = nullptr;
+
+// Inventory System
+InventorySystem* g_inventory = nullptr;
+
+// Multiple tabs Menu
+UnifiedMenu* g_unifiedMenu = nullptr;
 
 int red = 0;
 int green = 0;
@@ -247,6 +259,51 @@ void CreateSprite()
 		pochi->SetScale(2.0f);
 	}
 
+	// Sound 
+	g_soundManager = new SoundManage();
+	if (!g_soundManager->Initialize()) {
+		MessageBoxA(NULL, "Failed to initialize sound system", "Warning", MB_OK);
+	} 
+
+	// Load sounds (you'll need to add these audio files)
+	g_soundManager->LoadSound("click", "Assets/Sounds/click.wav");
+	g_soundManager->LoadSound("gameover", "Assets/Sounds/gameover.wav");
+	g_soundManager->LoadSound("levelcomplete", "Assets/Sounds/levelcomplete.wav");
+	g_soundManager->LoadSound("background", "Assets/Sounds/background.mp3", true);
+	g_soundManager->LoadSound("battle", "Assets/Sounds/battle.mp3", true);
+
+	// Start background music
+	g_soundManager->PlayMusic("background", 0.6f);
+
+	// Inventory
+
+	g_inventory = new InventorySystem();
+	g_inventory->Initialize();
+
+	// Set up inventory callbacks
+	g_inventory->SetOnItemUse([](const Item& item) -> bool {
+		// Handle item usage
+		if (item.isConsumable) {
+			OutputDebugStringA(("Used: " + item.name + "\n").c_str());
+			return true;
+		}
+		return false;
+		});
+
+	g_inventory->SetOnItemEquip([](const Item& item) -> bool {
+		// Handle item equipping
+		OutputDebugStringA(("Equipped: " + item.name + "\n").c_str());
+		return true;
+		});
+
+	g_inventory->SetOnItemUnequip([](const Item& item) {
+		// Handle item unequipping
+		OutputDebugStringA(("Unequipped: " + item.name + "\n").c_str());
+		});
+
+	g_unifiedMenu = new UnifiedMenu(d3dDevice, g_soundManager, g_inventory, nullptr);
+	g_unifiedMenu->Initialize(spriteBrush);
+
 }
 
 bool WindowIsRunning()
@@ -317,6 +374,10 @@ void Render()
 
 	if (gameStates) gameStates->Render();
 
+	if (g_unifiedMenu && g_unifiedMenu->IsOpen()) {
+		g_unifiedMenu->Render(spriteBrush);
+	}
+
 	spriteBrush->End();
 
 	// End the scene -> Locks the buffer for presenting.
@@ -331,6 +392,26 @@ void CleanupSprite()
 	if (forestMap) { delete forestMap; forestMap = nullptr; }
 	if (mazeMap) { delete mazeMap; mazeMap = nullptr; }
 	if (pochi) { delete pochi;     pochi = nullptr; }
+
+	// Clean up Unified Menu	
+	if (g_unifiedMenu) {
+		delete g_unifiedMenu;
+		g_unifiedMenu = nullptr;
+	}
+
+	// Clean up inventory system
+	if (g_inventory) {
+		delete g_inventory;
+		g_inventory = nullptr;
+	}
+
+	// Clean up sound manager
+	if (g_soundManager) {
+		g_soundManager->Shutdown();
+		delete g_soundManager;
+		g_soundManager = nullptr;
+	}
+
 
 	if (spriteBrush) {
 		spriteBrush->Release();
@@ -403,13 +484,32 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nSho
 
 		// GAME LOOP
 		// One application loop delegates work to the state on top of the stack.
-		GetInput();
+		GetInput(); 
+
+		// Update Sound system
+		if (g_soundManager) {
+			g_soundManager->Update();
+		}
+
+		// Update Inventory UI (if open)
+		if (g_unifiedMenu) {
+			g_unifiedMenu->Update(
+				diKeys,
+				gameContext.mouseX,
+				gameContext.mouseY,
+				gameContext.mouseLeftDown,
+				false
+			);
+		}
+
+		// Update Game States
 		if (gameStates) {
 			gameStates->HandleInput();
 			gameStates->ApplyPendingChanges();
 			gameStates->Update();
 			gameStates->ApplyPendingChanges();
 		}
+
 		Render();
 	}
 

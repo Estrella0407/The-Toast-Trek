@@ -6,9 +6,10 @@
 #include "TileMap.h"
 #include "BattleState.h"
 #include <dinput.h>
-#include "SettingsState.h"
-#include "LevelSelectState.h"
 #include "GameOverState.h"
+
+class InventoryUI;
+extern InventoryUI* g_inventoryUI;
 
 namespace {
     bool JustPressed(BYTE* keys, int key, bool& wasDown) {
@@ -64,6 +65,7 @@ namespace {
     private:
         MainMenu* menu;
         bool enterWasDown;
+        bool inventoryWasDown; 
 
     public:
         MainMenuState() : menu(NULL), enterWasDown(false) {}
@@ -76,6 +78,13 @@ namespace {
         void HandleInput(GameContext& context, GameStateManager& manager) override {
             if (JustPressed(context.keys, DIK_RETURN, enterWasDown)) {
                 manager.Push(CreateTutorialState());
+            }
+
+            // inventory 
+            if (JustPressed(context.keys, DIK_I, inventoryWasDown)) {
+                if (g_inventoryUI) {
+                    g_inventoryUI->Toggle();
+                }
             }
         }
 
@@ -143,6 +152,14 @@ namespace {
                 manager.Push(CreateBattleState(BossId::SkullBones));
                 return;
             }
+
+            //  I key to toggle inventory 
+            if (JustPressed(context.keys, DIK_I, inventoryWasDown)) {
+                if (g_inventoryUI) {
+                    g_inventoryUI->Toggle();
+                }
+            }
+
         }
 
         void Update(GameContext& context, GameStateManager& manager) override {
@@ -253,6 +270,13 @@ namespace {
 
         void HandleInput(GameContext& context, GameStateManager& manager) override {
             if (context.pochi == NULL) return;
+
+            if (JustPressed(context.keys, DIK_I, inventoryWasDown)) { // I key
+                if (g_inventoryUI) {
+                    g_inventoryUI->Toggle();
+                }
+            }
+
             if (!JustPressed(context.keys, DIK_F, interactWasDown)) return;
 
             D3DXVECTOR2 pochiPos = context.pochi->GetPosition();
@@ -340,6 +364,14 @@ namespace {
             if (JustPressed(context.keys, DIK_F1, gameOverWasDown)) {
                 manager.Push(std::make_unique<GameOverState>());
             }
+
+            // I key to toggle inventory 
+            if (JustPressed(context.keys, DIK_I, inventoryWasDown)) {
+                if (g_inventoryUI) {
+                    g_inventoryUI->Toggle();
+                }
+            }
+
         }
 
         void Update(GameContext& context, GameStateManager&) override {
@@ -390,7 +422,14 @@ namespace {
         void Initialize(GameContext& context) override {
             label = new Font(context.device, 0.0f, 320.0f, 1280, 60, 32, "Arial");
         }
-        void HandleInput(GameContext&, GameStateManager&) override {}
+        void HandleInput(GameContext&, GameStateManager&) override {
+            // I key to toggle inventory 
+            if (JustPressed(context.keys, DIK_I, inventoryWasDown)) {
+                if (g_inventoryUI) {
+                    g_inventoryUI->Toggle();
+                }
+            }
+        }
         void Update(GameContext&, GameStateManager&) override {}
         void Render(GameContext&) override {
             if (label != NULL) label->Draw("NEXT LEVEL - COMING SOON", D3DCOLOR_XRGB(255, 255, 255));
