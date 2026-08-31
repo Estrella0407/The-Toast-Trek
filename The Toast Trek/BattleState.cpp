@@ -14,6 +14,10 @@ bool JustPressed(BYTE* keys, int key, bool& wasDown) {
 }
 }
 
+// Defined here (not =default in the header) so Battlefield / BattleUI are
+// complete types when the unique_ptr members are destroyed.
+BattleState::~BattleState() = default;
+
 void BattleState::Initialize(GameContext& context) {
 	pochi = context.playerStats;
     battleUI = std::make_unique<BattleUI>(context.device);

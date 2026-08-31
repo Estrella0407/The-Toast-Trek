@@ -20,8 +20,15 @@ public:
     );
     ~Font();
 
-    void Draw(const char* text, D3DCOLOR color = D3DCOLOR_XRGB(255, 255, 255));
-    void Draw(const char* text, float x, float y, D3DCOLOR color = D3DCOLOR_XRGB(255, 255, 255));
+    // Pass an already-Begin()'d sprite (e.g. the shared brush) to draw the
+    // text into that batch. Leave it NULL to let D3DXFont manage its own
+    // internal sprite - fine on its own, but if another ID3DXSprite::Begin
+    // is already active (Main keeps the shared brush open for the whole
+    // frame) that nested batch can silently drop the glyphs.
+    void Draw(const char* text, D3DCOLOR color = D3DCOLOR_XRGB(255, 255, 255),
+              LPD3DXSPRITE sprite = NULL);
+    void Draw(const char* text, float x, float y, D3DCOLOR color = D3DCOLOR_XRGB(255, 255, 255),
+              LPD3DXSPRITE sprite = NULL);
 
     RECT GetRect() const;
 };

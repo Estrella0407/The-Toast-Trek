@@ -2,6 +2,7 @@
 #include "Enemy.h"
 #include "Font.h"
 #include "Physics.h"
+#include "PochiBadge.h"
 #include "Sprite.h"
 #include "TileMap.h"
 #include <dinput.h>
@@ -57,6 +58,25 @@ namespace {
         return (dx * dx + dy * dy) <= (radius * radius);
     }
 
+    // Pochi's foot box overlapping an item's sprite bounds - the same
+    // footprint used for tile collision, so "standing on it" lines up with
+    // where she visually is.
+    bool TouchingItem(Sprite* pochi, Sprite* item) {
+        if (pochi == NULL || item == NULL) return false;
+        return Physics::CheckAABBCollision(
+            Physics::GetFootBounds(pochi, kPochiFootWidthRatio, kPochiFootHeightRatio),
+            Physics::GetBounds(item));
+    }
+
+    const char* ItemLabel(ItemType type) {
+        switch (type) {
+        case ItemType::HealthPotion: return "Health Potion  -  restores health";
+        case ItemType::Bone:         return "Bone  -  restores armor";
+        case ItemType::Toast:        return "Toast";
+        }
+        return "Item";
+    }
+
     std::unique_ptr<GameState> CreateMazeState();
     std::unique_ptr<GameState> CreateRuinsExteriorState();
     std::unique_ptr<GameState> CreateRuinsInteriorState();
@@ -71,13 +91,25 @@ namespace {
         std::vector<bool> bossCleared;
         Font* interactPrompt;
 
+        std::vector<Sprite*> itemSprites;
+        std::vector<bool> itemCollected;
+        Sprite* exclaim;   // "!" bubble shown above an un-collected item Pochi is standing on
+        Font* itemPrompt;
+
+        PochiBadge* hud;   // top-left HP / DEF / ATK readout
+
     public:
         explicit OverworldState(OverworldConfig cfg)
-            : config(std::move(cfg)), map(NULL), interactWasDown(false), interactPrompt(NULL) {}
+            : config(std::move(cfg)), map(NULL), interactWasDown(false), interactPrompt(NULL),
+              exclaim(NULL), itemPrompt(NULL), hud(NULL) {}
 
         ~OverworldState() {
             for (Enemy* enemy : bossEnemies) delete enemy;
+            for (Sprite* item : itemSprites) delete item;
             delete interactPrompt;
+            delete exclaim;
+            delete itemPrompt;
+            delete hud;
         }
 
         void Initialize(GameContext& context) override {
@@ -100,6 +132,27 @@ namespace {
             if (!config.bosses.empty()) {
                 interactPrompt = new Font(context.device, 0.0f, 20.0f, 1280, 40, 20, "Arial");
             }
+
+            for (Sprite* item : itemSprites) delete item;
+            itemSprites.clear();
+            itemCollected.assign(config.items.size(), false);
+            for (const ItemSpawn& spawn : config.items) {
+                Sprite* item = new Sprite(context.device, spawn.texture.c_str(),
+                    spawn.texWidth, spawn.texHeight, 1, 1, 1, spawn.x, spawn.y);
+                item->SetScale(spawn.scale);
+                itemSprites.push_back(item);
+            }
+
+            if (!config.items.empty()) {
+                // exclamationPoint.png is a 1254x1254 source - scale it right down.
+                exclaim = new Sprite(context.device, "Assets/Item/exclamationPoint.png",
+                    1254, 1254, 1, 1, 1, 0.0f, 0.0f);
+                exclaim->SetScale(0.03f);
+                itemPrompt = new Font(context.device, 0.0f, 0.0f, 360, 30, 18, "Arial");
+            }
+
+            delete hud;
+            hud = new PochiBadge(context.device);
         }
 
         void HandleInput(GameContext& context, GameStateManager& manager) override {
@@ -107,6 +160,18 @@ namespace {
             if (!JustPressed(context.keys, DIK_F, interactWasDown)) return;
 
             D3DXVECTOR2 pochiPos = context.pochi->GetPosition();
+
+            // Items first: standing on one and pressing F picks it up (and
+            // consumes this press, so it never also starts a fight).
+            for (size_t i = 0; i < itemSprites.size(); ++i) {
+                if (itemCollected[i]) continue;
+                if (TouchingItem(context.pochi, itemSprites[i])) {
+                    itemCollected[i] = true;
+                    if (context.inventory != NULL) context.inventory->Add(config.items[i].type);
+                    return;
+                }
+            }
+
             for (size_t i = 0; i < bossEnemies.size(); ++i) {
                 if (bossCleared[i]) continue;
                 if (IsNear(pochiPos, bossEnemies[i]->GetSprite()->GetPosition(), kInteractRadius)) {
@@ -180,6 +245,12 @@ namespace {
             if (hasForeground) map->DrawExcludingLayers(context.spriteBrush, config.foregroundLayers);
             else map->Draw(context.spriteBrush);
 
+            // Items sit on the ground - drawn before Pochi/bosses so they
+            // walk over them.
+            for (size_t i = 0; i < itemSprites.size(); ++i) {
+                if (!itemCollected[i]) itemSprites[i]->Draw(context.spriteBrush);
+            }
+
             for (size_t i = 0; i < bossEnemies.size(); ++i) {
                 if (!bossCleared[i]) bossEnemies[i]->Render(context.spriteBrush);
             }
@@ -190,6 +261,25 @@ namespace {
             // both Pochi and any bosses.
             if (hasForeground) map->DrawOnlyLayers(context.spriteBrush, config.foregroundLayers);
 
+            // "!" bubble + label for an un-collected item Pochi is standing on.
+            if (context.pochi != NULL && itemPrompt != NULL) {
+                for (size_t i = 0; i < itemSprites.size(); ++i) {
+                    if (itemCollected[i]) continue;
+                    if (!TouchingItem(context.pochi, itemSprites[i])) continue;
+
+                    D3DXVECTOR2 itemPos = itemSprites[i]->GetPosition();
+                    if (exclaim != NULL) {
+                        exclaim->SetPosition(itemPos.x, itemPos.y - 44.0f);
+                        exclaim->Draw(context.spriteBrush);
+                    }
+                    itemPrompt->Draw(ItemLabel(config.items[i].type),
+                        itemPos.x - 110.0f, itemPos.y - 26.0f, D3DCOLOR_XRGB(255, 255, 255));
+                    itemPrompt->Draw("Press F to pick up",
+                        itemPos.x - 110.0f, itemPos.y - 4.0f, D3DCOLOR_XRGB(255, 255, 255));
+                    break;
+                }
+            }
+
             if (context.pochi != NULL && interactPrompt != NULL) {
                 D3DXVECTOR2 pochiPos = context.pochi->GetPosition();
                 for (size_t i = 0; i < bossEnemies.size(); ++i) {
@@ -199,6 +289,10 @@ namespace {
                         break;
                     }
                 }
+            }
+
+            if (hud != NULL && context.playerStats != NULL) {
+                hud->Draw(context.spriteBrush, *context.playerStats);
             }
         }
 
@@ -237,6 +331,13 @@ namespace {
         config.foregroundLayers = { "Tree_Leaf" }; // only the leaf canopy draws in front of Pochi
         config.computeSpawnPosition = [](const D3DXVECTOR2&) {
             return D3DXVECTOR2(100.0f, 380.0f);
+        };
+        // A couple of pickups along the walk to the maze, so the tutorial's
+        // "stand on it and press F" has something to land on. Nudge these if
+        // they end up inside a tree once the final art is in.
+        config.items = {
+            { ItemType::HealthPotion, "Assets/Item/heathPotion.png", 18, 20, 380.0f, 392.0f, 2.0f },
+            { ItemType::Bone,         "Assets/Item/bone.png",        32, 32, 680.0f, 360.0f, 1.5f },
         };
         config.onReachRightEdge = [] { return CreateMazeState(); };
         return config;

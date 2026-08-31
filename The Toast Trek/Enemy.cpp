@@ -136,7 +136,7 @@ Enemy* CreateBossEnemy(IDirect3DDevice9* d3dDevice, BossId bossId, float startX,
 		return new Enemy(d3dDevice, BossId::Goblin, "Assets/characters/goblin.png", startX, startY, 
 			100, 87, 1, 1, 1);
 	case BossId::Maki:
-		return new Enemy(d3dDevice, "Assets/characters/makima.png", startX, startY, 120,
+		return new Enemy(d3dDevice, BossId::Maki, "Assets/characters/makima.png", startX, startY,
 			120, 120, 1, 1, 1);
 	case BossId::SkullBones:
 	default:

@@ -22,9 +22,11 @@
     <ClCompile Include="BattleButton.cpp" />
     <ClCompile Include="Battlefield.cpp" />
     <ClCompile Include="BattleState.cpp" />
+    <ClCompile Include="BattleStatusBars.cpp" />
     <ClCompile Include="BattleUI.cpp" />
     <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="Font.cpp" />
+    <ClCompile Include="FrameBar.cpp" />
     <ClCompile Include="FrameTimer.cpp" />
     <ClCompile Include="GameState.cpp" />
     <ClCompile Include="Heart.cpp" />
@@ -37,19 +39,24 @@
     <ClCompile Include="OverworldState.cpp" />
     <ClCompile Include="Physics.cpp" />
     <ClCompile Include="Pochi.cpp" />
+    <ClCompile Include="PochiBadge.cpp" />
     <ClCompile Include="Projectile.cpp" />
+    <ClCompile Include="UiFill.cpp" />
     <ClCompile Include="SettingsState.cpp" />
     <ClCompile Include="SoundManage.cpp" />
     <ClCompile Include="Sprite.cpp" />
     <ClCompile Include="TileMap.cpp" />
+    <ClCompile Include="TutorialPopupState.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BattleButton.h" />
     <ClInclude Include="Battlefield.h" />
     <ClInclude Include="BattleState.h" />
+    <ClInclude Include="BattleStatusBars.h" />
     <ClInclude Include="BattleUI.h" />
     <ClInclude Include="Enemy.h" />
     <ClInclude Include="Font.h" />
+    <ClInclude Include="FrameBar.h" />
     <ClInclude Include="FrameTimer.h" />
     <ClInclude Include="GameState.h" />
     <ClInclude Include="Heart.h" />
@@ -60,11 +67,14 @@
     <ClInclude Include="OverworldState.h" />
     <ClInclude Include="Physics.h" />
     <ClInclude Include="Pochi.h" />
+    <ClInclude Include="PochiBadge.h" />
     <ClInclude Include="Projectile.h" />
+    <ClInclude Include="UiFill.h" />
     <ClInclude Include="SettingsState.h" />
     <ClInclude Include="SoundManage.h" />
     <ClInclude Include="Sprite.h" />
     <ClInclude Include="TileMap.h" />
+    <ClInclude Include="TutorialPopupState.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="fmod.dll" />

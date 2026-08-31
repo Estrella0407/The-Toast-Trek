@@ -1,6 +1,7 @@
 #include "GameState.h"
 #include "MainMenu.h"
 #include "OverworldState.h"
+#include "TutorialPopupState.h"
 #include <dinput.h>
 
 namespace {
@@ -10,6 +11,11 @@ namespace {
         wasDown = isDown;
         return pressed;
     }
+
+    // The forest intro plays only the first time the player starts a run.
+    // The main menu is reachable again later (retry / return to menu), and
+    // it shouldn't replay the tutorial then.
+    bool s_forestIntroShown = false;
 
     class MainMenuState : public GameState {
     private:
@@ -26,7 +32,14 @@ namespace {
 
         void HandleInput(GameContext& context, GameStateManager& manager) override {
             if (JustPressed(context.keys, DIK_RETURN, enterWasDown)) {
+                // Queued in order: the forest initializes first, then the
+                // popup lands on top of it. Closing the popup reveals the
+                // already-running forest underneath.
                 manager.Push(CreateForestState());
+                if (!s_forestIntroShown) {
+                    manager.Push(CreateForestIntroPopup());
+                    s_forestIntroShown = true;
+                }
             }
         }
 

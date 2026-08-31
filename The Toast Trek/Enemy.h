@@ -9,7 +9,7 @@
 enum class BossId {
 	SkullBones, // Level 1
 	Goblin,     // Level 2
-	// Maki (Level 3) belongs to a different map whose art isn't finished yet.
+	Maki,       // Level 3 (final boss, ruins interior)
 	MrAndrew	// Secret boss
 };
 

@@ -32,10 +32,10 @@ Font::~Font() {
     }
 }
 
-void Font::Draw(const char* text, D3DCOLOR color) {
+void Font::Draw(const char* text, D3DCOLOR color, LPD3DXSPRITE sprite) {
     if (font != NULL && text != NULL) {
         font->DrawTextA(
-            NULL,
+            sprite,
             text,
             -1, // Count
             &rect,
@@ -45,13 +45,13 @@ void Font::Draw(const char* text, D3DCOLOR color) {
     }
 }
 
-void Font::Draw(const char* text, float x, float y, D3DCOLOR color) {
+void Font::Draw(const char* text, float x, float y, D3DCOLOR color, LPD3DXSPRITE sprite) {
     if (font != NULL && text != NULL) {
         rect.left = (long)x;
         rect.top = (long)y;
 
         font->DrawTextA(
-            NULL,
+            sprite,
             text,
             -1, // Count
             &rect,

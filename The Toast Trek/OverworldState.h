@@ -1,5 +1,6 @@
 #pragma once
 #include "GameState.h"
+#include "Inventory.h" // ItemType
 #include <functional>
 #include <string>
 #include <vector>
@@ -20,6 +21,17 @@ struct BossSpawn {
     float x, y;
 };
 
+// One item lying in the map. Walk over it and press F to add it to the
+// inventory. texWidth/texHeight are the PNG's exact pixel dimensions (the
+// Sprite loader needs them so non-power-of-two art isn't silently resized).
+struct ItemSpawn {
+    ItemType type;
+    std::string texture;
+    int texWidth, texHeight;
+    float x, y;
+    float scale;
+};
+
 // Everything that differs between one overworld map and the next. Pochi's
 // forest walk and her maze walk used to be two near-identical copies of
 // the same movement/collision/render loop (TutorialState and MazeState);
@@ -35,6 +47,8 @@ struct OverworldConfig {
     std::vector<std::string> foregroundLayers;
 
     std::vector<BossSpawn> bosses;
+
+    std::vector<ItemSpawn> items;
 
     // Where Pochi appears when this state starts, given wherever she
     // currently is - e.g. carry her Y across a map seam, or ignore the

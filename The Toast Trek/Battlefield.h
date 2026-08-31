@@ -12,6 +12,7 @@
 
 class Pochi;
 class BattleUI;
+class BattleStatusBars;
 class Battlefield {
 private:
 	IDirect3DDevice9* d3dDevice;
@@ -29,6 +30,7 @@ private:
 	BattleUI* battleUI;
 	Inventory* inventory;
 	Font* statusFont;
+	BattleStatusBars* playerBars;   // framed health/shield + enemy HP bars
 	float displayedEnemyHealth;
 	float hitStartHealth;
 	unsigned long long hitAnimationStart;

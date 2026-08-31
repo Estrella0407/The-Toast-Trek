@@ -1,9 +1,11 @@
 #include "Battlefield.h"
 #include "Enemy.h"
 #include "BattleUI.h"
+#include "BattleStatusBars.h"
 #include "Pochi.h"
 #include "Heart.h"
 #include "Physics.h"
+#include <algorithm>
 #include <string>
 #include <cmath>
 #include <cstdlib>
@@ -15,6 +17,7 @@ Battlefield::Battlefield(IDirect3DDevice9* d3dDevice, BattleUI* battleUI, Enemy*
 	this->pochi = pochi;
 	this->inventory = inventory;
 	statusFont = new Font(d3dDevice, 300.0f, 510.0f, 700, 35, 18, "Arial");
+	playerBars = new BattleStatusBars(d3dDevice);
 	displayedEnemyHealth = (float)enemy->GetHealth();
 	hitStartHealth = displayedEnemyHealth;
 	hitAnimationStart = 0;
@@ -217,6 +220,7 @@ bool Battlefield::IsProjectileAttackFinished() const {
 
 Battlefield::~Battlefield() {
 	delete statusFont;
+	delete playerBars;
 	delete heart;
 	delete enemy;
 
@@ -419,7 +423,6 @@ bool Battlefield::HasFled() const {
 }
 
 void Battlefield::Render(LPD3DXSPRITE sharedBrush) {
-	D3DCOLOR black = D3DCOLOR_XRGB(0, 0, 0);
 	heart->Render(sharedBrush);
 
 	if (showProjectiles) {
@@ -432,24 +435,12 @@ void Battlefield::Render(LPD3DXSPRITE sharedBrush) {
 		? D3DCOLOR_XRGB(255, 60, 60)
 		: D3DCOLOR_XRGB(255, 255, 255));
 
-	//enemyHealthBar->Draw(sharedBrush);
+	// Player health + shield bars (top-left) and the enemy HP bar (under
+	// the enemy) - all framed strips, driven by live values.
 	const float enemyRatio = enemy->GetMaxHealth() > 0
-		? displayedEnemyHealth / enemy->GetMaxHealth() : 0.0f;
-	const float shieldRatio = heart->GetMaxShield() > 0
-		? (float)heart->GetShield() / heart->GetMaxShield() : 0.0f;
-	const float healthRatio = heart->GetMaxHealth() > 0
-		? (float)heart->GetHealth() / heart->GetMaxHealth() : 0.0f;
+		? std::clamp(displayedEnemyHealth / enemy->GetMaxHealth(), 0.0f, 1.0f) : 0.0f;
 
-	//D3DRECT bars[6] = {
-	//	{ 520, 160, 760, 178 }, { 523, 163, 523 + (LONG)(234 * enemyRatio), 175 },
-	//	{ 300, 520, 650, 538 }, { 303, 523, 303 + (LONG)(344 * shieldRatio), 535 },
-	//	{ 650, 520, 1000, 538 }, { 653, 523, 653 + (LONG)(344 * healthRatio), 535 }
-	//};
-	//d3dDevice->Clear(1, &bars[0], D3DCLEAR_TARGET, black, 1.0f, 0);
-	//d3dDevice->Clear(1, &bars[1], D3DCLEAR_TARGET, D3DCOLOR_XRGB(210, 35, 35), 1.0f, 0);
-	//d3dDevice->Clear(1, &bars[2], D3DCLEAR_TARGET, black, 1.0f, 0);
-	//d3dDevice->Clear(1, &bars[3], D3DCLEAR_TARGET, D3DCOLOR_XRGB(60, 150, 255), 1.0f, 0);
-	//d3dDevice->Clear(1, &bars[4], D3DCLEAR_TARGET, black, 1.0f, 0);
-	//d3dDevice->Clear(1, &bars[5], D3DCLEAR_TARGET, D3DCOLOR_XRGB(70, 200, 90), 1.0f, 0);
-	//statusFont->Draw("SHIELD                                      HEALTH", black);
+	if (playerBars != nullptr && pochi != nullptr) {
+		playerBars->Draw(sharedBrush, *pochi, enemyRatio);
+	}
 }
