@@ -7,9 +7,9 @@
 // battle screen can agree on a single sprite/health/scale definition
 // (see CreateBossEnemy()) instead of duplicating those numbers.
 enum class BossId {
-	SkullBones, // Level 1
-	Goblin,     // Level 2
-	// Maki (Level 3) belongs to a different map whose art isn't finished yet.
+	SkullBones, // Level 1 - maze
+	Goblin,     // Level 2 - maze
+	Maki,       // Level 3 - final boss, ruins interior
 	MrAndrew	// Secret boss
 };
 

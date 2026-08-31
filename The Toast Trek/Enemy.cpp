@@ -49,10 +49,13 @@ Enemy* CreateBossEnemy(IDirect3DDevice9* d3dDevice, BossId bossId, float startX,
 	// this big it visibly drags the sprite away from (startX, startY)
 	// (that's what was sending Goblin toward the bottom-right corner).
 	switch (bossId) {
-	case BossId::Goblin: // real art is 1346x1168
+	case BossId::Goblin:
 		return new Enemy(d3dDevice, "Assets/characters/goblin.png", startX, startY, 80,
 			100, 87, 1, 1, 1);
-	case BossId::SkullBones: // real art is 1254x1254
+	case BossId::Maki:
+		return new Enemy(d3dDevice, "Assets/characters/makima.png", startX, startY, 120,
+			120, 120, 1, 1, 1);
+	case BossId::SkullBones:
 	default:
 		return new Enemy(d3dDevice, "Assets/characters/skullBones.png", startX, startY, 50,
 			100, 100, 1, 1, 1);

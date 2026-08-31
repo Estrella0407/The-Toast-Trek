@@ -114,7 +114,8 @@ TileMap::~TileMap() {
 }
 
 void TileMap::BuildSolidGrid() {
-    solidGrid.assign((size_t)mapWidthTiles * (size_t)mapHeightTiles, false);
+    size_t cellCount = (size_t)mapWidthTiles * (size_t)mapHeightTiles;
+    solidGrid.assign(cellCount, false);
 
     for (size_t layerIndex = 0; layerIndex < layers.size(); ++layerIndex) {
         const MapLayer& layer = layers[layerIndex];
@@ -134,10 +135,45 @@ void TileMap::BuildSolidGrid() {
             }
         }
     }
+
+    // Inverse pass: anywhere NONE of the walkable layers has a tile becomes
+    // solid too (e.g. a lake that's only distinguishable by land tiles not
+    // being drawn there). Skipped entirely when no walkable layers are set.
+    if (!walkableLayerNames.empty()) {
+        std::vector<bool> hasLand(cellCount, false);
+
+        for (size_t layerIndex = 0; layerIndex < layers.size(); ++layerIndex) {
+            const MapLayer& layer = layers[layerIndex];
+
+            bool isWalkableLayer = false;
+            for (size_t i = 0; i < walkableLayerNames.size(); ++i) {
+                if (walkableLayerNames[i] == layer.name) {
+                    isWalkableLayer = true;
+                    break;
+                }
+            }
+            if (!isWalkableLayer) continue;
+
+            for (size_t index = 0; index < layer.tileIds.size() && index < hasLand.size(); ++index) {
+                if (layer.tileIds[index] != 0) {
+                    hasLand[index] = true;
+                }
+            }
+        }
+
+        for (size_t index = 0; index < cellCount; ++index) {
+            if (!hasLand[index]) solidGrid[index] = true;
+        }
+    }
 }
 
 void TileMap::SetSolidLayers(const std::vector<std::string>& layerNames) {
     solidLayerNames = layerNames;
+    BuildSolidGrid();
+}
+
+void TileMap::SetWalkableLayers(const std::vector<std::string>& layerNames) {
+    walkableLayerNames = layerNames;
     BuildSolidGrid();
 }
 

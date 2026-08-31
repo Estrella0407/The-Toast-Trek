@@ -41,6 +41,8 @@ BYTE  diKeys[256];
 
 TileMap* forestMap = NULL;
 TileMap* mazeMap = NULL;
+TileMap* ruinsExteriorMap = NULL;
+TileMap* ruinsInteriorMap = NULL;
 Sprite* pochi = NULL;
 GameContext gameContext = {};
 GameStateManager* gameStates = NULL;
@@ -241,6 +243,18 @@ void CreateSprite()
 	mazeMap = new TileMap(d3dDevice, "Assets/TileMap/Maze.tmx", "Assets/TileMap/");
 	mazeMap->SetSolidLayers({ "Maze" });
 
+	ruinsExteriorMap = new TileMap(d3dDevice, "Assets/TileMap/Ruined_Temple_Exterior.tmx", "Assets/TileMap/");
+	ruinsExteriorMap->SetSolidLayers({ "Tree", "House", "Bricks", "Statues", "Columns" });
+	// "Water" is a full-canvas background fill, not a lake outline (the same
+	// tile sits under almost every cell, including all the grass) - so the
+	// lake is only distinguishable as wherever none of the actual land/floor
+	// layers have a tile drawn on top of it. SetWalkableLayers() marks
+	// exactly that solid: everywhere none of these has a tile.
+	ruinsExteriorMap->SetWalkableLayers({ "Ground", "Grass", "Spots", "Grass_details", "Site", "House_platform" });
+
+	ruinsInteriorMap = new TileMap(d3dDevice, "Assets/TileMap/Ruined_Temple_Interior.tmx", "Assets/TileMap/");
+	ruinsInteriorMap->SetSolidLayers({ "Walls_back", "Walls_top", "Statue", "Decorative_objects1", "Decorative_objects2" });
+
 	pochi = new Sprite(d3dDevice, "Assets/Characters/Pochi.png", 250, 60, 5, 2, 10, 100.0f, 380.0f);
 	if (pochi != nullptr) {
 		pochi->CropToFrame(0);
@@ -330,6 +344,8 @@ void CleanupSprite()
 {
 	if (forestMap) { delete forestMap; forestMap = nullptr; }
 	if (mazeMap) { delete mazeMap; mazeMap = nullptr; }
+	if (ruinsExteriorMap) { delete ruinsExteriorMap; ruinsExteriorMap = nullptr; }
+	if (ruinsInteriorMap) { delete ruinsInteriorMap; ruinsInteriorMap = nullptr; }
 	if (pochi) { delete pochi;     pochi = nullptr; }
 
 	if (spriteBrush) {
@@ -387,6 +403,8 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nSho
 	gameContext.pochi = pochi;
 	gameContext.forestMap = forestMap;
 	gameContext.mazeMap = mazeMap;
+	gameContext.ruinsExteriorMap = ruinsExteriorMap;
+	gameContext.ruinsInteriorMap = ruinsInteriorMap;
 	gameContext.keys = diKeys;
 	gameContext.moveSpeed = spriteVelocity;
 	gameStates = new GameStateManager(gameContext);

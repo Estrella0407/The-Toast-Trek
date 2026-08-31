@@ -26,11 +26,16 @@
     <ClCompile Include="FrameTimer.cpp" />
     <ClCompile Include="GameState.cpp" />
     <ClCompile Include="Heart.cpp" />
+    <ClCompile Include="LevelSelectState.cpp" />
     <ClCompile Include="Line.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="MainMenu.cpp" />
+    <ClCompile Include="MainMenuState.cpp" />
+    <ClCompile Include="OverworldState.cpp" />
     <ClCompile Include="Physics.cpp" />
     <ClCompile Include="Projectile.cpp" />
+    <ClCompile Include="SettingsState.cpp" />
+    <ClCompile Include="SoundManage.cpp" />
     <ClCompile Include="Sprite.cpp" />
     <ClCompile Include="TileMap.cpp" />
   </ItemGroup>
@@ -42,12 +47,23 @@
     <ClInclude Include="FrameTimer.h" />
     <ClInclude Include="GameState.h" />
     <ClInclude Include="Heart.h" />
+    <ClInclude Include="LevelSelectState.h" />
     <ClInclude Include="Line.h" />
     <ClInclude Include="MainMenu.h" />
+    <ClInclude Include="OverworldState.h" />
     <ClInclude Include="Physics.h" />
     <ClInclude Include="Projectile.h" />
+    <ClInclude Include="SettingsState.h" />
+    <ClInclude Include="SoundManage.h" />
     <ClInclude Include="Sprite.h" />
     <ClInclude Include="TileMap.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="fmod.dll" />
+    <None Include="fmodL.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="fmod_vc.lib" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>
@@ -102,8 +118,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(DXSDK_DIR)include\;$(IncludePath)</IncludePath>
-    <LibraryPath>$(DXSDK_DIR)lib\x86;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Program Files (x86)\FMOD SoundSystem\FMOD Studio API Windows\api\core\inc;$(DXSDK_DIR)include\;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files (x86)\FMOD SoundSystem\FMOD Studio API Windows\api\core\lib\x86;$(DXSDK_DIR)lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>C:\Program Files %28x86%29\FMOD SoundSystem\FMOD Studio API Windows\api\core\inc;$(DXSDK_DIR)include\;$(IncludePath)</IncludePath>
@@ -121,7 +137,7 @@
     <Link>
       <SubSystem>NotSet</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d9.lib;d3dx9.lib;dinput8.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>fmod_vc.lib;d3d9.lib;d3dx9.lib;dinput8.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Manifest>
       <EnableSegmentHeap>true</EnableSegmentHeap>

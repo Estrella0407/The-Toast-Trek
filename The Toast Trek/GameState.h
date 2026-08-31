@@ -25,6 +25,8 @@ struct GameContext {
     Sprite* pochi;
     TileMap* forestMap;
     TileMap* mazeMap;
+    TileMap* ruinsExteriorMap;
+    TileMap* ruinsInteriorMap;
     BYTE* keys;
     int moveSpeed;
 
@@ -77,7 +79,11 @@ public:
     D3DCOLOR ClearColor() const;
 };
 
+// Cross-file entry points - each defined next to the state it builds
+// (CreateMainMenuState() in MainMenuState.cpp, CreateBattleState() in
+// BattleState.cpp). Anything only ever pushed from within one file (e.g.
+// the maze, pushed only from OverworldState.cpp's forest-exit trigger)
+// doesn't need to live here - see OverworldState.h for those.
 std::unique_ptr<GameState> CreateMainMenuState();
-std::unique_ptr<GameState> CreateMazeState();
 std::unique_ptr<GameState> CreateBattleState(BossId bossId);
 

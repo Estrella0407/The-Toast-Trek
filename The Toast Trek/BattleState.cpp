@@ -39,3 +39,7 @@ void BattleState::Render(GameContext& context) {
 D3DCOLOR BattleState::ClearColor() const {
 	return D3DCOLOR_XRGB(255, 255, 255);
 }
+
+std::unique_ptr<GameState> CreateBattleState(BossId bossId) {
+	return std::make_unique<BattleState>(bossId);
+}
