@@ -19,6 +19,12 @@ public:
 	void Heal(int amount);
 	void RecoverArmor(int amount);
 	void SetLevel(int newLevel);
+	//Special lvl
+	void SetMaxHealth(int maxHealth);
+	void SetHealth(int health);
+	void SetMaxArmor(int maxArmor);
+	void SetArmor(int armor);
+	void SetAttackDamage(int attackDamage);
 	void RestoreFull();
 
 	void IncreaseMaxHealth(int amount);

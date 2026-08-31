@@ -15,7 +15,9 @@ enum class BossId {
 
 enum class AttackType {
 	FourDirection,
-	StarBounce
+	StarBounce,
+	Gunshot,
+	SpecialAttack
 };
 
 class Enemy {

@@ -6,6 +6,7 @@
 #include "TileMap.h"
 #include "BattleState.h"
 #include "Inventory.h"
+#include "Pochi.h"
 #include <dinput.h>
 
 namespace {
@@ -68,6 +69,7 @@ namespace {
         ~MainMenuState() { delete menu; }
 
         void Initialize(GameContext& context) override {
+			if (context.playerStats != NULL) context.playerStats->SetLevel(1);
             menu = new MainMenu(context.device, context.pochi);
         }
 
@@ -138,7 +140,7 @@ namespace {
         void HandleInput(GameContext& context, GameStateManager& manager) override {
             // Debug shortcut straight to a fight, bypassing the walk to the maze.
             if (JustPressed(context.keys,DIK_P, gameOverWasDown)) {
-                manager.Push(CreateBattleState(BossId::SkullBones));
+                manager.Push(CreateBattleState(BossId::MrAndrew));
                 return;
             }
         }
@@ -298,12 +300,22 @@ namespace {
 
             if (!level1Cleared && skullBonesEnemy != NULL &&
                 IsNear(pochiPos, skullBonesEnemy->GetSprite()->GetPosition(), kInteractRadius)) {
+				// Skull Bone is the level-1 encounter.
+				if (context.playerStats != NULL && context.playerStats->GetLevel() != 1) {
+					context.playerStats->SetLevel(1);
+				}
                 manager.Push(CreateBattleState(BossId::SkullBones));
                 return;
             }
 
             if (!level2Cleared && goblinEnemy != NULL &&
                 IsNear(pochiPos, goblinEnemy->GetSprite()->GetPosition(), kInteractRadius)) {
+				// The maze permits reaching Goblin before Skull Bone. Always use
+				// the intended level-2 stats for this encounter so one 3-damage
+				// special projectile cannot incorrectly end a level-1 battle.
+				if (context.playerStats != NULL && context.playerStats->GetLevel() < 2) {
+					context.playerStats->SetLevel(2);
+				}
                 manager.Push(CreateBattleState(BossId::Goblin));
                 return;
             }

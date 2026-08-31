@@ -8,7 +8,7 @@
 #include <cmath>
 #include <cstdlib>
 
-Battlefield::Battlefield(IDirect3DDevice9* d3dDevice, BattleUI* battleUI, Enemy* enemy, Pochi* pochi, Inventory* inventory) {
+Battlefield::Battlefield(IDirect3DDevice9* d3dDevice, BattleUI* battleUI, BossId bossId, Enemy* enemy, Pochi* pochi, Inventory* inventory) {
 	this->d3dDevice = d3dDevice;
 	this->battleUI = battleUI;
 	this->enemy = enemy;
@@ -18,6 +18,7 @@ Battlefield::Battlefield(IDirect3DDevice9* d3dDevice, BattleUI* battleUI, Enemy*
 	displayedEnemyHealth = (float)enemy->GetHealth();
 	hitStartHealth = displayedEnemyHealth;
 	hitAnimationStart = 0;
+	lastPlayerHitTime = 0;
 	enemyHitAnimating = false;
 
 	posX = 300.0f;
@@ -33,6 +34,15 @@ Battlefield::Battlefield(IDirect3DDevice9* d3dDevice, BattleUI* battleUI, Enemy*
 	spawningProjectile = 0;
 	maxProjectiles = 26;
 
+	currentBulletAim = nullptr;
+	currentBulletHole = nullptr;
+	bulletAttackActive = false;
+	bulletAiming = false;
+	bulletShotCount = 0;
+	bulletAimStartTime = 0;
+	bulletHoleStartTime = 0;
+	maxBulletShots = 50;
+
 	projectileTimer = 0.0f;
 	projectileSpawnInterval = 750.0f;
 
@@ -44,11 +54,23 @@ Battlefield::Battlefield(IDirect3DDevice9* d3dDevice, BattleUI* battleUI, Enemy*
 
 	mouseWasDown = false;
 	fled = false;
-	fightDamage = 10;
-	itemHealAmount = 5;
+	//fightDamage = 10;
+	//itemHealAmount = 5;
 
+	pochiHealthBar = new Sprite(d3dDevice, "Assets/UI/battleHealthBar.png", 200, 20, 1, 1, 1, 420.0f, 540.0f);
+	pochiArmorBar = new Sprite(d3dDevice, "Assets/UI/battleArmorBar.png", 200, 20, 1, 1, 1, 800.0f, 540.0f);
+	enemyHealthBar = new Sprite(d3dDevice, "Assets/UI/battleHealthBar.png", 200, 20, 1, 1, 1, 550.0f, 170.0f);
 
-	//enemyHealthBar = new Sprite(d3dDevice, ....);
+	//Special lvl
+	if (bossId == BossId::MrAndrew) {
+		pochi->SetMaxHealth(99);
+		pochi->SetHealth(99);
+		pochi->SetMaxArmor(50);
+		pochi->SetArmor(50);
+		pochi->SetAttackDamage(99);
+	}
+	specialAttackActive = false;
+	specialAttackWave = 0;
 }
 
 
@@ -104,9 +126,38 @@ void Battlefield::StarBounceAttack() {
 	}
 }
 
+void Battlefield::SpecialAttack() {
+	specialAttackActive = true;
+	specialAttackWave = 0;
+	//specialAttackTimer = 0.0f;
+
+	FourDirectionAttack();
+}
+
+bool Battlefield::AreAllProjectilesInactive() {
+	for (Projectile* projectile : projectiles) {
+		if (projectile != nullptr && projectile->IsActive())
+			return false;
+	}
+	return true;
+}
+
 void Battlefield::StartEnemyAttack() {
 	for (Projectile* projectile : projectiles) delete projectile;
 	projectiles.clear();
+	currentBulletAim = nullptr;
+	currentBulletHole = nullptr;
+	currentBulletAims.clear();
+	currentBulletHoles.clear();
+	currentBulletTargets.clear();
+	bulletAttackActive = false;
+	specialAttackActive = false;
+	showProjectiles = true;
+	projectileAttackFinished = false;
+	projectileAttackStart = GetTickCount64();
+	lastPlayerHitTime = 0;
+	spawningProjectile = 0;
+	projectileTimer = projectileSpawnInterval;
 
 	switch (enemy->GetAttackType()) {
 	case AttackType::FourDirection:
@@ -114,14 +165,16 @@ void Battlefield::StartEnemyAttack() {
 		break;
 	case AttackType::StarBounce:
 		StarBounceAttack();
-		spawningProjectile = 5;
+		spawningProjectile = 6;
+		projectileTimer = 4000.0f;
+		break;
+	case AttackType::Gunshot:
+		StartGunshotAttack();
+		break;
+	case AttackType::SpecialAttack:
+		StartSpecialBossAttack();
 		break;
 	}
-	showProjectiles = true;
-	projectileAttackFinished = false;
-	projectileAttackStart = GetTickCount64();
-	if (enemy->GetAttackType() == AttackType::FourDirection) spawningProjectile = 0;
-	projectileTimer = enemy->GetAttackType() == AttackType::StarBounce ? 4000.0f : projectileSpawnInterval;
 }
 
 void Battlefield::PerformFight() {
@@ -142,6 +195,34 @@ void Battlefield::PerformFight() {
 	OutputDebugStringA(("Enemy hit for " + std::to_string(damage) +
 				", health now " + std::to_string(enemy->GetHealth()) + "\n").c_str());
 
+}
+
+void Battlefield::StartGunshotAttack() {
+	bulletAttackActive = true;
+	bulletShotCount = 0;
+	currentBulletAims.clear();
+	currentBulletHoles.clear();
+	currentBulletTargets.clear();
+	StartGunshotBurst();
+}
+
+void Battlefield::StartGunshotBurst() {
+	currentBulletAims.clear();
+	currentBulletHoles.clear();
+	currentBulletTargets.clear();
+
+	const int randomBurstSize = 3 + rand() % 4;
+	const int burstSize = randomBurstSize;
+	for (int i = 0; i < burstSize; ++i) {
+		const float targetX = posX + 30.0f + (float)(rand() % (int)(width - 60.0f));
+		const float targetY = posY + 30.0f + (float)(rand() % (int)(height - 60.0f));
+		currentBulletTargets.push_back(D3DXVECTOR2(targetX, targetY));
+		Projectile* aim = new Projectile(d3dDevice, targetX, targetY, 0.0f, 0.0f, ProjectileType::aim);
+		currentBulletAims.push_back(aim);
+		projectiles.push_back(aim);
+	}
+	bulletAiming = true;
+	bulletAimStartTime = GetTickCount64();
 }
 
 void Battlefield::PerformAct() {
@@ -215,10 +296,26 @@ bool Battlefield::IsProjectileAttackFinished() const {
 	return projectileAttackFinished;
 }
 
+bool Battlefield::isSpecialAttackFinished() const {
+	return !specialAttackActive;
+}
+
+void Battlefield::StartSpecialBossAttack() {
+	specialAttackActive = true;
+	specialAttackWave = 0;
+	StarBounceAttack();
+	spawningProjectile = 6;
+	projectileTimer = projectileSpawnInterval;
+	StartGunshotAttack();
+}
+
 Battlefield::~Battlefield() {
 	delete statusFont;
 	delete heart;
 	delete enemy;
+	delete pochiHealthBar;
+	delete pochiArmorBar;
+	delete enemyHealthBar;
 
 	for (Projectile* projectile : projectiles) {
 		delete projectile;
@@ -274,10 +371,16 @@ void Battlefield::Update(GameContext& context) {
 
 	if (!showProjectiles) return;
 
-	const bool starAttack = enemy->GetAttackType() == AttackType::StarBounce;
+	const AttackType attackType = enemy->GetAttackType();
+	const bool starAttack = attackType == AttackType::StarBounce;
+	const bool fireSpawner = attackType == AttackType::FourDirection || attackType == AttackType::SpecialAttack;
 	const unsigned long long elapsedAttackTime = GetTickCount64() - projectileAttackStart;
 	const bool attackTimedOut = elapsedAttackTime >= projectileAttackDuration;
-	if (!attackTimedOut && spawningProjectile < maxProjectiles && elapsedAttackTime >= projectileTimer) {
+	if ((attackType == AttackType::Gunshot || attackType == AttackType::SpecialAttack) && !attackTimedOut) {
+		UpdateGunshotAttack();
+	}
+	if (!attackTimedOut && (starAttack || fireSpawner) &&
+		spawningProjectile < maxProjectiles && elapsedAttackTime >= projectileTimer) {
 		if (starAttack) {
 			StarBounceAttack();
 			spawningProjectile += 5;
@@ -368,10 +471,19 @@ void Battlefield::Update(GameContext& context) {
 			}
 		}
 
-		AABB projectileBounds = Physics::GetBounds(projectile->GetSprite());
-		if (Physics::CheckAABBCollision(heartBounds, projectileBounds)) {
+		AABB projectileBounds = projectile->GetCollisionBounds();
+		if (projectile->GetType() != ProjectileType::aim &&
+			!projectile->HasAppliedDamage() &&
+			(lastPlayerHitTime == 0 || GetTickCount64() - lastPlayerHitTime >= 1000) &&
+			Physics::CheckAABBCollision(heartBounds, projectileBounds)) {
 			pochi->TakeDamage(enemy->GetAttackDamage());
-			projectile->Deactivate();
+			lastPlayerHitTime = GetTickCount64();
+			projectile->MarkDamageApplied();
+			// Keep the bullet visible for its short impact duration. Moving
+			// projectiles disappear immediately after landing a hit.
+			if (projectile->GetType() != ProjectileType::bullet) {
+				projectile->Deactivate();
+			}
 		}
 	}
 
@@ -388,6 +500,8 @@ void Battlefield::Update(GameContext& context) {
 	if (attackTimedOut && projectiles.empty()) {
 		projectileAttackFinished = true;
 		showProjectiles = false;
+		bulletAttackActive = false;
+		specialAttackActive = false;
 		OutputDebugStringA("PROJECTILE ATTACK FINISHED!\n");
 	}
 }
@@ -403,6 +517,60 @@ void Battlefield::UpdateStarBounce(Projectile* projectile) {
 	if (position.y <= posY || position.y + 64.0f >= posY + height) {
 		velocity.y *= -1.0f;
 		projectile->SetVelocity(velocity.x, velocity.y);
+	}
+}
+
+void Battlefield::UpdateSpecialBossAttack() {
+	if (!specialAttackActive)
+		return;
+	if (specialAttackWave == 0) {
+		if (IsProjectileAttackFinished()) {
+			specialAttackWave = 1;
+			StarBounceAttack();
+		}
+	}
+	else if (specialAttackWave == 1) {
+		if (IsProjectileAttackFinished()) {
+			specialAttackActive = false;
+		}
+	}
+}
+
+void Battlefield::UpdateGunshotAttack() {
+	if (!bulletAttackActive)
+		return;
+	//aiming phase
+	if (bulletAiming) {
+		unsigned long long elapsed = GetTickCount64() - bulletAimStartTime;
+		if (elapsed >= 500) {		//500 milliseconds = 0.5 seconds
+			bulletAiming = false;
+			for (Projectile* aim : currentBulletAims) {
+				if (aim != nullptr) aim->Deactivate();
+			}
+			currentBulletAims.clear();
+			for (const D3DXVECTOR2& target : currentBulletTargets) {
+				Projectile* bullet = new Projectile(d3dDevice, target.x, target.y, 0.0f, 0.0f, ProjectileType::bullet);
+				currentBulletHoles.push_back(bullet);
+				projectiles.push_back(bullet);
+			}
+			bulletHoleStartTime = GetTickCount64();
+			bulletShotCount += (int)currentBulletTargets.size();
+		}
+	}
+	//bullet hole phase
+	else if (!currentBulletHoles.empty()) {
+		unsigned long long elapsed = GetTickCount64() - bulletHoleStartTime;
+		if (elapsed >= 180) {
+			for (Projectile* bullet : currentBulletHoles) {
+				if (bullet != nullptr) bullet->Deactivate();
+			}
+			currentBulletHoles.clear();
+			currentBulletTargets.clear();
+
+			// Keep producing randomized bursts. Battlefield::Update stops this
+			// attack when the shared 20-second projectile timer expires.
+			StartGunshotBurst();
+		}
 	}
 }
 
@@ -432,7 +600,26 @@ void Battlefield::Render(LPD3DXSPRITE sharedBrush) {
 		? D3DCOLOR_XRGB(255, 60, 60)
 		: D3DCOLOR_XRGB(255, 255, 255));
 
-	//enemyHealthBar->Draw(sharedBrush);
+	//pochi health bar
+	char barText[32];
+	sprintf_s(barText, "HEALTH: %d/%d", pochi->GetHealth(), pochi->GetMaxHealth());
+	statusFont->Draw(barText, 305.0f, 540.0f, black);
+	float pochiHealthPercentage = (float)pochi->GetHealth() / (float)pochi->GetMaxHealth();
+	pochiHealthBar->DrawBar(sharedBrush, pochiHealthPercentage);
+
+	//pochi armor bar
+	sprintf_s(barText, "ARMOR: %d/%d", pochi->GetArmor(), pochi->GetMaxArmor());
+	statusFont->Draw(barText, 690.0f, 540.0f, black);
+	float armorPercentage = (float)pochi->GetArmor() / (float)pochi->GetMaxArmor();
+	pochiArmorBar->DrawBar(sharedBrush, armorPercentage);
+
+	//enemy health bar
+	sprintf_s(barText, "HEALTH: %d/%d", enemy->GetHealth(), enemy->GetMaxHealth());
+	statusFont->Draw(barText, 390.0f, 170.0f, black);
+	float enemyHealthPercentage = enemy->GetMaxHealth() > 0
+		? displayedEnemyHealth / (float)enemy->GetMaxHealth() : 0.0f;
+	enemyHealthBar->DrawBar(sharedBrush, enemyHealthPercentage);
+
 	const float enemyRatio = enemy->GetMaxHealth() > 0
 		? displayedEnemyHealth / enemy->GetMaxHealth() : 0.0f;
 	const float shieldRatio = heart->GetMaxShield() > 0
@@ -440,16 +627,5 @@ void Battlefield::Render(LPD3DXSPRITE sharedBrush) {
 	const float healthRatio = heart->GetMaxHealth() > 0
 		? (float)heart->GetHealth() / heart->GetMaxHealth() : 0.0f;
 
-	//D3DRECT bars[6] = {
-	//	{ 520, 160, 760, 178 }, { 523, 163, 523 + (LONG)(234 * enemyRatio), 175 },
-	//	{ 300, 520, 650, 538 }, { 303, 523, 303 + (LONG)(344 * shieldRatio), 535 },
-	//	{ 650, 520, 1000, 538 }, { 653, 523, 653 + (LONG)(344 * healthRatio), 535 }
-	//};
-	//d3dDevice->Clear(1, &bars[0], D3DCLEAR_TARGET, black, 1.0f, 0);
-	//d3dDevice->Clear(1, &bars[1], D3DCLEAR_TARGET, D3DCOLOR_XRGB(210, 35, 35), 1.0f, 0);
-	//d3dDevice->Clear(1, &bars[2], D3DCLEAR_TARGET, black, 1.0f, 0);
-	//d3dDevice->Clear(1, &bars[3], D3DCLEAR_TARGET, D3DCOLOR_XRGB(60, 150, 255), 1.0f, 0);
-	//d3dDevice->Clear(1, &bars[4], D3DCLEAR_TARGET, black, 1.0f, 0);
-	//d3dDevice->Clear(1, &bars[5], D3DCLEAR_TARGET, D3DCOLOR_XRGB(70, 200, 90), 1.0f, 0);
-	//statusFont->Draw("SHIELD                                      HEALTH", black);
+	
 }

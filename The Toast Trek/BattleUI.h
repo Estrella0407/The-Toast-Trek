@@ -6,6 +6,7 @@
 #include "BattleButton.h"
 #include "GameState.h" //GameContext (mouse input)
 #include "Inventory.h"
+#include <string>
 
 
 class BattleUI {
@@ -47,6 +48,7 @@ private:
 
 	//You have encounter Skullie!
 	bool showEncounterMessage;
+	std::string encounterMessage;
 	bool showActChoices;
 	bool showItemChoices;
 	int selectedItemOption;
@@ -75,6 +77,7 @@ public:
 	int GetActSelection(GameContext& context);
 
 	void SetShowEncounterMessage(bool show);
+	void SetEncounterMessage(const char* message);
 	void SetShowActChoices(bool show);
 	void SetActChoiceUsed(int index, bool used);
 	void SetShowItemChoices(bool show, const Inventory* inventory = nullptr);

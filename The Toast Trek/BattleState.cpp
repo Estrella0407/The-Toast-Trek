@@ -17,8 +17,12 @@ bool JustPressed(BYTE* keys, int key, bool& wasDown) {
 void BattleState::Initialize(GameContext& context) {
 	pochi = context.playerStats;
     battleUI = std::make_unique<BattleUI>(context.device);
+	if (bossId == BossId::SkullBones) battleUI->SetEncounterMessage("You have encounter Skull Bone!");
+	else if (bossId == BossId::Goblin) battleUI->SetEncounterMessage("You have encounter Goblin!");
+	else if (bossId == BossId::Maki) battleUI->SetEncounterMessage("You have encounter Maki!");
+	else battleUI->SetEncounterMessage("You have encounter Mr Andrew!");
     Enemy* enemy = CreateBossEnemy(context.device, bossId, 600.0f, 50.0f);
-    battlefield = std::make_unique<Battlefield>(context.device, battleUI.get(), enemy, pochi, context.inventory);
+    battlefield = std::make_unique<Battlefield>(context.device, battleUI.get(), bossId, enemy, pochi, context.inventory);
 }
 
 void BattleState::HandleInput(GameContext& context, GameStateManager&) {

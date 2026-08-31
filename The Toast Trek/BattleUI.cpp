@@ -11,6 +11,7 @@ BattleUI::BattleUI(IDirect3DDevice9* d3dDevice) : d3dDevice(d3dDevice), selected
 
 	selectedButton = 0;
 	showEncounterMessage = true;
+	encounterMessage = "You have encounter Skull Bone!";
 	showActChoices = false;
 	showItemChoices = false;
 	selectedItemOption = -1;
@@ -64,6 +65,10 @@ BattleUI::BattleUI(IDirect3DDevice9* d3dDevice) : d3dDevice(d3dDevice), selected
 
 void BattleUI::SetShowEncounterMessage(bool show) {
 	showEncounterMessage = show;
+}
+
+void BattleUI::SetEncounterMessage(const char* message) {
+	encounterMessage = message != nullptr ? message : "";
 }
 
 void BattleUI::SetShowActChoices(bool show) {
@@ -244,6 +249,6 @@ void BattleUI::Render(LPD3DXSPRITE sharedBrush) {
 	mercyButton->Render();
 
 	if (showEncounterMessage) {
-		encounterFont->Draw("You have encountered Skullie!", black);
+		encounterFont->Draw(encounterMessage.c_str(), black);
 	}
 }

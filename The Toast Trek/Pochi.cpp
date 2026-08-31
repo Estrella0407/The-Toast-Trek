@@ -104,3 +104,24 @@ int Pochi::GetAttackDamage() const {
 bool Pochi::isAlive() const {
 	return health > 0;
 }
+
+//Special lvl
+void Pochi::SetHealth(int health) {
+	this->health = health;
+}
+
+void Pochi::SetMaxHealth(int maxHealth) {
+	this->maxHealth = maxHealth;
+}
+
+void Pochi::SetArmor(int armor) {
+	this->armor = armor;
+}
+
+void Pochi::SetMaxArmor(int maxArmor) {
+	this->maxArmor = maxArmor;
+}
+
+void Pochi::SetAttackDamage(int attackDamage) {
+	this->attackDamage = attackDamage;
+}

@@ -18,8 +18,8 @@ Enemy::Enemy(IDirect3DDevice9* d3dDevice, BossId bossId, const char* spritePath,
 		attackDamage = 5;
 		break;
 	case BossId::MrAndrew:
-		health = 50;
-		attackDamage = 7;
+		health = 1000;
+		attackDamage = 30;
 		break;
 	}
 	maxHealth = health;
@@ -35,14 +35,22 @@ Enemy::Enemy(IDirect3DDevice9* d3dDevice, BossId bossId, const char* spritePath,
 	case BossId::Goblin:
 		actSprite = new Sprite(d3dDevice, "Assets/characters/goblinBlush.png", 200, 100, 2, 1, 2, startX, startY);
 		break;
+	case BossId::MrAndrew:
+		actSprite = new Sprite(d3dDevice, "Assets/characters/MrAndrewBlush.png", 200, 100, 2, 1, 2, startX, startY);
+		break;
 	}
 
 	switch (bossId) {
 	case BossId::SkullBones:
-		attackType = AttackType::FourDirection;
+		attackType = AttackType::FourDirection;		//FourDirection
 		break;
 	case BossId::Goblin:
-		attackType = AttackType::StarBounce;
+		attackType = AttackType::StarBounce;		//StarBounce
+		break;
+	case BossId::Maki:
+		attackType = AttackType::Gunshot;
+	case BossId::MrAndrew:
+		attackType = AttackType::SpecialAttack;
 		break;
 	}
 }
@@ -135,6 +143,12 @@ Enemy* CreateBossEnemy(IDirect3DDevice9* d3dDevice, BossId bossId, float startX,
 	case BossId::Goblin: // real art is 1346x1168
 		return new Enemy(d3dDevice, BossId::Goblin, "Assets/characters/goblin.png", startX, startY, 
 			100, 87, 1, 1, 1);
+	case BossId::Maki:	//128x128
+		return new Enemy(d3dDevice, BossId::Maki, "Assets/characters/makima.png", startX, startY,
+			128, 128, 1, 1, 1);
+	case BossId::MrAndrew:	//1254x1254
+		return new Enemy(d3dDevice, BossId::MrAndrew, "Assets/characters/MrAndrew.png", startX, startY,
+			100, 100, 1, 1, 1);
 	case BossId::SkullBones: // real art is 1254x1254
 	default:
 		return new Enemy(d3dDevice, BossId::SkullBones, "Assets/characters/skullBones.png", startX, startY,
