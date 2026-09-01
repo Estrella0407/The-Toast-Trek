@@ -6,6 +6,8 @@ Heart::Heart(IDirect3DDevice9* d3dDevice) {
 	moveSpeed = 3.0f;
 	health = 20;
 	maxHealth = 20;
+	shield = 10;
+	maxShield = 10;
 
 	boundaryLeft = 0.0f;
 	boundaryRight = 0.0f;
@@ -88,6 +90,12 @@ void Heart::ClampToBoundary(float left, float top, float right, float bottom) {
 }
 
 void Heart::TakeDamage(int damage) {
+	if (shield > 0) {
+		const int absorbed = damage < shield ? damage : shield;
+		shield -= absorbed;
+		damage -= absorbed;
+	}
+	if (damage <= 0) return;
 	health -= damage;
 	if (health < 0)
 		health = 0;
@@ -105,4 +113,12 @@ int Heart::GetHealth() const {
 
 int Heart::GetMaxHealth() const {
 	return maxHealth;
+}
+
+int Heart::GetShield() const {
+	return shield;
+}
+
+int Heart::GetMaxShield() const {
+	return maxShield;
 }

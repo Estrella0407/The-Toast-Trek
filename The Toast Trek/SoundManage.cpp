@@ -1,7 +1,13 @@
 #include "SoundManage.h"
 #include <fmod.hpp>
+#include <fmod_errors.h>
 #include <Windows.h>
-#include <iostream>
+
+static float ClampVol(float v) {
+    if (v < 0.0f) return 0.0f;
+    if (v > 1.0f) return 1.0f;
+    return v;
+}
 
 SoundManage::SoundManage()
     : system(nullptr)
@@ -17,24 +23,20 @@ SoundManage::~SoundManage() {
 
 bool SoundManage::Initialize() {
     if (FMOD::System_Create(&system) != FMOD_OK) {
-        MessageBoxA(NULL, "Failed to create FMOD system", "Sound Error", MB_OK | MB_ICONERROR);
+        system = nullptr;
         return false;
     }
-
     if (system->init(32, FMOD_INIT_NORMAL, nullptr) != FMOD_OK) {
-        MessageBoxA(NULL, "Failed to initialize FMOD system", "Sound Error", MB_OK | MB_ICONERROR);
+        system->release();
+        system = nullptr;
         return false;
     }
-
     return true;
 }
 
 void SoundManage::Shutdown() {
-    // Release all sounds
     for (auto& pair : sounds) {
-        if (pair.second) {
-            pair.second->release();
-        }
+        if (pair.second) pair.second->release();
     }
     sounds.clear();
     channels.clear();
@@ -49,93 +51,79 @@ void SoundManage::Shutdown() {
 bool SoundManage::LoadSound(const std::string& name, const std::string& filePath, bool isLooping) {
     if (!system) return false;
 
-    FMOD_SOUND* sound = nullptr;
+    FMOD::Sound* sound = nullptr;
     FMOD_MODE mode = FMOD_DEFAULT;
-
-    if (isLooping) {
-        mode |= FMOD_LOOP_NORMAL;
-    }
+    if (isLooping) mode |= FMOD_LOOP_NORMAL;
 
     if (system->createSound(filePath.c_str(), mode, nullptr, &sound) != FMOD_OK) {
-        std::string msg = "Failed to load sound: " + filePath;
-        OutputDebugStringA(msg.c_str());
+        OutputDebugStringA(("SoundManage: could not load " + filePath + "\n").c_str());
         return false;
     }
-
     sounds[name] = sound;
     return true;
 }
 
-void SoundManage::PlaySound(const std::string& name, float volume) {
-    if (muted) return;
-    if (sounds.find(name) == sounds.end()) return;
+void SoundManage::PlaySfx(const std::string& name, float volume) {
+    if (!system || muted) return;
+    auto it = sounds.find(name);
+    if (it == sounds.end()) return;
 
-    FMOD_SOUND* sound = sounds[name];
-    FMOD_CHANNEL* channel = nullptr;
-
-    if (system->playSound(sound, nullptr, false, &channel) == FMOD_OK) {
-        float finalVolume = volume * masterVolume * sfxVolume;
-        channel->setVolume(finalVolume);
+    FMOD::Channel* channel = nullptr;
+    if (system->playSound(it->second, nullptr, false, &channel) == FMOD_OK && channel) {
+        channel->setVolume(volume * masterVolume * sfxVolume);
         channels[name] = channel;
     }
 }
 
 void SoundManage::PlayMusic(const std::string& name, float volume) {
-    if (muted) return;
-    if (sounds.find(name) == sounds.end()) return;
+    if (!system || muted) return;
+    auto it = sounds.find(name);
+    if (it == sounds.end()) return;
 
-    // Stop current music
     StopMusic();
 
-    FMOD_SOUND* sound = sounds[name];
-    FMOD_CHANNEL* channel = nullptr;
-
-    if (system->playSound(sound, nullptr, false, &channel) == FMOD_OK) {
-        float finalVolume = volume * masterVolume * musicVolume;
-        channel->setVolume(finalVolume);
+    FMOD::Channel* channel = nullptr;
+    if (system->playSound(it->second, nullptr, false, &channel) == FMOD_OK && channel) {
+        channel->setVolume(volume * masterVolume * musicVolume);
         channels["_music"] = channel;
     }
 }
 
 void SoundManage::StopMusic() {
-    if (channels.find("_music") != channels.end()) {
-        channels["_music"]->stop();
-        channels.erase("_music");
+    auto it = channels.find("_music");
+    if (it != channels.end()) {
+        if (it->second) it->second->stop();
+        channels.erase(it);
     }
 }
 
 void SoundManage::PauseMusic(bool pause) {
-    if (channels.find("_music") != channels.end()) {
-        channels["_music"]->setPaused(pause);
-    }
+    auto it = channels.find("_music");
+    if (it != channels.end() && it->second) it->second->setPaused(pause);
 }
 
 void SoundManage::SetMasterVolume(float volume) {
-    masterVolume = max(0.0f, min(1.0f, volume));
-    // Update all active channels
+    masterVolume = ClampVol(volume);
     for (auto& pair : channels) {
-        if (pair.second) {
-            bool isMusic = (pair.first == "_music");
-            float baseVol = isMusic ? musicVolume : sfxVolume;
-            pair.second->setVolume(masterVolume * baseVol);
-        }
+        if (!pair.second) continue;
+        const bool isMusic = (pair.first == "_music");
+        pair.second->setVolume(masterVolume * (isMusic ? musicVolume : sfxVolume));
     }
 }
 
 void SoundManage::SetSFXVolume(float volume) {
-    sfxVolume = max(0.0f, min(1.0f, volume));
+    sfxVolume = ClampVol(volume);
     for (auto& pair : channels) {
-        if (pair.second && pair.first != "_music") {
+        if (pair.second && pair.first != "_music")
             pair.second->setVolume(masterVolume * sfxVolume);
-        }
     }
 }
 
 void SoundManage::SetMusicVolume(float volume) {
-    musicVolume = max(0.0f, min(1.0f, volume));
-    if (channels.find("_music") != channels.end()) {
-        channels["_music"]->setVolume(masterVolume * musicVolume);
-    }
+    musicVolume = ClampVol(volume);
+    auto it = channels.find("_music");
+    if (it != channels.end() && it->second)
+        it->second->setVolume(masterVolume * musicVolume);
 }
 
 void SoundManage::ToggleMute() {
@@ -144,31 +132,19 @@ void SoundManage::ToggleMute() {
 
 void SoundManage::SetMute(bool mute) {
     muted = mute;
-    if (muted) {
-        // Pause all channels
-        for (auto& pair : channels) {
-            if (pair.second) {
-                pair.second->setPaused(true);
-            }
+    for (auto& pair : channels) {
+        if (!pair.second) continue;
+        if (muted) {
+            pair.second->setPaused(true);
         }
-    }
-    else {
-        // Resume all channels
-        for (auto& pair : channels) {
-            if (pair.second) {
-                pair.second->setPaused(false);
-                // Restore volumes
-                bool isMusic = (pair.first == "_music");
-                float baseVol = isMusic ? musicVolume : sfxVolume;
-                pair.second->setVolume(masterVolume * baseVol);
-            }
+        else {
+            pair.second->setPaused(false);
+            const bool isMusic = (pair.first == "_music");
+            pair.second->setVolume(masterVolume * (isMusic ? musicVolume : sfxVolume));
         }
     }
 }
 
 void SoundManage::Update() {
-    if (system) {
-        system->update();
-    }
+    if (system) system->update();
 }
-
