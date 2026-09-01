@@ -29,9 +29,6 @@ void FrameBar::DrawFrame(LPD3DXSPRITE brush, int index, float x, float y, float 
     if (texture == NULL) return;
     index = std::clamp(index, 0, frameCount - 1);
 
-    // Slice the strip by the ACTUAL texture height, so this stays correct
-    // even when the device scaled a non-power-of-two strip to fit a POT
-    // texture on load.
     const LONG top = (LONG)((long long)index * texH / frameCount);
     const LONG bottom = (LONG)((long long)(index + 1) * texH / frameCount);
     RECT src = { 0, top, (LONG)texW, bottom };

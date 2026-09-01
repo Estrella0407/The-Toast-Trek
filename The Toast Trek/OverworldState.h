@@ -8,11 +8,12 @@
 // Which loaded map an OverworldState renders/collides against - resolved
 // against GameContext (context.forestMap / context.mazeMap / ...) at
 // Initialize() time, not baked in at construction.
-enum class MapId {
+enum class MapId : int {   // fixed underlying type: forward-declared in GameState.h
     Forest,
     Maze,
     RuinsExterior,
-    RuinsInterior
+    RuinsInterior,
+    Tarumt          // secret-boss (Mr Andrew) area off the forest's top-left
 };
 
 // One boss standing in the map, waiting to be walked up to (F to fight).
@@ -59,6 +60,50 @@ struct OverworldConfig {
     // next state to push, or nullptr for "no exit on this edge".
     std::function<std::unique_ptr<GameState>()> onReachRightEdge;
 
+    // The reverse: walking into the map's LEFT edge, to backtrack to the
+    // previous map. Retreat is allowed even while this map's bosses are
+    // uncleared (only the forward exits seal). nullptr = no exit here.
+    std::function<std::unique_ptr<GameState>()> onReachLeftEdge;
+
+    // Optional forced spawn point in the DESTINATION map for each of this
+    // map's exits, so Pochi lands on the connecting seam rather than the
+    // destination's own default spawn. Leave as kNoSpawn to let the
+    // destination's computeSpawnPosition decide. A y of kCarryY keeps
+    // Pochi's current y (seamless edge crossings).
+    static constexpr float kNoSpawn = -1000000.0f;
+    static constexpr float kCarryY  = -1.0f;
+    D3DXVECTOR2 rightEdgeSpawn = D3DXVECTOR2(kNoSpawn, kNoSpawn);
+    D3DXVECTOR2 leftEdgeSpawn  = D3DXVECTOR2(kNoSpawn, kNoSpawn);
+    D3DXVECTOR2 doorwaySpawn   = D3DXVECTOR2(kNoSpawn, kNoSpawn);
+
+    // Called the frame every boss in `bosses` has been cleared (e.g. the
+    // final map pushing the ending). Fired once.
+    std::function<std::unique_ptr<GameState>()> onAllCleared;
+
+    // Sequence gating. When requireBossesCleared is true the map's exit
+    // (onReachRightEdge / onEnterDoorway) stays locked until every boss in
+    // `bosses` is beaten - Pochi is walled in until the room is cleared, and
+    // a prompt shows at the blocked exit. When bossesInOrder is true the
+    // bosses must be fought in list order: boss i can't be engaged until
+    // bosses 0..i-1 are down. Both default off. The F8 dev-warp ignores this.
+    bool requireBossesCleared = false;
+    bool bossesInOrder = false;
+
+    // Optional locked gate drawn across the exit while requireBossesCleared
+    // is still unmet - "beat them, then cross". Enabled when gateWidth and
+    // gateHeight are both > 0. It's drawn from gateTexture (a PNG at its
+    // real texWidth/texHeight, positioned at gateX/gateY) if one is given,
+    // otherwise a plain barred gate is drawn to fill the gate rect. While
+    // the gate is up Pochi is also physically stopped at gateX (she can't
+    // walk past it), so it blocks a right-edge exit.
+    float gateX = 0.0f;
+    float gateY = 0.0f;
+    float gateWidth = 0.0f;
+    float gateHeight = 0.0f;
+    std::string gateTexture;
+    int gateTexWidth = 0;
+    int gateTexHeight = 0;
+
     // A specific spot on the map (e.g. a temple doorway) rather than an
     // edge - walking within doorwayRadius of doorwayPosition calls
     // onEnterDoorway the same way onReachRightEdge works. Ignored unless
@@ -66,6 +111,13 @@ struct OverworldConfig {
     D3DXVECTOR2 doorwayPosition = D3DXVECTOR2(0.0f, 0.0f);
     float doorwayRadius = 40.0f;
     std::function<std::unique_ptr<GameState>()> onEnterDoorway;
+
+    // Invisible top/bottom fence in pixels - Pochi's feet are kept between
+    // these Y values, on top of normal tile collision. Use it to stop the
+    // player walking around a maze along the map's open edges. fenceBottom
+    // <= fenceTop disables it (the default).
+    float fenceTop = 0.0f;
+    float fenceBottom = 0.0f;
 };
 
 std::unique_ptr<GameState> CreateOverworldState(OverworldConfig config);

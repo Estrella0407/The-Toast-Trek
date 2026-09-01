@@ -8,9 +8,25 @@
 // sprite/font drawn afterwards render invisibly.
 namespace ui {
 
-    // A 1x1 opaque-white MANAGED texture. NULL on failure. Caller owns it
-    // (Release when done).
+    // Standard palette for a text/readout plate drawn with the 1x1 white
+    // texture: a dark translucent panel, a thin gold border one pixel
+    // proud of it, and a near-black drop shadow for the text on top.
+    // Use these everywhere a FillRect plate backs UI text so every HUD
+    // element reads as one set.
+    inline constexpr D3DCOLOR kPlate     = D3DCOLOR_ARGB(190, 18, 15, 12);
+    inline constexpr D3DCOLOR kPlateEdge = D3DCOLOR_ARGB(220, 216, 184, 128);
+    inline constexpr D3DCOLOR kShadow    = D3DCOLOR_ARGB(230, 0, 0, 0);
+
+    // Loads Assets/UI/white.png (a 1x1 opaque-white image) with
+    // D3DXCreateTextureFromFileEx - the FillRect helper stretches it into
+    // every solid-colour panel. NULL on failure. Caller owns it (Release
+    // when done).
     IDirect3DTexture9* MakeWhiteTexture(IDirect3DDevice9* device);
+
+    // A soft-edged white disc, `size` x `size`, alpha 255 inside fading to 0
+    // at the rim. Draw it with DrawTexture and a tint for a round ball / dot.
+    // NULL on failure. Caller owns it (Release when done).
+    IDirect3DTexture9* MakeCircleTexture(IDirect3DDevice9* device, UINT size = 64);
 
     // Load a texture at its exact pixel size (no power-of-two rescale, so
     // source rects stay accurate). NULL on failure. Caller owns it.
@@ -36,4 +52,12 @@ namespace ui {
                            const RECT& src, float x, float y,
                            float scaleX, float scaleY,
                            D3DCOLOR tint = D3DCOLOR_ARGB(255, 255, 255, 255));
+
+    // Draw the whole texture scaled to drawW x drawH, rotated `angleRad`
+    // about its own centre, with that centre placed at (centreX, centreY).
+    // Leaves the brush transform as identity.
+    void DrawTextureRotated(LPD3DXSPRITE brush, IDirect3DTexture9* tex,
+                            UINT srcW, UINT srcH, float centreX, float centreY,
+                            float drawW, float drawH, float angleRad,
+                            D3DCOLOR tint = D3DCOLOR_ARGB(255, 255, 255, 255));
 }

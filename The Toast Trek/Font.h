@@ -16,7 +16,8 @@ public:
         int width = 200,
         int height = 50,
         int fontSize = 25,
-        const char* fontFace = "Arial"
+        const char* fontFace = "Arial",
+        int weight = FW_BOLD           // UI text reads thin at these sizes; default to bold
     );
     ~Font();
 

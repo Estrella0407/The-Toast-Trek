@@ -2,6 +2,7 @@
 #include <d3d9.h>
 #include <d3dx9.h>
 #include <memory>
+#include <set>
 #include <vector>
 #include "Enemy.h" // BossId
 
@@ -9,6 +10,12 @@ class Sprite;
 class TileMap;
 class Pochi;
 class Inventory;
+class SoundManage;
+
+// Defined in OverworldState.h. The fixed underlying type makes this a
+// complete type here, so GameContext can hold a std::set<MapId> without
+// pulling in the whole overworld header.
+enum class MapId : int;
 
 // How BattleState's last fight ended, so whichever state pushed it (the
 // maze) can react once it's back on top of the stack. Set by BattleState
@@ -29,8 +36,10 @@ struct GameContext {
     TileMap* mazeMap;
 	Pochi* playerStats;
 	Inventory* inventory;
+    SoundManage* sound;   // may be null if audio failed to init
     TileMap* ruinsExteriorMap;
     TileMap* ruinsInteriorMap;
+    TileMap* tarumtMap;          // secret-boss area off the forest's top-left; may be null
     BYTE* keys;
     int moveSpeed;
 
@@ -45,6 +54,19 @@ struct GameContext {
 
     BattleOutcome lastBattleOutcome;
     BossId lastBattleBoss;
+
+    // One-shot spawn override for the next overworld map. A departing
+    // OverworldState sets this (e.g. "put Pochi at the right edge of the
+    // forest") so the arriving map places her at the connecting seam
+    // instead of its own default spawn. The arriving Initialize() consumes
+    // it and clears the flag.
+    D3DXVECTOR2 pendingSpawn = D3DXVECTOR2(0.0f, 0.0f);
+    bool hasPendingSpawn = false;
+
+    // Maps whose bosses are all beaten. Persists for the run so backtracking
+    // into a cleared map doesn't respawn its enemies / re-lock its gate.
+    // Cleared at the start of a new run (main menu -> play, game-over retry).
+    std::set<MapId> clearedMaps;
 };
 
 class GameStateManager;
@@ -90,4 +112,6 @@ public:
 // doesn't need to live here - see OverworldState.h for those.
 std::unique_ptr<GameState> CreateMainMenuState();
 std::unique_ptr<GameState> CreateBattleState(BossId bossId);
+std::unique_ptr<GameState> CreateGameOverState(SoundManage* sound);
+std::unique_ptr<GameState> CreateEndingState();
 

@@ -1,6 +1,7 @@
 #pragma once
 #include <d3d9.h>
 #include <d3dx9.h>
+#include <string>
 #include "Line.h"
 #include "Font.h"
 #include "BattleButton.h"
@@ -45,7 +46,8 @@ private:
 	int fightDamage;
 	int itemHealAmount;
 
-	//You have encounter Skullie!
+	//"You have encountered <enemyName>!" - set per fight by BattleState.
+	std::string enemyName = "the enemy";
 	bool showEncounterMessage;
 	bool showActChoices;
 	bool showItemChoices;
@@ -75,6 +77,7 @@ public:
 	int GetActSelection(GameContext& context);
 
 	void SetShowEncounterMessage(bool show);
+	void SetEnemyName(const std::string& name);
 	void SetShowActChoices(bool show);
 	void SetActChoiceUsed(int index, bool used);
 	void SetShowItemChoices(bool show, const Inventory* inventory = nullptr);

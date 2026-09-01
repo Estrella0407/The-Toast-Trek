@@ -66,6 +66,10 @@ void BattleUI::SetShowEncounterMessage(bool show) {
 	showEncounterMessage = show;
 }
 
+void BattleUI::SetEnemyName(const std::string& name) {
+	if (!name.empty()) enemyName = name;
+}
+
 void BattleUI::SetShowActChoices(bool show) {
 	showActChoices = show;
 	if (!show) selectedActOption = -1;
@@ -244,6 +248,7 @@ void BattleUI::Render(LPD3DXSPRITE sharedBrush) {
 	mercyButton->Render();
 
 	if (showEncounterMessage) {
-		encounterFont->Draw("You have encountered Skullie!", black);
+		std::string msg = "You have encountered " + enemyName + "!";
+		encounterFont->Draw(msg.c_str(), black);
 	}
 }

@@ -1,18 +1,18 @@
 #include "Font.h"
 
-Font::Font(IDirect3DDevice9* d3dDevice, float startX, float startY, int width, int height, int fontSize, const char* fontFace) {
+Font::Font(IDirect3DDevice9* d3dDevice, float startX, float startY, int width, int height, int fontSize, const char* fontFace, int weight) {
     font = NULL;
 
     D3DXCreateFont(
         d3dDevice,                      // Device
         fontSize,                       // Height
         0,                              // Width
-        0,                              // Weight
+        weight,                         // Weight (FW_BOLD by default)
         1,                              // MipLevels
         false,                          // Italic
         DEFAULT_CHARSET,                // CharSet
         OUT_TT_ONLY_PRECIS,             // OutputPrecision
-        DEFAULT_QUALITY,                // Quality
+        ANTIALIASED_QUALITY,            // Quality - smoother edges on the heavier strokes
         DEFAULT_PITCH | FF_DONTCARE,    // PitchAndFamily
         fontFace,                       // pFaceName
         &font                           // Font pointer destination

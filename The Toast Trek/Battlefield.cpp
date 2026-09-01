@@ -78,31 +78,35 @@ void Battlefield::FourDirectionAttack() {
 }
 
 void Battlefield::StarBounceAttack() {
-	const int STAR_COUNT = 6;
-	//// Spawn away from the heart's initial center position so the whole wave
-	//// does not collide on its first frame.
-	//float centerX = posX + 100.0f;
-	//float centerY = posY + 100.0f;
+	const int STAR_COUNT = 3;
 
-	//const float velocities[5][2] =
-	//{
-	//	{1.0f, 0.5f},
-	//	{-1.0f, 0.5f},
-	//	{0.7f, -1.0f},
-	//	{-0.7f, -1.0f},
-	//	{1.0f, -0.3f}
-	//};
+	// The star sprite is ~64x64 on screen. Keep the whole wave clear of the
+	// heart's current position - a star spawned on top of it used to hit
+	// before the player could react (several at once = instant death).
+	const D3DXVECTOR2 heartPos = heart->GetPosition();
+	const float keepOut = 150.0f;
+
 	for (int i = 0; i < STAR_COUNT; i++) {
-		//random position
-		float x = posX + 10.0f + rand() % (int)(width - 74.0f);
-		float y = posY + 10.0f + rand() % (int)(height - 74.0f);
-		//random velocity
+		float x = posX + 10.0f;
+		float y = posY + 10.0f;
+		for (int tries = 0; tries < 24; ++tries) {
+			x = posX + 10.0f + rand() % (int)(width - 74.0f);
+			y = posY + 10.0f + rand() % (int)(height - 74.0f);
+			if (fabsf(x - heartPos.x) > keepOut || fabsf(y - heartPos.y) > keepOut) break;
+		}
+
 		float velocityX = (rand() % 201 - 100) / 100.0f;
 		float velocityY = (rand() % 201 - 100) / 100.0f;
-		//prevent star become stationary
-		if (velocityX == 0.0f && velocityY == 0.0f) {
-			velocityX = 1.0f;
+
+		// No near-stationary stars - normalise slow ones up to a real speed
+		// so the wave actually travels and bounces.
+		float speed = sqrtf(velocityX * velocityX + velocityY * velocityY);
+		if (speed < 0.6f) {
+			if (speed < 0.001f) { velocityX = 1.0f; velocityY = 0.4f; speed = sqrtf(1.16f); }
+			velocityX = velocityX / speed * 0.9f;
+			velocityY = velocityY / speed * 0.9f;
 		}
+
 		SpawnProjectile(d3dDevice, x, y, velocityX, velocityY, ProjectileType::star);
 	}
 }
@@ -117,7 +121,7 @@ void Battlefield::StartEnemyAttack() {
 		break;
 	case AttackType::StarBounce:
 		StarBounceAttack();
-		spawningProjectile = 5;
+		spawningProjectile = 3;
 		break;
 	}
 	showProjectiles = true;
@@ -284,7 +288,7 @@ void Battlefield::Update(GameContext& context) {
 	if (!attackTimedOut && spawningProjectile < maxProjectiles && elapsedAttackTime >= projectileTimer) {
 		if (starAttack) {
 			StarBounceAttack();
-			spawningProjectile += 5;
+			spawningProjectile += 3;
 			projectileTimer += 4000.0f;
 		}
 		else {

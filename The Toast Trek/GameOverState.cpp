@@ -1,8 +1,12 @@
 #include "GameOverState.h"
 #include "GameState.h"
+#include "OverworldState.h"   // CreateForestState
+#include "Pochi.h"
+#include "SoundManage.h"
 #include <dinput.h>
 #include <string>
 #include <sstream>
+#include <cmath>
 
 namespace {
     bool JustPressed(BYTE* keys, int key, bool& wasDown) {
@@ -40,14 +44,17 @@ void GameOverState::Initialize(GameContext& context) {
     promptFont = new Font(context.device, 0.0f, 500.0f, 1280, 60, 22, "Arial");
 
     if (soundManage) {
-        // Play game over sound
-        soundManage->PlaySound("gameover", 0.8f);
+        soundManage->PlaySfx("gameover", 0.8f);
     }
 }
 
 void GameOverState::HandleInput(GameContext& context, GameStateManager& manager) {
+    // The game-over screen is the only state on the stack, so both choices
+    // rebuild it with ClearAndPush.
     if (JustPressed(context.keys, DIK_R, retryWasDown)) {
-        manager.Pop(); // Retry the level
+        if (context.playerStats != nullptr) context.playerStats->SetLevel(1); // fresh Pochi
+        context.clearedMaps.clear();   // restart from scratch - every map locked again
+        manager.ClearAndPush(CreateForestState());
     }
     if (JustPressed(context.keys, DIK_M, menuWasDown)) {
         manager.ClearAndPush(CreateMainMenuState());
@@ -64,32 +71,27 @@ void GameOverState::Update(GameContext& context, GameStateManager& manager) {
 }
 
 void GameOverState::Render(GameContext& context) {
+    LPD3DXSPRITE brush = context.spriteBrush;
+
     if (titleFont) {
-        // Flash effect for title
-        D3DCOLOR color = D3DCOLOR_XRGB(255, 0, 0);
-        if (fmod(flashTimer, 0.5f) > 0.25f) {
-            color = D3DCOLOR_XRGB(200, 50, 50);
-        }
-        titleFont->Draw("GAME OVER", color);
+        D3DCOLOR color = (fmod(flashTimer, 0.6f) > 0.3f)
+            ? D3DCOLOR_XRGB(200, 50, 50) : D3DCOLOR_XRGB(255, 70, 70);
+        titleFont->Draw("GAME OVER", color, brush);
     }
-
     if (statsFont) {
-        std::stringstream stats;
-        stats << "LEVEL: " << levelName << "\n";
-        stats << "SCORE: " << score << "\n";
-        stats << "ENEMIES DEFEATED: " << enemiesDefeated << "\n";
-        stats << "TIME SURVIVED: " << timeSurvived << "s";
-
-        statsFont->Draw(stats.str().c_str(), 420.0f, 280.0f, D3DCOLOR_XRGB(220, 220, 220));
+        statsFont->Draw("Pochi has run out of health.", D3DCOLOR_XRGB(210, 200, 200), brush);
     }
-
     if (promptFont) {
-        promptFont->Draw("R: RETRY    M: RETURN TO MAIN MENU",
-            D3DCOLOR_XRGB(200, 200, 200));
+        promptFont->Draw("R: RETRY FROM THE START     M: MAIN MENU",
+            D3DCOLOR_XRGB(200, 200, 200), brush);
     }
 }
 
 D3DCOLOR GameOverState::ClearColor() const {
     // Fade to dark red
     return D3DCOLOR_XRGB(35, 10, 10);
+}
+
+std::unique_ptr<GameState> CreateGameOverState(SoundManage* sound) {
+    return std::make_unique<GameOverState>(sound);
 }

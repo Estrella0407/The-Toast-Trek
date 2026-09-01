@@ -18,8 +18,8 @@ Enemy::Enemy(IDirect3DDevice9* d3dDevice, BossId bossId, const char* spritePath,
 		attackDamage = 5;
 		break;
 	case BossId::MrAndrew:
-		health = 50;
-		attackDamage = 7;
+		health = 1000;
+		attackDamage = 30;
 		break;
 	}
 	maxHealth = health;
@@ -42,6 +42,12 @@ Enemy::Enemy(IDirect3DDevice9* d3dDevice, BossId bossId, const char* spritePath,
 		attackType = AttackType::FourDirection;
 		break;
 	case BossId::Goblin:
+		attackType = AttackType::StarBounce;
+		break;
+	case BossId::Maki:
+		attackType = AttackType::StarBounce;
+		break;
+	case BossId::MrAndrew:
 		attackType = AttackType::StarBounce;
 		break;
 	}
@@ -124,20 +130,16 @@ AttackType Enemy::GetAttackType() const {
 
 
 Enemy* CreateBossEnemy(IDirect3DDevice9* d3dDevice, BossId bossId, float startX, float startY) {
-	// Both boss images are full-body art on a large, mostly-transparent
-	// square-ish canvas (well over 1000px). Request the texture pre-scaled
-	// straight to its on-screen size (matching each file's real aspect
-	// ratio) instead of loading full-res and calling Sprite::SetScale() -
-	// SetScale() shrinks around the sprite's own center, so on a canvas
-	// this big it visibly drags the sprite away from (startX, startY)
-	// (that's what was sending Goblin toward the bottom-right corner).
 	switch (bossId) {
-	case BossId::Goblin: // real art is 1346x1168
+	case BossId::Goblin:
 		return new Enemy(d3dDevice, BossId::Goblin, "Assets/characters/goblin.png", startX, startY, 
 			100, 87, 1, 1, 1);
 	case BossId::Maki:
 		return new Enemy(d3dDevice, BossId::Maki, "Assets/characters/makima.png", startX, startY,
 			120, 120, 1, 1, 1);
+	case BossId::MrAndrew:
+		return new Enemy(d3dDevice, BossId::MrAndrew, "Assets/characters/mrAndrew.png", startX, startY,
+			140, 140, 1, 1, 1);
 	case BossId::SkullBones:
 	default:
 		return new Enemy(d3dDevice, BossId::SkullBones, "Assets/characters/skullBones.png", startX, startY,

@@ -1,48 +1,69 @@
 #include "PochiBadge.h"
-#include "FrameBar.h"
 #include "Font.h"
 #include "Pochi.h"
+#include "UiFill.h"
+#include <algorithm>
 #include <string>
 
 namespace {
-    // --- Frame strip layout (must match the PNGs) -----------------------
-    // All three strips are 128 x 128 per frame and overlay at the same spot.
-    // Frame is chosen by ratio (value / max), so a full bar always looks
-    // full regardless of level: frame 0 = empty ... last frame = full.
-    // Power-of-two strips: 128x2048, 16 frames of 128x128.
-    constexpr int kFrameW = 128, kFrameH = 128;
-    constexpr int kHpFrames = 16;
-    constexpr int kDefFrames = 16;
-    constexpr int kAtkFrames = 16;
-
-    // --- On-screen layout (pixels). Tweak freely. -------------------
+    // --- On-screen layout (pixels). Tweak freely. ------------------------
     constexpr float kBadgeScale = 2.2f;
-    constexpr float kBadgeX = -10.0f;
+    constexpr float kBadgeX = -30.0f;
     constexpr float kBadgeY = -97.0f;   // pulls the badge's empty top margin off-screen
 
-    constexpr float kValueX = 262.0f;
-    constexpr float kRowHpY = 22.0f;
-    constexpr float kRowDefY = 44.0f;
+    // pochiStateFull.png (128x128) is the finished badge with all three
+    // bars full. We draw THAT as the base and then darken the unfilled tail
+    // of each bar, rather than compositing an "empty" art on top - the
+    // pochiStateEmpty.png art is a separate drawing (different flag length,
+    // colour and outline) and doesn't line up with the full one.
+    //
+    // Source-pixel coords inside pochiStateFull.png (measured off the art):
+    // y0..y1 spans a bar's rows, kFillL is the first x of colour (just past
+    // the medallion), fillR is the last x of colour. Re-measure if the art
+    // is redrawn.
+    //   red   x 47..97  rows 57-59
+    //   blue  x 47..91  rows 62-64
+    //   green x 47..85  rows 67-69
+    constexpr int kArtW = 128, kArtH = 128;
+    constexpr int kFillL = 47;
+
+    struct Stripe { int y0, y1, fillR; };
+    constexpr Stripe kHp  { 57, 60, 97 };   // red
+    constexpr Stripe kDef { 62, 65, 91 };   // blue
+    constexpr Stripe kAtk { 67, 70, 85 };   // green
+
+    // Opaque groove colour painted over the drained part of a bar - a shade
+    // darker than the wood's own groove shadow so the fill still pops.
+    const D3DCOLOR kEmptyWash = D3DCOLOR_ARGB(255, 58, 36, 24);
+
+    // --- value readout -------------------------------------------------
+    // Kept at the same offset from kBadgeX as before, so the plate moves
+    // left together with the badge art rather than staying put.
+    constexpr float kValueX = 230.0f;
+    constexpr float kRowHpY = 18.0f;
+    constexpr float kRowDefY = 42.0f;
     constexpr float kRowAtkY = 66.0f;
 
-    const D3DCOLOR kHpCol = D3DCOLOR_XRGB(226, 92, 66);
-    const D3DCOLOR kDefCol = D3DCOLOR_XRGB(96, 176, 230);
-    const D3DCOLOR kAtkCol = D3DCOLOR_XRGB(104, 190, 96);
+    constexpr float kPlateX = 220.0f, kPlateY = 12.0f, kPlateW = 128.0f, kPlateH = 80.0f;
+    // Plate / edge / shadow: ui::kPlate, ui::kPlateEdge, ui::kShadow - the
+    // shared palette so every FillRect plate in the game matches.
+
+    const D3DCOLOR kHpCol = D3DCOLOR_XRGB(255, 138, 118);
+    const D3DCOLOR kDefCol = D3DCOLOR_XRGB(150, 205, 255);
+    const D3DCOLOR kAtkCol = D3DCOLOR_XRGB(160, 240, 150);
 }
 
 PochiBadge::PochiBadge(IDirect3DDevice9* device)
-    : hpBadge(NULL), defLine(NULL), atkLine(NULL), valueFont(NULL) {
-    hpBadge = new FrameBar(device, "Assets/UI/badge_hp_strip.png", kFrameW, kFrameH, kHpFrames);
-    defLine = new FrameBar(device, "Assets/UI/badge_def_strip.png", kFrameW, kFrameH, kDefFrames);
-    atkLine = new FrameBar(device, "Assets/UI/badge_atk_strip.png", kFrameW, kFrameH, kAtkFrames);
-    valueFont = new Font(device, 0.0f, 0.0f, 90, 20, 15, "Arial");
+    : badgeTex(NULL), valueFont(NULL), whiteTex(NULL) {
+    badgeTex = ui::LoadTexture(device, "Assets/UI/pochiStateFull.png", kArtW, kArtH);
+    valueFont = new Font(device, 0.0f, 0.0f, 120, 20, 16, "Arial");
+    whiteTex = ui::MakeWhiteTexture(device);
 }
 
 PochiBadge::~PochiBadge() {
-    delete hpBadge;
-    delete defLine;
-    delete atkLine;
+    if (badgeTex != NULL) badgeTex->Release();
     delete valueFont;
+    if (whiteTex != NULL) whiteTex->Release();
 }
 
 void PochiBadge::Draw(LPD3DXSPRITE brush, const Pochi& stats) {
@@ -57,18 +78,43 @@ void PochiBadge::Draw(LPD3DXSPRITE brush, const Pochi& stats) {
     const float defRatio = defMax > 0 ? (float)def / defMax : 0.0f;
     const float atkRatio = level / 3.0f;   // level tops out at 3
 
-    // Base badge + red line, then the blue and green lines overlaid at the
-    // exact same position/scale.
-    if (hpBadge != NULL) hpBadge->DrawRatio(brush, hpRatio, kBadgeX, kBadgeY, kBadgeScale);
-    if (defLine != NULL) defLine->DrawRatio(brush, defRatio, kBadgeX, kBadgeY, kBadgeScale);
-    if (atkLine != NULL) atkLine->DrawRatio(brush, atkRatio, kBadgeX, kBadgeY, kBadgeScale);
+    const float S = kBadgeScale;
+
+    // Base: the finished badge (wood flag + medallion + all bars full).
+    if (badgeTex != NULL) {
+        ui::DrawTexture(brush, badgeTex, kArtW, kArtH, kBadgeX, kBadgeY, S, S);
+    }
+
+    // Darken each bar from its fill point to its end, so only the filled
+    // part shows colour. FillRect is a plain quad - no art to misalign.
+    auto drain = [&](const Stripe& s, float ratio) {
+        if (whiteTex == NULL) return;
+        ratio = std::clamp(ratio, 0.0f, 1.0f);
+        const float xFill = kFillL + ratio * (float)(s.fillR - kFillL);
+        if (xFill >= (float)s.fillR) return;
+        ui::FillRect(brush, whiteTex,
+            kBadgeX + xFill * S, kBadgeY + s.y0 * S,
+            ((float)s.fillR - xFill) * S, (float)(s.y1 - s.y0) * S, kEmptyWash);
+    };
+    drain(kHp, hpRatio);
+    drain(kDef, defRatio);
+    drain(kAtk, atkRatio);
 
     if (valueFont != NULL) {
-        std::string hpText = "HP  " + std::to_string(hp) + " / " + std::to_string(hpMax);
-        std::string defText = "DEF " + std::to_string(def) + " / " + std::to_string(defMax);
-        std::string atkText = "ATK " + std::to_string(atk);
-        valueFont->Draw(hpText.c_str(), kValueX, kRowHpY, kHpCol, brush);
-        valueFont->Draw(defText.c_str(), kValueX, kRowDefY, kDefCol, brush);
-        valueFont->Draw(atkText.c_str(), kValueX, kRowAtkY, kAtkCol, brush);
+        // Dark plate + gold edge behind the readout.
+        ui::FillRect(brush, whiteTex, kPlateX - 1.0f, kPlateY - 1.0f, kPlateW + 2.0f, kPlateH + 2.0f, ui::kPlateEdge);
+        ui::FillRect(brush, whiteTex, kPlateX, kPlateY, kPlateW, kPlateH, ui::kPlate);
+
+        const std::string hpText = "HP  " + std::to_string(hp) + " / " + std::to_string(hpMax);
+        const std::string defText = "DEF " + std::to_string(def) + " / " + std::to_string(defMax);
+        const std::string atkText = "ATK " + std::to_string(atk);
+
+        auto row = [&](const char* s, float y, D3DCOLOR col) {
+            valueFont->Draw(s, kValueX + 1.0f, y + 1.0f, ui::kShadow, brush);   // drop shadow
+            valueFont->Draw(s, kValueX, y, col, brush);
+            };
+        row(hpText.c_str(), kRowHpY, kHpCol);
+        row(defText.c_str(), kRowDefY, kDefCol);
+        row(atkText.c_str(), kRowAtkY, kAtkCol);
     }
 }

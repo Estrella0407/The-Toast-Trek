@@ -1,8 +1,10 @@
 #include "BattleState.h"
 #include "Battlefield.h"
 #include "BattleUI.h"
+#include "Cheats.h"
 #include "Pochi.h"
 #include "Enemy.h"
+#include "SoundManage.h"
 #include <dinput.h>
 
 namespace {
@@ -12,6 +14,16 @@ bool JustPressed(BYTE* keys, int key, bool& wasDown) {
     wasDown = down;
     return pressed;
 }
+
+const char* BossDisplayName(BossId id) {
+    switch (id) {
+    case BossId::SkullBones: return "Skullie";
+    case BossId::Goblin:     return "the Goblin";
+    case BossId::Maki:       return "Makima";
+    case BossId::MrAndrew:   return "Mr Andrew";
+    }
+    return "the enemy";
+}
 }
 
 // Defined here (not =default in the header) so Battlefield / BattleUI are
@@ -20,9 +32,18 @@ BattleState::~BattleState() = default;
 
 void BattleState::Initialize(GameContext& context) {
 	pochi = context.playerStats;
+	lastPochiHealth = (pochi != nullptr) ? (pochi->GetHealth() + pochi->GetArmor()) : 0;
     battleUI = std::make_unique<BattleUI>(context.device);
+    battleUI->SetEnemyName(BossDisplayName(bossId));
     Enemy* enemy = CreateBossEnemy(context.device, bossId, 600.0f, 50.0f);
     battlefield = std::make_unique<Battlefield>(context.device, battleUI.get(), enemy, pochi, context.inventory);
+}
+
+namespace {
+    // Pochi's FIGHT swing sfx. Called from every place that runs a fight.
+    void PlayAttackSfx(GameContext& context) {
+        if (context.sound != nullptr) context.sound->PlaySfx("attack");
+    }
 }
 
 void BattleState::HandleInput(GameContext& context, GameStateManager&) {
@@ -41,6 +62,7 @@ void BattleState::HandleInput(GameContext& context, GameStateManager&) {
         if (action == 0) {
             phase = ENEMY_HIT;
             battleUI->SetShowEncounterMessage(false);
+            PlayAttackSfx(context);
             battlefield->PerformFight();
         }
         //Act
@@ -74,6 +96,7 @@ void BattleState::HandleInput(GameContext& context, GameStateManager&) {
 		if (action == 0) {
 			battleUI->SetShowItemChoices(false, context.inventory);
 			phase = ENEMY_HIT;
+			PlayAttackSfx(context);
 			battlefield->PerformFight();
 			return;
 		}
@@ -110,6 +133,7 @@ void BattleState::HandleInput(GameContext& context, GameStateManager&) {
 		if (action == 0) {
 			battleUI->SetShowActChoices(false);
 			phase = ENEMY_HIT;
+			PlayAttackSfx(context);
 			battlefield->PerformFight();
 			return;
 		}
@@ -164,6 +188,21 @@ void BattleState::HandleInput(GameContext& context, GameStateManager&) {
 }
 
 void BattleState::Update(GameContext& context, GameStateManager& manager) {
+    // --- developer cheats (F5 toggles the switch, see Cheats.h) -----------
+    if (Cheats::enabled) {
+        // Keep the tester alive: top Pochi's health/armor back up every frame.
+        if (pochi != nullptr) pochi->RestoreFull();
+        // K: win the fight immediately. (Plain letter keys - laptop OEM
+        // Fn rows eat F8/F9 for airplane mode / brightness before the game
+        // ever sees them.)
+        if (JustPressed(context.keys, DIK_K, cheatWinWasDown)) {
+            context.lastBattleOutcome = BattleOutcome::Victory;
+            context.lastBattleBoss = bossId;
+            manager.Pop();
+            return;
+        }
+    }
+
     if (phase == ACT_ANIMATION) {
         battlefield->UpdateActAnimation();
         if (battlefield->IsActAnimationFinished()) {
@@ -182,10 +221,22 @@ void BattleState::Update(GameContext& context, GameStateManager& manager) {
         }
     }
     battlefield->Update(context);
+
+    // Pochi took damage this frame (armour or heart) -> play the hurt sfx.
+    if (pochi != nullptr) {
+        const int hpNow = pochi->GetHealth() + pochi->GetArmor();
+        if (hpNow < lastPochiHealth && context.sound != nullptr) {
+            context.sound->PlaySfx("hurt");
+        }
+        lastPochiHealth = hpNow;
+    }
+
     if (battlefield->IsPlayerDefeated()) {
         context.lastBattleOutcome = BattleOutcome::Defeat;
         context.lastBattleBoss = bossId;
-        manager.Pop();
+        // Pochi is out of health -> game over screen (replaces the whole
+        // stack; the ruins/forest run doesn't continue).
+        manager.ClearAndPush(CreateGameOverState(context.sound));
     }
     else if (phase != ENEMY_HIT && battlefield->IsEnemyDefeated()) {
         context.lastBattleOutcome = BattleOutcome::Victory;

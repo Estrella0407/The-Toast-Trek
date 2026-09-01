@@ -2,6 +2,7 @@
 #include "Font.h"
 #include "Sprite.h"
 #include "TileMap.h"
+#include "UiFill.h"
 #include <d3dx9.h>
 #include <dinput.h>
 #include <string>
@@ -66,6 +67,15 @@ namespace {
                 "",
                 "Potions restore health; bones restore armor." } },
 
+            { "Barred Paths", {
+                "Some ways out are chained shut by an iron gate.",
+                "",
+                "A gate like that won't lift until every enemy in",
+                "the area has been beaten - and they must be",
+                "faced in order.",
+                "",
+                "Clear the room, the gate opens, the path is yours." } },
+
             { "Fights", {
                 "When a fight starts, click a button:",
                 "",
@@ -85,10 +95,10 @@ namespace {
         std::vector<TutorialPage> pages;
         int pageIndex;
 
-        // A 1x1 white texture, drawn stretched through the shared sprite
-        // brush for every solid rectangle. Using ID3DXLine here instead
-        // corrupts the active ID3DXSprite batch and makes this panel - and
-        // every font drawn after it - render invisibly.
+        // Assets/UI/white.png (a 1x1 white image), drawn stretched through
+        // the shared sprite brush for every solid rectangle. Using ID3DXLine
+        // here instead corrupts the active ID3DXSprite batch and makes this
+        // panel - and every font drawn after it - render invisibly.
         IDirect3DTexture9* whiteTex;
 
         Font* headingFont;
@@ -140,16 +150,7 @@ namespace {
             nextWasDown = false;
             advanceWasDown = true;
 
-            whiteTex = NULL;
-            if (context.device != NULL &&
-                SUCCEEDED(context.device->CreateTexture(1, 1, 1, 0, D3DFMT_A8R8G8B8,
-                    D3DPOOL_MANAGED, &whiteTex, NULL))) {
-                D3DLOCKED_RECT locked;
-                if (SUCCEEDED(whiteTex->LockRect(0, &locked, NULL, 0))) {
-                    *reinterpret_cast<DWORD*>(locked.pBits) = 0xFFFFFFFF;
-                    whiteTex->UnlockRect(0);
-                }
-            }
+            whiteTex = ui::MakeWhiteTexture(context.device);
 
             const int innerWidth = (int)(kPanelR - kPanelL - 2.0f * kTextMargin);
             headingFont = new Font(context.device, kPanelL + kTextMargin, kPanelT + 34.0f,

@@ -2,6 +2,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <iostream>
+#include <fstream>
 
 //	include the Direct3D 9 library
 #include <d3d9.h>
@@ -18,10 +19,10 @@
 #include "Battlefield.h"
 #include "Heart.h"
 #include "SoundManage.h"
-#include "InventorySystem.h"
-#include "UnifiedMenu.h"
 #include "Inventory.h"
 #include "Pochi.h"
+#include "Cheats.h"
+#include "UiFill.h"
 
 //--------------------------------------------------------------------
 //	Window handle
@@ -48,27 +49,20 @@ TileMap* forestMap = NULL;
 TileMap* mazeMap = NULL;
 TileMap* ruinsExteriorMap = NULL;
 TileMap* ruinsInteriorMap = NULL;
+TileMap* tarumtMap = NULL;   // optional secret-boss map, loaded only if present
 Sprite* pochi = NULL;
 GameContext gameContext = {};
 GameStateManager* gameStates = NULL;
 Inventory* playerInventory = NULL;
 Pochi* playerStats = NULL;
-
 Battlefield* battlefield;
-
-// Sound Manager
 SoundManage* g_soundManager = nullptr;
 
-// Inventory System
-InventorySystem* g_inventory = nullptr;
+// Global "CHEAT MODE" overlay - drawn over whatever state is on top so the
+// indicator shows everywhere F5 works (menu, overworld, battle, ...).
+Font* g_cheatFont = NULL;
+IDirect3DTexture9* g_cheatPlateTex = NULL;
 
-// Multiple tabs Menu
-UnifiedMenu* g_unifiedMenu = nullptr;
-
-int red = 0;
-int green = 0;
-int blue = 0;
-int incrementColour = 1;
 int spriteVelocity = 5;
 
 using namespace std;
@@ -88,8 +82,6 @@ LRESULT CALLBACK WindowProcedure(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 	case WM_KEYDOWN:
 		switch (wParam)
 		{
-		case 'C':
-			break;
 
 		case 'F':
 			// Toggle fullscreen
@@ -99,9 +91,8 @@ LRESULT CALLBACK WindowProcedure(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 
 			break;
 
-		case VK_ESCAPE:
-			PostQuitMessage(0);
-			break;
+		// ESC is a normal gameplay key (the tab menu uses it to close);
+		// quitting is via the window's close button.
 		}
 		break;
 
@@ -251,9 +242,12 @@ void CreateSprite()
 {
 	HRESULT hr = D3DXCreateSprite(d3dDevice, &spriteBrush);
 
-	forestMap = new TileMap(d3dDevice, "Assets/TileMap/Forest.tmx", "Assets/TileMap/");
-	forestMap->SetDebugForceSingleTile(false);
+	// Wide rect so the banner still renders when drawn far to the right
+	// (Font::Draw(x,y,...) inverts its rect once x passes the width).
+	g_cheatFont = new Font(d3dDevice, 0.0f, 0.0f, 1600, 30, 18, "Arial");
+	g_cheatPlateTex = ui::MakeWhiteTexture(d3dDevice);
 
+	forestMap = new TileMap(d3dDevice, "Assets/TileMap/Forest.tmx", "Assets/TileMap/");
 	forestMap->SetSolidLayers({ "Tree", "Rock" });
 
 	mazeMap = new TileMap(d3dDevice, "Assets/TileMap/Maze.tmx", "Assets/TileMap/");
@@ -261,15 +255,17 @@ void CreateSprite()
 
 	ruinsExteriorMap = new TileMap(d3dDevice, "Assets/TileMap/Ruined_Temple_Exterior.tmx", "Assets/TileMap/");
 	ruinsExteriorMap->SetSolidLayers({ "Tree", "House", "Bricks", "Statues", "Columns" });
-	// "Water" is a full-canvas background fill, not a lake outline (the same
-	// tile sits under almost every cell, including all the grass) - so the
-	// lake is only distinguishable as wherever none of the actual land/floor
-	// layers have a tile drawn on top of it. SetWalkableLayers() marks
-	// exactly that solid: everywhere none of these has a tile.
 	ruinsExteriorMap->SetWalkableLayers({ "Ground", "Grass", "Spots", "Grass_details", "Site", "House_platform" });
 
 	ruinsInteriorMap = new TileMap(d3dDevice, "Assets/TileMap/Ruined_Temple_Interior.tmx", "Assets/TileMap/");
-	ruinsInteriorMap->SetSolidLayers({ "Walls_back", "Walls_top", "Statue", "Decorative_objects1", "Decorative_objects2" });
+	// Decorative_objects1/2 are floor clutter (pots, rubble, banner poles) -
+	// they were blocking the middle of the path up to Maki, so only the real
+	// walls + the dragon statue are solid.
+	ruinsInteriorMap->SetSolidLayers({ "Walls_back", "Walls_top", "Statue" });
+
+	// Secret-boss area, reached from the forest's top-left.
+	tarumtMap = new TileMap(d3dDevice, "Assets/TileMap/Tarumt.tmx", "Assets/TileMap/");
+	tarumtMap->SetSolidLayers({ "Tree", "Structure1", "Structure2", "Building" });
 
 	pochi = new Sprite(d3dDevice, "Assets/Characters/Pochi.png", 250, 60, 5, 2, 10, 100.0f, 380.0f);
 	if (pochi != nullptr) {
@@ -277,51 +273,20 @@ void CreateSprite()
 		pochi->SetScale(2.0f);
 	}
 
-	// Sound 
+	// Sound. Initialize() and every call are safe even with no audio files -
+	// missing sounds just no-op.
 	g_soundManager = new SoundManage();
-	if (!g_soundManager->Initialize()) {
-		MessageBoxA(NULL, "Failed to initialize sound system", "Warning", MB_OK);
-	} 
+	g_soundManager->Initialize();
 
-	// Load sounds (you'll need to add these audio files)
 	g_soundManager->LoadSound("click", "Assets/Sounds/click.wav");
 	g_soundManager->LoadSound("gameover", "Assets/Sounds/gameover.wav");
 	g_soundManager->LoadSound("levelcomplete", "Assets/Sounds/levelcomplete.wav");
-	g_soundManager->LoadSound("background", "Assets/Sounds/background.mp3", true);
-	g_soundManager->LoadSound("battle", "Assets/Sounds/battle.mp3", true);
+	g_soundManager->LoadSound("background", "Assets/Sounds/background.wav", true);
+	g_soundManager->LoadSound("battle", "Assets/Sounds/battle.wav", true);
+	g_soundManager->LoadSound("attack", "Assets/Sounds/attack.wav");   // Pochi's FIGHT swing
+	g_soundManager->LoadSound("hurt", "Assets/Sounds/hurt.ogg");       // Pochi takes damage
 
-	// Start background music
 	g_soundManager->PlayMusic("background", 0.6f);
-
-	// Inventory
-
-	g_inventory = new InventorySystem();
-	g_inventory->Initialize();
-
-	// Set up inventory callbacks
-	g_inventory->SetOnItemUse([](const Item& item) -> bool {
-		// Handle item usage
-		if (item.isConsumable) {
-			OutputDebugStringA(("Used: " + item.name + "\n").c_str());
-			return true;
-		}
-		return false;
-		});
-
-	g_inventory->SetOnItemEquip([](const Item& item) -> bool {
-		// Handle item equipping
-		OutputDebugStringA(("Equipped: " + item.name + "\n").c_str());
-		return true;
-		});
-
-	g_inventory->SetOnItemUnequip([](const Item& item) {
-		// Handle item unequipping
-		OutputDebugStringA(("Unequipped: " + item.name + "\n").c_str());
-		});
-
-	g_unifiedMenu = new UnifiedMenu(d3dDevice, g_soundManager, g_inventory, nullptr);
-	g_unifiedMenu->Initialize(spriteBrush);
-
 }
 
 bool WindowIsRunning()
@@ -399,8 +364,18 @@ void Render()
 
 	if (gameStates) gameStates->Render();
 
-	if (g_unifiedMenu && g_unifiedMenu->IsOpen()) {
-		g_unifiedMenu->Render(spriteBrush);
+	// Global CHEAT MODE banner, upper-right, over every state.
+	if (Cheats::enabled && g_cheatFont != NULL) {
+		const char* txt = "CHEAT MODE";
+		const float pw = 118.0f, ph = 24.0f;
+		const float px = 1280.0f - pw - 12.0f, py = 12.0f;
+		if (g_cheatPlateTex != NULL) {
+			ui::FillRect(spriteBrush, g_cheatPlateTex, px - 1.0f, py - 1.0f,
+				pw + 2.0f, ph + 2.0f, ui::kPlateEdge);
+			ui::FillRect(spriteBrush, g_cheatPlateTex, px, py, pw, ph, ui::kPlate);
+		}
+		g_cheatFont->Draw(txt, px + 15.0f, py + 4.0f, ui::kShadow, spriteBrush);
+		g_cheatFont->Draw(txt, px + 14.0f, py + 3.0f, D3DCOLOR_XRGB(255, 120, 120), spriteBrush);
 	}
 
 	spriteBrush->End();
@@ -418,19 +393,11 @@ void CleanupSprite()
 	if (mazeMap) { delete mazeMap; mazeMap = nullptr; }
 	if (ruinsExteriorMap) { delete ruinsExteriorMap; ruinsExteriorMap = nullptr; }
 	if (ruinsInteriorMap) { delete ruinsInteriorMap; ruinsInteriorMap = nullptr; }
+	if (tarumtMap) { delete tarumtMap; tarumtMap = nullptr; }
 	if (pochi) { delete pochi;     pochi = nullptr; }
 
-	// Clean up Unified Menu	
-	if (g_unifiedMenu) {
-		delete g_unifiedMenu;
-		g_unifiedMenu = nullptr;
-	}
-
-	// Clean up inventory system
-	if (g_inventory) {
-		delete g_inventory;
-		g_inventory = nullptr;
-	}
+	if (g_cheatFont) { delete g_cheatFont; g_cheatFont = nullptr; }
+	if (g_cheatPlateTex) { g_cheatPlateTex->Release(); g_cheatPlateTex = nullptr; }
 
 	// Clean up sound manager
 	if (g_soundManager) {
@@ -499,8 +466,10 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nSho
 	playerStats = new Pochi(1);
 	gameContext.inventory = playerInventory;
 	gameContext.playerStats = playerStats;
+	gameContext.sound = g_soundManager;
 	gameContext.ruinsExteriorMap = ruinsExteriorMap;
 	gameContext.ruinsInteriorMap = ruinsInteriorMap;
+	gameContext.tarumtMap = tarumtMap;
 	gameContext.keys = diKeys;
 	gameContext.moveSpeed = spriteVelocity;
 	gameStates = new GameStateManager(gameContext);
@@ -517,22 +486,15 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nSho
 
 		// GAME LOOP
 		// One application loop delegates work to the state on top of the stack.
-		GetInput(); 
+		GetInput();
+
+		// Developer cheat switch (F5). Reads the same key buffer GetInput()
+		// just filled - Lecture 4.
+		Cheats::Update(diKeys);
 
 		// Update Sound system
 		if (g_soundManager) {
 			g_soundManager->Update();
-		}
-
-		// Update Inventory UI (if open)
-		if (g_unifiedMenu) {
-			g_unifiedMenu->Update(
-				diKeys,
-				gameContext.mouseX,
-				gameContext.mouseY,
-				gameContext.mouseLeftDown,
-				false
-			);
 		}
 
 		// Update Game States

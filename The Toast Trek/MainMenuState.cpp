@@ -2,6 +2,7 @@
 #include "MainMenu.h"
 #include "OverworldState.h"
 #include "TutorialPopupState.h"
+#include "Cheats.h"
 #include <dinput.h>
 
 namespace {
@@ -21,9 +22,10 @@ namespace {
     private:
         MainMenu* menu;
         bool enterWasDown;
+        bool endingWasDown;
 
     public:
-        MainMenuState() : menu(NULL), enterWasDown(false) {}
+        MainMenuState() : menu(NULL), enterWasDown(false), endingWasDown(false) {}
         ~MainMenuState() { delete menu; }
 
         void Initialize(GameContext& context) override {
@@ -31,12 +33,24 @@ namespace {
         }
 
         void HandleInput(GameContext& context, GameStateManager& manager) override {
+            // Dev shortcut: jump straight to the ending screen. Remove when
+            // no longer needed.
+            if (JustPressed(context.keys, DIK_F10, endingWasDown)) {
+                manager.Push(CreateEndingState());
+                return;
+            }
+
             if (JustPressed(context.keys, DIK_RETURN, enterWasDown)) {
+                // Fresh run: forget any maps cleared in a previous playthrough.
+                context.clearedMaps.clear();
                 // Queued in order: the forest initializes first, then the
                 // popup lands on top of it. Closing the popup reveals the
                 // already-running forest underneath.
                 manager.Push(CreateForestState());
-                if (!s_forestIntroShown) {
+                // Cheat mode skips the tutorial popup entirely (and leaves
+                // s_forestIntroShown alone, so a later non-cheat run still
+                // gets it).
+                if (!s_forestIntroShown && !Cheats::enabled) {
                     manager.Push(CreateForestIntroPopup());
                     s_forestIntroShown = true;
                 }
@@ -49,6 +63,7 @@ namespace {
 
         void Render(GameContext& context) override {
             if (menu != NULL) menu->Draw(context.spriteBrush);
+            // The "CHEAT MODE" indicator is drawn globally in Main.cpp.
         }
 
         D3DCOLOR ClearColor() const override { return D3DCOLOR_XRGB(245, 245, 245); }
