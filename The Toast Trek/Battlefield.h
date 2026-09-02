@@ -19,7 +19,6 @@ private:
 	
 	float posX;
 	float posY;
-
 	float width;
 	float height;
 
@@ -30,7 +29,7 @@ private:
 	BattleUI* battleUI;
 	Inventory* inventory;
 	Font* statusFont;
-	BattleStatusBars* playerBars;   // framed health/shield + enemy HP bars
+	BattleStatusBars* playerBars;
 	float displayedEnemyHealth;
 	float hitStartHealth;
 	unsigned long long hitAnimationStart;
@@ -57,17 +56,50 @@ private:
 	int spawningProjectile;			//when to display projectile
 	int maxProjectiles;
 
+	//Maki projectile
+	bool bulletAttackActive;
+	bool bulletAiming;
+	float bulletAimTimer;
+	float bulletAimDuration;
+	int bulletShotCount;
+	int maxBulletShots;
+	float bulletTargetX;
+	float bulletTargetY;
+	unsigned long long bulletAimStartTime;
+	unsigned long long bulletHoleStartTime;
+	Projectile* currentBulletAim;
+	Projectile* currentBulletHole;
+	std::vector<Projectile*> currentBulletAims;
+	std::vector<Projectile*> currentBulletHoles;
+	std::vector<D3DXVECTOR2> currentBulletTargets;
+
+
+	bool specialAttackActive;
+	int specialAttackWave;		//combine skull bone, goblin and maki projectile in one go
+	//float specialAttackTimer;
+
 	bool IsPointOverButton(float pointX, float pointY, BattleButton* button) const;
 	//void UpdateMenuButtons(GameContext& context);
 
-	void FourDirectionAttack();
+	//Projectiles
+	void FourDirectionAttack();		//skull bones 
 	void SpawnProjectile(IDirect3DDevice9* d3dDevice, float x, float y, float velocityX, float velocityY, ProjectileType type);
 	void SpawnProjectileAtAngle(IDirect3DDevice9* d3dDevice, float x, float y, float angleDegrees, float speed);
-	void StarBounceAttack();
+	void StarBounceAttack();		//goblin
 	void UpdateStarBounce(Projectile* projectile);
-	
+	void StartGunshotAttack();		//maki
+	void UpdateGunshotAttack();
+	void FireBullet();
+	void ChooseRandomBulletTarget();
+	void StartGunshotBurst();
+
+	//Special 
+	void SpecialAttack();
+	void UpdateSpecialBossAttack();
+	bool AreAllProjectilesInactive();
+
 public:
-	Battlefield(IDirect3DDevice9* d3dDevice, BattleUI* battleUI, Enemy* enemy, Pochi* pochi, Inventory* inventory);
+	Battlefield(IDirect3DDevice9* d3dDevice, BattleUI* battleUI, BossId bossId, Enemy* enemy, Pochi* pochi, Inventory* inventory);
 	~Battlefield();
 
 	void Init();
@@ -84,6 +116,9 @@ public:
 	void Flee();
 	void SetShowProjectiles(bool show);
 	bool IsProjectileAttackFinished() const;
+
+	void StartSpecialBossAttack();
+	bool isSpecialAttackFinished() const;
 
 	void StartActAnimation();
 	void UpdateActAnimation();

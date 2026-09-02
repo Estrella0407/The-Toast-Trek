@@ -47,8 +47,15 @@ void Font::Draw(const char* text, D3DCOLOR color, LPD3DXSPRITE sprite) {
 
 void Font::Draw(const char* text, float x, float y, D3DCOLOR color, LPD3DXSPRITE sprite) {
     if (font != NULL && text != NULL) {
+		// Keep the original box size when moving dynamic text. Updating only
+		// left/top can leave right < left at world positions, producing an
+		// invalid RECT and causing Direct3D to draw no text.
+		const LONG width = rect.right - rect.left;
+		const LONG height = rect.bottom - rect.top;
         rect.left = (long)x;
         rect.top = (long)y;
+		rect.right = rect.left + width;
+		rect.bottom = rect.top + height;
 
         font->DrawTextA(
             sprite,

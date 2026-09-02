@@ -7,6 +7,7 @@
 #include "BattleButton.h"
 #include "GameState.h" //GameContext (mouse input)
 #include "Inventory.h"
+#include <string>
 
 
 class BattleUI {
@@ -49,6 +50,7 @@ private:
 	//"You have encountered <enemyName>!" - set per fight by BattleState.
 	std::string enemyName = "the enemy";
 	bool showEncounterMessage;
+	std::string encounterMessage;
 	bool showActChoices;
 	bool showItemChoices;
 	int selectedItemOption;
@@ -75,9 +77,9 @@ public:
 	void SelectButton(int direction);
 	int GetSelectButton(GameContext& context);
 	int GetActSelection(GameContext& context);
+	void SetEnemyName(const std::string& name);
 
 	void SetShowEncounterMessage(bool show);
-	void SetEnemyName(const std::string& name);
 	void SetShowActChoices(bool show);
 	void SetActChoiceUsed(int index, bool used);
 	void SetShowItemChoices(bool show, const Inventory* inventory = nullptr);

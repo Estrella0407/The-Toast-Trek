@@ -53,6 +53,9 @@ public:
         float startY
     );
 
+    //health or armor bar
+    void DrawBar(LPD3DXSPRITE sharedBrush, float percentage);
+
     void UpdateRect();
     void Move(float offsetX, float offsetY);
     void SetPosition(float x, float y);

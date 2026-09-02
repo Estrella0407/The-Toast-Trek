@@ -65,7 +65,7 @@ namespace {
                 "Stand over one until its label appears, then",
                 "press  F  to take it.",
                 "",
-                "Potions restore health; bones restore armor." } },
+                "Potions restore health; bones restore armor; Toast fully restore health & armor." } },
 
             { "Barred Paths", {
                 "Some ways out are chained shut by an iron gate.",

@@ -34,9 +34,8 @@ void BattleState::Initialize(GameContext& context) {
 	pochi = context.playerStats;
 	lastPochiHealth = (pochi != nullptr) ? (pochi->GetHealth() + pochi->GetArmor()) : 0;
     battleUI = std::make_unique<BattleUI>(context.device);
-    battleUI->SetEnemyName(BossDisplayName(bossId));
     Enemy* enemy = CreateBossEnemy(context.device, bossId, 600.0f, 50.0f);
-    battlefield = std::make_unique<Battlefield>(context.device, battleUI.get(), enemy, pochi, context.inventory);
+    battlefield = std::make_unique<Battlefield>(context.device, battleUI.get(), bossId, enemy, pochi, context.inventory);
 }
 
 namespace {

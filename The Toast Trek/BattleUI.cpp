@@ -11,6 +11,7 @@ BattleUI::BattleUI(IDirect3DDevice9* d3dDevice) : d3dDevice(d3dDevice), selected
 
 	selectedButton = 0;
 	showEncounterMessage = true;
+	//encounterMessage = "You have encounter Skull Bone!";
 	showActChoices = false;
 	showItemChoices = false;
 	selectedItemOption = -1;
@@ -69,7 +70,6 @@ void BattleUI::SetShowEncounterMessage(bool show) {
 void BattleUI::SetEnemyName(const std::string& name) {
 	if (!name.empty()) enemyName = name;
 }
-
 void BattleUI::SetShowActChoices(bool show) {
 	showActChoices = show;
 	if (!show) selectedActOption = -1;
@@ -248,7 +248,7 @@ void BattleUI::Render(LPD3DXSPRITE sharedBrush) {
 	mercyButton->Render();
 
 	if (showEncounterMessage) {
-		std::string msg = "You have encountered " + enemyName + "!";
+		std::string msg = "You have encounter " + enemyName + "!";
 		encounterFont->Draw(msg.c_str(), black);
 	}
 }

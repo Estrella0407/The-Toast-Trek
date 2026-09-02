@@ -82,6 +82,33 @@ Sprite::Sprite(
     UpdateRect();
 }
 
+void Sprite::DrawBar(LPD3DXSPRITE sharedBrush, float percentage) {
+	if (texture == NULL || sharedBrush == NULL)
+		return;
+    if (percentage < 0.0f)
+        percentage = 0.0f;
+    if (percentage > 1.0f)
+        percentage = 1.0f;
+    int drawWidth = (int)(spriteWidth * percentage);
+
+    if (drawWidth <= 0)
+        return;
+    RECT sourceRect;
+    sourceRect.left = 0;
+    sourceRect.top = 0;
+    sourceRect.right = drawWidth;
+    sourceRect.bottom = spriteHeight;
+
+	// Bars use absolute screen coordinates. Do not inherit the transform of
+	// the previously rendered character or projectile sprite.
+	D3DXMATRIX identity;
+	D3DXMatrixIdentity(&identity);
+	sharedBrush->SetTransform(&identity);
+    D3DXVECTOR3 position(this->position.x, this->position.y, 0.0f);
+	sharedBrush->Draw(texture, &sourceRect, NULL, &position,
+		D3DCOLOR_ARGB(255, 255, 255, 255));
+}
+
 void Sprite::UpdateRect() {
     rect.left = 0;
     rect.top = 0;
