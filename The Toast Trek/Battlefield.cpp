@@ -521,6 +521,7 @@ void Battlefield::Render(LPD3DXSPRITE sharedBrush) {
 
 	
 	if (playerBars != nullptr && pochi != nullptr) {
-		playerBars->Draw(sharedBrush, *pochi, enemyRatio);
+		playerBars->Draw(sharedBrush, *pochi, enemyRatio,
+			enemy->GetHealth(), enemy->GetMaxHealth());
 	}
 }

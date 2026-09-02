@@ -190,8 +190,6 @@ void BattleState::HandleInput(GameContext& context, GameStateManager&) {
 void BattleState::Update(GameContext& context, GameStateManager& manager) {
     // --- Developer cheats (F5) -----------
     if (Cheats::enabled) {
-        // Keep the tester alive: top Pochi's health/armor back up every frame
-        if (pochi != nullptr) pochi->RestoreFull();
         // K: win the fight immediately
         if (JustPressed(context.keys, DIK_K, cheatWinWasDown)) {
             context.lastBattleOutcome = BattleOutcome::Victory;
@@ -220,6 +218,10 @@ void BattleState::Update(GameContext& context, GameStateManager& manager) {
     }
     battlefield->Update(context);
 
+    // Cheat mode: undo any damage taken this frame so Maki (etc.) can't chip
+    // the tester down, and don't let the fight be lost
+    if (Cheats::enabled && pochi != nullptr) pochi->RestoreFull();
+
     // Pochi took damage this frame (armour or heart) -> play the hurt sfx
     if (pochi != nullptr) {
         const int hpNow = pochi->GetHealth() + pochi->GetArmor();
@@ -229,7 +231,7 @@ void BattleState::Update(GameContext& context, GameStateManager& manager) {
         lastPochiHealth = hpNow;
     }
 
-    if (battlefield->IsPlayerDefeated()) {
+    if (!Cheats::enabled && battlefield->IsPlayerDefeated()) {
         context.lastBattleOutcome = BattleOutcome::Defeat;
         context.lastBattleBoss = bossId;
         // Pochi is out of health -> game over screen
