@@ -4,6 +4,7 @@
 #include "Inventory.h"
 #include "Pochi.h"
 #include "SoundManage.h"
+#include "SaveGame.h"
 #include <dinput.h>
 #include <algorithm>
 #include <string>
@@ -52,6 +53,14 @@ namespace {
     const D3DCOLOR kTextDim = D3DCOLOR_XRGB(160, 150, 138);
     const D3DCOLOR kHeading = D3DCOLOR_XRGB(245, 226, 184);
 
+    // "Exit to main menu" button, bottom-right of the panel.
+    constexpr float kExitR = kPanelR - 40.0f;
+    constexpr float kExitL = kExitR - 260.0f;
+    constexpr float kExitT = kPanelB - 76.0f;
+    constexpr float kExitB = kPanelB - 38.0f;
+    const D3DCOLOR kExitIdle = D3DCOLOR_ARGB(255, 58, 42, 36);
+    const D3DCOLOR kExitHover = D3DCOLOR_ARGB(255, 120, 60, 48);
+
     struct ItemRow { ItemType type; const char* name; const char* desc; };
     const ItemRow kItems[3] = {
         { ItemType::HealthPotion, "Health Potion", "Restores 3 health." },
@@ -76,10 +85,25 @@ namespace {
         Font* bodyFont;
         Font* hintFont;
 
-        bool eWasDown, escWasDown, aWasDown, dWasDown;
+        bool eWasDown, escWasDown, aWasDown, dWasDown, qWasDown;
         bool leftWasDown, rightWasDown, upWasDown, downWasDown, enterWasDown;
         bool mouseWasDown;
         float prevMouseX, prevMouseY;
+
+        void PersistSettings(GameContext& context) {
+            if (context.sound == NULL) return;
+            save::SaveSettings({ context.sound->GetMasterVolume(),
+                                 context.sound->GetMusicVolume(),
+                                 context.sound->GetSFXVolume(),
+                                 context.sound->IsMuted() });
+        }
+
+        // Save where we are, then go back to the title screen.
+        void ExitToMainMenu(GameContext& context, GameStateManager& manager) {
+            PersistSettings(context);
+            SaveCurrentRun(context);   // so "Continue" resumes right here
+            manager.ClearAndPush(CreateMainMenuState());
+        }
 
         int RowCount() const {
             switch (tab) {
@@ -197,12 +221,17 @@ namespace {
         }
 
         // --- Mouse -------------------------------------------------------
-        void HandleMouse(GameContext& context) {
+        void HandleMouse(GameContext& context, GameStateManager& manager) {
             const float mx = context.mouseX, my = context.mouseY;
             const bool moved = (mx != prevMouseX || my != prevMouseY);
             prevMouseX = mx; prevMouseY = my;
             const bool click = context.mouseLeftDown && !mouseWasDown;
             mouseWasDown = context.mouseLeftDown;
+
+            if (click && InRect(mx, my, kExitL, kExitT, kExitR, kExitB)) {
+                ExitToMainMenu(context, manager);
+                return;
+            }
 
             // Tabs
             for (int i = 0; i < TAB_COUNT; ++i) {
@@ -249,7 +278,7 @@ namespace {
         explicit UnifiedMenuState(GameState* under)
             : backdrop(under), tab(0), sel(0), whiteTex(NULL),
               titleFont(NULL), tabFont(NULL), headFont(NULL), bodyFont(NULL), hintFont(NULL),
-              eWasDown(true), escWasDown(false), aWasDown(false), dWasDown(false),
+              eWasDown(true), escWasDown(false), aWasDown(false), dWasDown(false), qWasDown(false),
               leftWasDown(false), rightWasDown(false), upWasDown(false), downWasDown(false),
               enterWasDown(false), mouseWasDown(true), prevMouseX(-1.0f), prevMouseY(-1.0f) {}
 
@@ -266,7 +295,7 @@ namespace {
             tab = 0; sel = 0;
             eWasDown = true;            // The E that opened the menu is still held
             mouseWasDown = true;        // and the mouse button might be too
-            escWasDown = aWasDown = dWasDown = false;
+            escWasDown = aWasDown = dWasDown = qWasDown = false;
             leftWasDown = rightWasDown = upWasDown = downWasDown = enterWasDown = false;
             prevMouseX = context.mouseX; prevMouseY = context.mouseY;
 
@@ -282,7 +311,12 @@ namespace {
             BYTE* k = context.keys;
 
             if (JustPressed(k, DIK_E, eWasDown) || JustPressed(k, DIK_ESCAPE, escWasDown)) {
+                PersistSettings(context);
                 manager.Pop();
+                return;
+            }
+            if (JustPressed(k, DIK_Q, qWasDown)) {
+                ExitToMainMenu(context, manager);
                 return;
             }
 
@@ -314,7 +348,7 @@ namespace {
                 else if (tab == TAB_SETTINGS && sel == 3) NudgeVolume(context, 1);
             }
 
-            HandleMouse(context);
+            HandleMouse(context, manager);
         }
 
         void Update(GameContext&, GameStateManager&) override {}
@@ -347,7 +381,14 @@ namespace {
             else if (tab == TAB_STATUS) RenderStatus(b, context);
             else RenderSettings(b, context);
 
-            hintFont->Draw("A / D: Tabs      Up / Down: Select      Enter: Use      E / Esc: Close",
+            // Exit-to-main-menu button (bottom-right).
+            const bool exitHover = InRect(mx, my, kExitL, kExitT, kExitR, kExitB);
+            Fill(b, kExitL, kExitT, kExitR - kExitL, kExitB - kExitT, exitHover ? kExitHover : kExitIdle);
+            Border(b, kExitL, kExitT, kExitR, kExitB, 2.0f, kGold);
+            tabFont->Draw("EXIT TO MAIN MENU", kExitL + 24.0f, kExitT + 8.0f,
+                          exitHover ? kHeading : kText, b);
+
+            hintFont->Draw("A / D: Tabs    Up / Down: Select    Enter: Use    Q: Main Menu    E / Esc: Close",
                            kPanelL + 40.0f, kPanelB - 32.0f, kTextDim, b);
         }
 

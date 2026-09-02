@@ -12,14 +12,12 @@ class Pochi;
 class Inventory;
 class SoundManage;
 
-// Defined in OverworldState.h
-// The fixed underlying type makes this a complete type here
-// GameContext can hold a std::set<MapId> without pulling in the whole overworld header
+// Full definition in OverworldState.h; opaque here so GameContext can hold a
+// std::set<MapId> without the whole overworld header
 enum class MapId : int;
 
-// How BattleState's last fight ended
-// Whichever state pushed it (the Maze) can react once it's back on top of the stack
-// Set by BattleState right before it pops itself; consumed and reset to None by the reader
+// How BattleState's last fight ended - set just before it pops itself,
+// read (and reset to None) by whichever map pushed it
 enum class BattleOutcome {
     None,
     Victory,
@@ -27,8 +25,7 @@ enum class BattleOutcome {
     Fled
 };
 
-// Data shared by all screens
-// States do not own these game resources
+// Shared game resources; states borrow these, they don't own them
 struct GameContext {
     IDirect3DDevice9* device;
     LPD3DXSPRITE spriteBrush;
@@ -44,9 +41,8 @@ struct GameContext {
     BYTE* keys;
     int moveSpeed;
 
-    // Absolute cursor position in window client coordinates, and whether the left button is currently held
-    // Read via GetCursorPos/GetAsyncKeyState instead of DirectInput mouse device
-    // which reports relative motion deltas (not an absolute position) the way it's configured
+    // Absolute cursor position + left-button state, refreshed each frame in
+    // Main.cpp (GetCursorPos / GetAsyncKeyState, not the DirectInput mouse)
     float mouseX;
     float mouseY;
     bool mouseLeftDown;
@@ -54,18 +50,23 @@ struct GameContext {
     BattleOutcome lastBattleOutcome;
     BossId lastBattleBoss;
 
-    // One-shot spawn override for the next overworld map
-    // A departing OverworldState sets this
-    // ("put Pochi at the right edge of the Forest")
-    // so the arriving map places her at the connecting seam instead of its own default spawn
-    // The arriving Initialize() consumes it and clears the flag
+    // One-shot spawn override for the next map, so the arriving map places Pochi on the connecting seam
+    // The arriving Initialize() consumes it
     D3DXVECTOR2 pendingSpawn = D3DXVECTOR2(0.0f, 0.0f);
     bool hasPendingSpawn = false;
 
-    // Maps whose bosses are all beaten
-    // Persists for the run so backtracking into a cleared map doesn't respawn its enemies / re-lock its gate
-    // Cleared at the start of a new run (main menu -> play, game-over retry)
+    // Maps whose bosses are all beaten - persists for the run so backtracking doesn't respawn enemies
+    // Cleared at the start of a new run
     std::set<MapId> clearedMaps;
+
+    // Per-slot run progress, kept so a picked-up item / beaten boss stays
+    // gone after a map reload or Continue. Encoded as (int)mapId * 16 + index
+    std::set<int> collectedItems;
+    std::set<int> clearedBosses;
+
+    // The map Pochi is currently on - set by OverworldState::Initialize, used
+    // by SaveCurrentRun() so "Continue" knows where to drop the player back
+    MapId currentMapId{};
 };
 
 class GameStateManager;
@@ -81,7 +82,7 @@ public:
 };
 
 // The only object that changes screens
-// State changes are queued until the current input/update call ends, so a state never deletes itself mid-method
+// Changes are queued until the current input/update call ends, so a state never deletes itself mid-method
 class GameStateManager {
 private:
     GameContext& context;
@@ -104,17 +105,17 @@ public:
     D3DCOLOR ClearColor() const;
 };
 
-// Cross-file entry points - each defined next to the state it builds
-// CreateMainMenuState() in MainMenuState.cpp
-// CreateBattleState() in BattleState.cpp
-// Anything only ever pushed from within one file
-// (the maze, pushed only from OverworldState.cpp's forest-exit trigger)
+// Entry points defined next to the state they build (CreateMainMenuState in MainMenuState.cpp)
+// States only ever pushed from one file aren't listed
 std::unique_ptr<GameState> CreateMainMenuState();
 std::unique_ptr<GameState> CreateBattleState(BossId bossId);
 std::unique_ptr<GameState> CreateGameOverState(SoundManage* sound);
 std::unique_ptr<GameState> CreateEndingState();
 
-// Level 1 Pochi, empty pack, every map re-locked
-// A clean playthrough called from each "new run" entry point (main menu Enter, Game Over retry)
+// Level 1 Pochi, empty pack, every map re-locked - for each "new run" entry
 void ResetRunProgress(GameContext& context);
 
+// Snapshot the current run (map, position, level, pack, cleared maps) to
+// savegame.txt. Call on any real progress event - map entry, item pickup,
+// battle win, exit to menu.
+void SaveCurrentRun(const GameContext& context);

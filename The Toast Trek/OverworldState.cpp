@@ -5,6 +5,7 @@
 #include "Physics.h"
 #include "Pochi.h"
 #include "PochiBadge.h"
+#include "SaveGame.h"
 #include "Sprite.h"
 #include "TileMap.h"
 #include "UiFill.h"
@@ -49,6 +50,9 @@ namespace {
         default: return context.forestMap;
         }
     }
+
+    // Key for GameContext::collectedItems / clearedBosses (per map + index)
+    int SlotKey(MapId map, int index) { return (int)map * 16 + index; }
 
     // Collide a smaller box at Pochi's feet
     constexpr float kPochiFootWidthRatio = 0.5f;
@@ -103,7 +107,7 @@ namespace {
         const char* floatText;  // what floating text says
 
         // Tarumt map: Pochi's stats are force-boosted to (HP 99 / armor 50 / ATK 99)
-        // restored to her real level on every way back out
+        // restored to his real level on every way back out
         Pochi* boostedStats;
 
         void LeaveBoostedMap(GameContext& context) {
@@ -114,7 +118,7 @@ namespace {
         }
 
         // Stash a forced spawn for the destination map
-        // A y of OverworldConfig::kCarryY keeps her current y
+        // A y of OverworldConfig::kCarryY keeps his current y
         // OverworldConfig::kNoSpawn means "no override"
         void StashSpawn(GameContext& context, const D3DXVECTOR2& s) {
             if (s.x <= OverworldConfig::kNoSpawn) return;
@@ -185,7 +189,7 @@ namespace {
 
             // Reset Pochi's pose
             // A pending spawn from the map she just left
-            // (placing her on the connecting seam) wins over this map's own default spawn
+            // (placing his on the connecting seam) wins over this map's own default spawn
             if (context.pochi != NULL) {
                 if (context.hasPendingSpawn) {
                     context.pochi->SetPosition(context.pendingSpawn.x, context.pendingSpawn.y);
@@ -203,15 +207,19 @@ namespace {
             // he may spawn right on a seam or in a doorway
             exitsArmed = false;
 
-            // Rememebred cleared maps (already defeated enemies, picked up items)
+            // Restore per-slot progress: a whole cleared map, or individual
+            // bosses / items already dealt with this run (survives Continue).
             const bool preCleared = context.clearedMaps.count(config.mapId) != 0;
 
             bossEnemies.clear();
-            bossCleared.assign(config.bosses.size(), preCleared);
-            for (const BossSpawn& spawn : config.bosses) {
-                bossEnemies.push_back(CreateBossEnemy(context.device, spawn.id, spawn.x, spawn.y));
+            bossCleared.assign(config.bosses.size(), false);
+            for (size_t i = 0; i < config.bosses.size(); ++i) {
+                bossCleared[i] = preCleared ||
+                    context.clearedBosses.count(SlotKey(config.mapId, (int)i)) != 0;
+                bossEnemies.push_back(CreateBossEnemy(context.device, config.bosses[i].id,
+                    config.bosses[i].x, config.bosses[i].y));
             }
-            allClearedFired = preCleared;
+            allClearedFired = !config.bosses.empty() && AllBossesCleared();
 
             if (!config.bosses.empty()) {
                 interactPrompt = new Font(context.device, 0.0f, 20.0f, 1280, 40, 20, "Arial");
@@ -220,11 +228,13 @@ namespace {
             for (Sprite* item : itemSprites) delete item;
             itemSprites.clear();
             itemCollected.assign(config.items.size(), false);
-            for (const ItemSpawn& spawn : config.items) {
+            for (size_t i = 0; i < config.items.size(); ++i) {
+                const ItemSpawn& spawn = config.items[i];
                 Sprite* item = new Sprite(context.device, spawn.texture.c_str(),
                     spawn.texWidth, spawn.texHeight, 1, 1, 1, spawn.x, spawn.y);
                 item->SetScale(spawn.scale);
                 itemSprites.push_back(item);
+                itemCollected[i] = context.collectedItems.count(SlotKey(config.mapId, (int)i)) != 0;
             }
 
             // The "!" bubble floats over Pochi when he can interact with something (items / enemies)
@@ -263,6 +273,11 @@ namespace {
                     config.gateTexWidth, config.gateTexHeight, 1, 1, 1,
                     config.gateX, config.gateY);
             }
+
+            // Checkpoint on entering the map. Also saved on item pickup and
+            // battle win (below), and on Exit to Main Menu (UnifiedMenu).
+            context.currentMapId = config.mapId;
+            SaveCurrentRun(context);
         }
 
         void HandleInput(GameContext& context, GameStateManager& manager) override {
@@ -314,7 +329,10 @@ namespace {
                 if (itemCollected[i]) continue;
                 if (TouchingItem(context.pochi, itemSprites[i])) {
                     itemCollected[i] = true;
+                    context.collectedItems.insert(SlotKey(config.mapId, (int)i));
                     if (context.inventory != NULL) context.inventory->Add(config.items[i].type);
+                    context.currentMapId = config.mapId;
+                    SaveCurrentRun(context);   // checkpoint the pickup
                     return;
                 }
             }
@@ -353,7 +371,10 @@ namespace {
             // BattleState sets this right before popping itself
             if (context.lastBattleOutcome == BattleOutcome::Victory) {
                 for (size_t i = 0; i < config.bosses.size(); ++i) {
-                    if (config.bosses[i].id == context.lastBattleBoss) bossCleared[i] = true;
+                    if (config.bosses[i].id == context.lastBattleBoss) {
+                        bossCleared[i] = true;
+                        context.clearedBosses.insert(SlotKey(config.mapId, (int)i));
+                    }
                 }
                 // Remember a fully-cleared map for the rest of the run
                 // walking back into it later doesn't respawn its enemies
@@ -370,6 +391,8 @@ namespace {
                         floatText = "Leveled Up!";
                     }
                 }
+                context.currentMapId = config.mapId;
+                SaveCurrentRun(context);   // checkpoint the win
             }
             context.lastBattleOutcome = BattleOutcome::None;
 
@@ -735,4 +758,17 @@ std::unique_ptr<GameState> CreateOverworldState(OverworldConfig config) {
 
 std::unique_ptr<GameState> CreateForestState() {
     return CreateOverworldState(MakeForestConfig());
+}
+
+// Rebuilds the overworld state for a given map - used by "Continue" to drop
+// the player back on the map their save was taken in
+std::unique_ptr<GameState> CreateOverworldStateForMap(MapId id) {
+    switch (id) {
+    case MapId::Maze:          return CreateOverworldState(MakeMazeConfig());
+    case MapId::RuinsExterior: return CreateOverworldState(MakeRuinsExteriorConfig());
+    case MapId::RuinsInterior: return CreateOverworldState(MakeRuinsInteriorConfig());
+    case MapId::Tarumt:        return CreateOverworldState(MakeTarumtConfig());
+    case MapId::Forest:
+    default:                   return CreateOverworldState(MakeForestConfig());
+    }
 }

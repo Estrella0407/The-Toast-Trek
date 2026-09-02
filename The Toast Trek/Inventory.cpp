@@ -23,6 +23,13 @@ int Inventory::GetCount(ItemType item) const {
 	return toast;
 }
 
+void Inventory::SetCount(ItemType item, int count) {
+	if (count < 0) count = 0;
+	if (item == ItemType::HealthPotion) healthPotions = count;
+	else if (item == ItemType::Bone) bones = count;
+	else if (item == ItemType::Toast) toast = count;
+}
+
 void Inventory::Reset() {
 	healthPotions = 0;
 	bones = 0;

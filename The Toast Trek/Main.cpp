@@ -19,6 +19,7 @@
 #include "Battlefield.h"
 #include "Heart.h"
 #include "SoundManage.h"
+#include "SaveGame.h"
 #include "Inventory.h"
 #include "Pochi.h"
 #include "Cheats.h"
@@ -284,6 +285,15 @@ void CreateSprite()
 	g_soundManager->LoadSound("battle", "Assets/Sounds/battle.wav", true);
 	g_soundManager->LoadSound("attack", "Assets/Sounds/attack.wav");   // Pochi's FIGHT swing
 	g_soundManager->LoadSound("hurt", "Assets/Sounds/hurt.ogg");       // Pochi takes damage
+
+	// Apply the saved audio settings (defaults if there's no settings.txt yet).
+	{
+		save::Settings st = save::LoadSettings();
+		g_soundManager->SetMasterVolume(st.master);
+		g_soundManager->SetMusicVolume(st.music);
+		g_soundManager->SetSFXVolume(st.sfx);
+		g_soundManager->SetMute(st.muted);
+	}
 
 	g_soundManager->PlayMusic("background", 0.6f);
 }

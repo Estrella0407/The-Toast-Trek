@@ -3,6 +3,7 @@
 #include "Font.h"
 #include "Sprite.h"
 #include "SoundManage.h"
+#include "SaveGame.h"
 #include "TileMap.h"
 #include "UiFill.h"
 #include <d3dx9.h>
@@ -223,6 +224,8 @@ namespace {
         }
 
         void Initialize(GameContext& context) override {
+            save::ClearProgress();   // game finished - no "Continue" from here
+
             denjiTex = ui::LoadTexture(context.device, "Assets/Characters/denji.png",
                                        kDenjiTexW, kDenjiTexH);
             ballTex = ui::LoadTexture(context.device, "Assets/Characters/football.png",

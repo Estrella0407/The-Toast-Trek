@@ -45,6 +45,9 @@
     <ClCompile Include="MainMenuState.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MenuSelectState.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="OverworldState.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -76,6 +79,12 @@
 	  <Filter>Source Files</Filter>
 	</ClCompile>
     <ClCompile Include="SoundManage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SaveGame.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SettingsState.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="GameOverState.cpp">
@@ -128,6 +137,9 @@
     <ClInclude Include="MainMenu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MenuSelectState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="OverworldState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -159,6 +171,12 @@
 	  <Filter>Header Files</Filter>
 	</ClInclude>
     <ClInclude Include="SoundManage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SaveGame.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SettingsState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GameOverState.h">

@@ -41,7 +41,7 @@ struct OverworldConfig {
     std::vector<BossSpawn> bosses;
     std::vector<ItemSpawn> items;
 
-    // Where Pochi spawns, given her current position (carry Y across a seam)
+    // Where Pochi spawns, given his current position (carry Y across a seam)
     std::function<D3DXVECTOR2(const D3DXVECTOR2& currentPosition)> ComputeSpawnPosition;
 
     // Pochi reaches the right edge -> next state to push (null = no exit)
@@ -94,3 +94,6 @@ std::unique_ptr<GameState> CreateOverworldState(OverworldConfig config);
 
 // The first overworld screen, reached from the main menu
 std::unique_ptr<GameState> CreateForestState();
+
+// Rebuilds the overworld state for `id` - used by "Continue"
+std::unique_ptr<GameState> CreateOverworldStateForMap(MapId id);
