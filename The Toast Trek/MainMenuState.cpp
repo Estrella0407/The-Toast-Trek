@@ -41,8 +41,9 @@ namespace {
             }
 
             if (JustPressed(context.keys, DIK_RETURN, enterWasDown)) {
-                // Fresh run: forget any maps cleared in a previous playthrough.
-                context.clearedMaps.clear();
+                // Fresh run: Pochi back to level 1, pack emptied, every map
+                // re-locked (so items and enemies are all back).
+                ResetRunProgress(context);
                 // Queued in order: the forest initializes first, then the
                 // popup lands on top of it. Closing the popup reveals the
                 // already-running forest underneath.

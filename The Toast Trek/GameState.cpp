@@ -1,4 +1,6 @@
 #include "GameState.h"
+#include "Pochi.h"
+#include "Inventory.h"
 
 // This translation unit now owns only GameStateManager.
 //
@@ -17,6 +19,14 @@
 
 GameStateManager::GameStateManager(GameContext& gameContext)
     : context(gameContext), pendingPopCount(0), clearRequested(false) {
+}
+
+void ResetRunProgress(GameContext& context) {
+    if (context.playerStats != NULL) context.playerStats->SetLevel(1); // fresh Pochi, stats refilled
+    if (context.inventory != NULL) context.inventory->Reset();         // empty the pack
+    context.clearedMaps.clear();                                       // every map locked again
+    context.lastBattleOutcome = BattleOutcome::None;                   // drop any stale battle result
+    context.hasPendingSpawn = false;                                   // and any pending spawn hand-off
 }
 
 void GameStateManager::Push(std::unique_ptr<GameState> state) {
