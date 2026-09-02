@@ -39,8 +39,13 @@ private:
     // makes that grid cell solid; every other layer is purely visual.
     std::vector<std::string> solidLayerNames;
 
+    // Names of the layers that define "land", set via SetWalkableLayers().
+    // Empty (the default) disables this check entirely. See SetWalkableLayers().
+    std::vector<std::string> walkableLayerNames;
+
     // One flag per map cell (mapWidthTiles * mapHeightTiles, row-major),
-    // rebuilt by BuildSolidGrid() whenever SetSolidLayers() is called.
+    // rebuilt by BuildSolidGrid() whenever SetSolidLayers() or
+    // SetWalkableLayers() is called.
     std::vector<bool> solidGrid;
 
     // Tiled uses the top 3 bits of a gid as flip flags (horizontal/vertical/
@@ -89,9 +94,23 @@ public:
     // construction - each call replaces the previous list.
     void SetSolidLayers(const std::vector<std::string>& layerNames);
 
+    // For maps with a full-canvas "background" layer instead of a dedicated
+    // outline for impassable areas (e.g. a "Water" layer that's actually
+    // just the whole map's base fill, with land tiles drawn on top of it
+    // wherever it's walkable - so the lake itself is only visible as
+    // wherever no land tile was placed, not as its own shape): any cell
+    // where NONE of the named layers has a tile becomes solid too.
+    //
+    // Combines with SetSolidLayers() rather than replacing it - a cell ends
+    // up solid if it's covered by a SetSolidLayers() layer, OR it's outside
+    // every SetWalkableLayers() layer. Call with an empty list (the
+    // default) to disable this check entirely.
+    void SetWalkableLayers(const std::vector<std::string>& layerNames);
+
     // True if the tile at (tileX, tileY) is solid - i.e. it has a non-empty
-    // gid on one of the layers passed to SetSolidLayers(). Out-of-range
-    // coordinates are always non-solid.
+    // gid on one of the layers passed to SetSolidLayers(), or it's outside
+    // every layer passed to SetWalkableLayers() (when that's in use).
+    // Out-of-range coordinates are always non-solid.
     bool IsTileSolid(int tileX, int tileY) const;
 
     // TEMPORARY DIAGNOSTIC: when true, Draw() ignores the CSV data entirely

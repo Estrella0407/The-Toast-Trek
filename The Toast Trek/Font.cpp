@@ -1,18 +1,18 @@
 #include "Font.h"
 
-Font::Font(IDirect3DDevice9* d3dDevice, float startX, float startY, int width, int height, int fontSize, const char* fontFace) {
+Font::Font(IDirect3DDevice9* d3dDevice, float startX, float startY, int width, int height, int fontSize, const char* fontFace, int weight) {
     font = NULL;
 
     D3DXCreateFont(
         d3dDevice,                      // Device
         fontSize,                       // Height
         0,                              // Width
-        0,                              // Weight
+        weight,                         // Weight (FW_BOLD by default)
         1,                              // MipLevels
         false,                          // Italic
         DEFAULT_CHARSET,                // CharSet
         OUT_TT_ONLY_PRECIS,             // OutputPrecision
-        DEFAULT_QUALITY,                // Quality
+        ANTIALIASED_QUALITY,            // Quality - smoother edges on the heavier strokes
         DEFAULT_PITCH | FF_DONTCARE,    // PitchAndFamily
         fontFace,                       // pFaceName
         &font                           // Font pointer destination
@@ -32,10 +32,10 @@ Font::~Font() {
     }
 }
 
-void Font::Draw(const char* text, D3DCOLOR color) {
+void Font::Draw(const char* text, D3DCOLOR color, LPD3DXSPRITE sprite) {
     if (font != NULL && text != NULL) {
         font->DrawTextA(
-            NULL,
+            sprite,
             text,
             -1, // Count
             &rect,
@@ -45,7 +45,7 @@ void Font::Draw(const char* text, D3DCOLOR color) {
     }
 }
 
-void Font::Draw(const char* text, float x, float y, D3DCOLOR color) {
+void Font::Draw(const char* text, float x, float y, D3DCOLOR color, LPD3DXSPRITE sprite) {
     if (font != NULL && text != NULL) {
 		// Keep the original box size when moving dynamic text. Updating only
 		// left/top can leave right < left at world positions, producing an
@@ -58,7 +58,7 @@ void Font::Draw(const char* text, float x, float y, D3DCOLOR color) {
 		rect.bottom = rect.top + height;
 
         font->DrawTextA(
-            NULL,
+            sprite,
             text,
             -1, // Count
             &rect,

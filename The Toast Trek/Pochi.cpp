@@ -1,11 +1,31 @@
 #include "Pochi.h"
 #include <algorithm>
 
-Pochi::Pochi(int level) : level(level), health(0), maxHealth(0), armor(0), maxArmor(0), attackDamage(0) {
+Pochi::Pochi(int level) : level(level), savedLevel(level), specialMode(false),
+	health(0), maxHealth(0), armor(0), maxArmor(0), attackDamage(0) {
 	SetLevel(level);
 }
 
+void Pochi::SetSpecialMode(bool on) {
+	if (on == specialMode) return;
+	if (on) {
+		savedLevel = level;
+		specialMode = true;
+		maxHealth = 99;
+		maxArmor = 50;
+		attackDamage = 99;
+		health = maxHealth;
+		armor = maxArmor;
+	}
+	else {
+		specialMode = false;
+		SetLevel(savedLevel);   // restores stats and refills
+	}
+}
+
 void Pochi::SetLevel(int newLevel) {
+	// An explicit level change always ends the Mr Andrew special boost.
+	specialMode = false;
 	level = newLevel;
 	switch (level) {
 	case 1:

@@ -22,40 +22,70 @@
     <ClCompile Include="BattleButton.cpp" />
     <ClCompile Include="Battlefield.cpp" />
     <ClCompile Include="BattleState.cpp" />
+    <ClCompile Include="BattleStatusBars.cpp" />
     <ClCompile Include="BattleUI.cpp" />
+    <ClCompile Include="Cheats.cpp" />
+    <ClCompile Include="EndingState.cpp" />
     <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="Font.cpp" />
+    <ClCompile Include="FrameBar.cpp" />
     <ClCompile Include="FrameTimer.cpp" />
+    <ClCompile Include="GameOverState.cpp" />
     <ClCompile Include="GameState.cpp" />
     <ClCompile Include="Heart.cpp" />
 	<ClCompile Include="Inventory.cpp" />
     <ClCompile Include="Line.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="MainMenu.cpp" />
+    <ClCompile Include="MainMenuState.cpp" />
+    <ClCompile Include="OverworldState.cpp" />
     <ClCompile Include="Physics.cpp" />
     <ClCompile Include="Pochi.cpp" />
+    <ClCompile Include="PochiBadge.cpp" />
     <ClCompile Include="Projectile.cpp" />
+    <ClCompile Include="UiFill.cpp" />
+    <ClCompile Include="SoundManage.cpp" />
     <ClCompile Include="Sprite.cpp" />
     <ClCompile Include="TileMap.cpp" />
+    <ClCompile Include="TutorialPopupState.cpp" />
+    <ClCompile Include="UnifiedMenu.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BattleButton.h" />
     <ClInclude Include="Battlefield.h" />
     <ClInclude Include="BattleState.h" />
+    <ClInclude Include="BattleStatusBars.h" />
     <ClInclude Include="BattleUI.h" />
+    <ClInclude Include="Cheats.h" />
+    <ClInclude Include="EndingState.h" />
     <ClInclude Include="Enemy.h" />
     <ClInclude Include="Font.h" />
+    <ClInclude Include="FrameBar.h" />
     <ClInclude Include="FrameTimer.h" />
+    <ClInclude Include="GameOverState.h" />
     <ClInclude Include="GameState.h" />
     <ClInclude Include="Heart.h" />
 	<ClInclude Include="Inventory.h" />
     <ClInclude Include="Line.h" />
     <ClInclude Include="MainMenu.h" />
+    <ClInclude Include="OverworldState.h" />
     <ClInclude Include="Physics.h" />
     <ClInclude Include="Pochi.h" />
+    <ClInclude Include="PochiBadge.h" />
     <ClInclude Include="Projectile.h" />
+    <ClInclude Include="UiFill.h" />
+    <ClInclude Include="SoundManage.h" />
     <ClInclude Include="Sprite.h" />
     <ClInclude Include="TileMap.h" />
+    <ClInclude Include="TutorialPopupState.h" />
+    <ClInclude Include="UnifiedMenu.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="fmod.dll" />
+    <None Include="fmodL.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="fmod_vc.lib" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>
@@ -110,8 +140,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(DXSDK_DIR)include\;$(IncludePath)</IncludePath>
-    <LibraryPath>$(DXSDK_DIR)lib\x86;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Program Files (x86)\FMOD SoundSystem\FMOD Studio API Windows\api\core\inc;$(DXSDK_DIR)include\;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files (x86)\FMOD SoundSystem\FMOD Studio API Windows\api\core\lib\x86;$(DXSDK_DIR)lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>C:\Program Files %28x86%29\FMOD SoundSystem\FMOD Studio API Windows\api\core\inc;$(DXSDK_DIR)include\;$(IncludePath)</IncludePath>
@@ -129,11 +159,15 @@
     <Link>
       <SubSystem>NotSet</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d9.lib;d3dx9.lib;dinput8.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>fmod_vc.lib;d3d9.lib;d3dx9.lib;dinput8.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Manifest>
       <EnableSegmentHeap>true</EnableSegmentHeap>
     </Manifest>
+    <PostBuildEvent>
+      <Command>xcopy /Y /D "$(ProjectDir)fmod*.dll" "$(OutDir)"</Command>
+      <Message>Copying FMOD runtime DLLs next to the executable</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>

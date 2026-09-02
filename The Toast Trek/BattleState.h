@@ -33,12 +33,15 @@ private:
 	bool actChoiceWasDown[3];
 	bool itemChoiceWasDown[3];
 	bool actChoiceUsed[3];	//After use one of the choices, the selected button will be gone
+	bool cheatWinWasDown;	//Dev cheat: F9 ends the fight in a win (see Cheats.h)
+	int lastPochiHealth;	//prev-frame heart+armour total; a drop triggers the "hurt" sfx
 
 public:
 	explicit BattleState(BossId bossId) : bossId(bossId), battlefield(nullptr), battleUI(nullptr), phase(ENCOUNTER), 
 	showEncounterMessage(true), enemyFlashTimer(0.0f), enemyHitFrames(0),
 		actionKeyWasDown{ false, false, false, false }, actChoiceWasDown{ false, false, false },
-		itemChoiceWasDown{ false, false, false }, actChoiceUsed{ false, false, false} {}
+		itemChoiceWasDown{ false, false, false }, actChoiceUsed{ false, false, false},
+		cheatWinWasDown(false), lastPochiHealth(0) {}
 
 	~BattleState();
 	BattlePhase phase;

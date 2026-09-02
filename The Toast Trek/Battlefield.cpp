@@ -1,9 +1,11 @@
 #include "Battlefield.h"
 #include "Enemy.h"
 #include "BattleUI.h"
+#include "BattleStatusBars.h"
 #include "Pochi.h"
 #include "Heart.h"
 #include "Physics.h"
+#include <algorithm>
 #include <string>
 #include <cmath>
 #include <cstdlib>
@@ -15,6 +17,7 @@ Battlefield::Battlefield(IDirect3DDevice9* d3dDevice, BattleUI* battleUI, BossId
 	this->pochi = pochi;
 	this->inventory = inventory;
 	statusFont = new Font(d3dDevice, 300.0f, 510.0f, 700, 35, 18, "Arial");
+	playerBars = new BattleStatusBars(d3dDevice);
 	displayedEnemyHealth = (float)enemy->GetHealth();
 	hitStartHealth = displayedEnemyHealth;
 	hitAnimationStart = 0;
@@ -57,10 +60,6 @@ Battlefield::Battlefield(IDirect3DDevice9* d3dDevice, BattleUI* battleUI, BossId
 	//fightDamage = 10;
 	//itemHealAmount = 5;
 
-	pochiHealthBar = new Sprite(d3dDevice, "Assets/UI/battleHealthBar.png", 200, 20, 1, 1, 1, 420.0f, 540.0f);
-	pochiArmorBar = new Sprite(d3dDevice, "Assets/UI/battleArmorBar.png", 200, 20, 1, 1, 1, 800.0f, 540.0f);
-	enemyHealthBar = new Sprite(d3dDevice, "Assets/UI/battleHealthBar.png", 200, 20, 1, 1, 1, 550.0f, 170.0f);
-
 	//Special lvl
 	if (bossId == BossId::MrAndrew) {
 		pochi->SetMaxHealth(99);
@@ -97,31 +96,35 @@ void Battlefield::FourDirectionAttack() {
 }
 
 void Battlefield::StarBounceAttack() {
-	const int STAR_COUNT = 6;
-	//// Spawn away from the heart's initial center position so the whole wave
-	//// does not collide on its first frame.
-	//float centerX = posX + 100.0f;
-	//float centerY = posY + 100.0f;
+	const int STAR_COUNT = 3;
 
-	//const float velocities[5][2] =
-	//{
-	//	{1.0f, 0.5f},
-	//	{-1.0f, 0.5f},
-	//	{0.7f, -1.0f},
-	//	{-0.7f, -1.0f},
-	//	{1.0f, -0.3f}
-	//};
+	// The star sprite is ~64x64 on screen. Keep the whole wave clear of the
+	// heart's current position - a star spawned on top of it used to hit
+	// before the player could react (several at once = instant death).
+	const D3DXVECTOR2 heartPos = heart->GetPosition();
+	const float keepOut = 150.0f;
+
 	for (int i = 0; i < STAR_COUNT; i++) {
-		//random position
-		float x = posX + 10.0f + rand() % (int)(width - 74.0f);
-		float y = posY + 10.0f + rand() % (int)(height - 74.0f);
-		//random velocity
+		float x = posX + 10.0f;
+		float y = posY + 10.0f;
+		for (int tries = 0; tries < 24; ++tries) {
+			x = posX + 10.0f + rand() % (int)(width - 74.0f);
+			y = posY + 10.0f + rand() % (int)(height - 74.0f);
+			if (fabsf(x - heartPos.x) > keepOut || fabsf(y - heartPos.y) > keepOut) break;
+		}
+
 		float velocityX = (rand() % 201 - 100) / 100.0f;
 		float velocityY = (rand() % 201 - 100) / 100.0f;
-		//prevent star become stationary
-		if (velocityX == 0.0f && velocityY == 0.0f) {
-			velocityX = 1.0f;
+
+		// No near-stationary stars - normalise slow ones up to a real speed
+		// so the wave actually travels and bounces.
+		float speed = sqrtf(velocityX * velocityX + velocityY * velocityY);
+		if (speed < 0.6f) {
+			if (speed < 0.001f) { velocityX = 1.0f; velocityY = 0.4f; speed = sqrtf(1.16f); }
+			velocityX = velocityX / speed * 0.9f;
+			velocityY = velocityY / speed * 0.9f;
 		}
+
 		SpawnProjectile(d3dDevice, x, y, velocityX, velocityY, ProjectileType::star);
 	}
 }
@@ -173,6 +176,7 @@ void Battlefield::StartEnemyAttack() {
 		break;
 	case AttackType::SpecialAttack:
 		StartSpecialBossAttack();
+		spawningProjectile = 3;
 		break;
 	}
 }
@@ -311,11 +315,9 @@ void Battlefield::StartSpecialBossAttack() {
 
 Battlefield::~Battlefield() {
 	delete statusFont;
+	delete playerBars;
 	delete heart;
 	delete enemy;
-	delete pochiHealthBar;
-	delete pochiArmorBar;
-	delete enemyHealthBar;
 
 	for (Projectile* projectile : projectiles) {
 		delete projectile;
@@ -383,7 +385,7 @@ void Battlefield::Update(GameContext& context) {
 		spawningProjectile < maxProjectiles && elapsedAttackTime >= projectileTimer) {
 		if (starAttack) {
 			StarBounceAttack();
-			spawningProjectile += 5;
+			spawningProjectile += 3;
 			projectileTimer += 4000.0f;
 		}
 		else {
@@ -587,7 +589,6 @@ bool Battlefield::HasFled() const {
 }
 
 void Battlefield::Render(LPD3DXSPRITE sharedBrush) {
-	D3DCOLOR black = D3DCOLOR_XRGB(0, 0, 0);
 	heart->Render(sharedBrush);
 
 	if (showProjectiles) {
@@ -600,32 +601,13 @@ void Battlefield::Render(LPD3DXSPRITE sharedBrush) {
 		? D3DCOLOR_XRGB(255, 60, 60)
 		: D3DCOLOR_XRGB(255, 255, 255));
 
-	//pochi health bar
-	char barText[32];
-	sprintf_s(barText, "HEALTH: %d/%d", pochi->GetHealth(), pochi->GetMaxHealth());
-	statusFont->Draw(barText, 305.0f, 540.0f, black);
-	float pochiHealthPercentage = (float)pochi->GetHealth() / (float)pochi->GetMaxHealth();
-	pochiHealthBar->DrawBar(sharedBrush, pochiHealthPercentage);
-
-	//pochi armor bar
-	sprintf_s(barText, "ARMOR: %d/%d", pochi->GetArmor(), pochi->GetMaxArmor());
-	statusFont->Draw(barText, 690.0f, 540.0f, black);
-	float armorPercentage = (float)pochi->GetArmor() / (float)pochi->GetMaxArmor();
-	pochiArmorBar->DrawBar(sharedBrush, armorPercentage);
-
-	//enemy health bar
-	sprintf_s(barText, "HEALTH: %d/%d", enemy->GetHealth(), enemy->GetMaxHealth());
-	statusFont->Draw(barText, 390.0f, 170.0f, black);
-	float enemyHealthPercentage = enemy->GetMaxHealth() > 0
-		? displayedEnemyHealth / (float)enemy->GetMaxHealth() : 0.0f;
-	enemyHealthBar->DrawBar(sharedBrush, enemyHealthPercentage);
-
+	// Player health + shield bars (top-left) and the enemy HP bar (under
+	// the enemy) - all framed strips, driven by live values.
 	const float enemyRatio = enemy->GetMaxHealth() > 0
-		? displayedEnemyHealth / enemy->GetMaxHealth() : 0.0f;
-	const float shieldRatio = heart->GetMaxShield() > 0
-		? (float)heart->GetShield() / heart->GetMaxShield() : 0.0f;
-	const float healthRatio = heart->GetMaxHealth() > 0
-		? (float)heart->GetHealth() / heart->GetMaxHealth() : 0.0f;
+		? std::clamp(displayedEnemyHealth / enemy->GetMaxHealth(), 0.0f, 1.0f) : 0.0f;
 
 	
+	if (playerBars != nullptr && pochi != nullptr) {
+		playerBars->Draw(sharedBrush, *pochi, enemyRatio);
+	}
 }
