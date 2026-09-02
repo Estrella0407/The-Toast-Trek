@@ -13,9 +13,9 @@ namespace {
         return pressed;
     }
 
-    // The forest intro plays only the first time the player starts a run.
-    // The main menu is reachable again later (retry / return to menu), and
-    // it shouldn't replay the tutorial then.
+    // The forest intro plays only the first time the player starts a run
+    // the main menu is reachable again later (retry / return to menu), and
+    // it shouldn't replay the tutorial then
     bool s_forestIntroShown = false;
 
     class MainMenuState : public GameState {
@@ -34,23 +34,21 @@ namespace {
 
         void HandleInput(GameContext& context, GameStateManager& manager) override {
             // Dev shortcut: jump straight to the ending screen. Remove when
-            // no longer needed.
+            // no longer needed
             if (JustPressed(context.keys, DIK_F10, endingWasDown)) {
                 manager.Push(CreateEndingState());
                 return;
             }
 
             if (JustPressed(context.keys, DIK_RETURN, enterWasDown)) {
-                // Fresh run: Pochi back to level 1, pack emptied, every map
-                // re-locked (so items and enemies are all back).
-                ResetRunProgress(context);
-                // Queued in order: the forest initializes first, then the
+                ResetRunProgress(context);   // Fresh run - level 1, empty pack, maps re-locked
+                // queued in order: the forest initializes first, then the
                 // popup lands on top of it. Closing the popup reveals the
-                // already-running forest underneath.
+                // already-running forest underneath
                 manager.Push(CreateForestState());
                 // Cheat mode skips the tutorial popup entirely (and leaves
-                // s_forestIntroShown alone, so a later non-cheat run still
-                // gets it).
+                // S_forestIntroShown alone, so a later non-cheat run still
+                // gets it)
                 if (!s_forestIntroShown && !Cheats::enabled) {
                     manager.Push(CreateForestIntroPopup());
                     s_forestIntroShown = true;
@@ -64,7 +62,7 @@ namespace {
 
         void Render(GameContext& context) override {
             if (menu != NULL) menu->Draw(context.spriteBrush);
-            // The "CHEAT MODE" indicator is drawn globally in Main.cpp.
+            // The "CHEAT MODE" indicator is drawn globally in Main.cpp
         }
 
         D3DCOLOR ClearColor() const override { return D3DCOLOR_XRGB(245, 245, 245); }

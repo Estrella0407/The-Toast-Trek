@@ -24,7 +24,7 @@ namespace {
     enum Tab { TAB_INVENTORY = 0, TAB_STATUS, TAB_SETTINGS, TAB_COUNT };
     const char* kTabNames[TAB_COUNT] = { "INVENTORY", "STATUS", "SETTINGS" };
 
-    // Panel + layout.
+    // Panel + layout
     constexpr float kPanelL = 200.0f, kPanelR = 1080.0f;
     constexpr float kPanelT = 80.0f, kPanelB = 640.0f;
     constexpr float kTabAreaL = kPanelL + 24.0f;
@@ -84,7 +84,7 @@ namespace {
         int RowCount() const {
             switch (tab) {
             case TAB_INVENTORY: return 3;
-            case TAB_SETTINGS:  return 4;   // master, music, sfx, mute
+            case TAB_SETTINGS:  return 4;   // Master, music, sfx, mute
             default:            return 0;   // status: nothing selectable
             }
         }
@@ -138,7 +138,7 @@ namespace {
             else if (which == 2) context.sound->SetSFXVolume(value);
         }
 
-        // --- rendering per tab ---------------------------------------
+        // --- Rendering per tab ---------------------------------------
         void RenderInventory(LPD3DXSPRITE b, GameContext& context) {
             headFont->Draw("Items Pochi is carrying", kBodyX, kHeadingY, kHeading, b);
             for (int i = 0; i < 3; ++i) {
@@ -156,15 +156,15 @@ namespace {
         void RenderStatus(LPD3DXSPRITE b, GameContext& context) {
             headFont->Draw("Pochi", kBodyX, kHeadingY, kHeading, b);
             const Pochi* p = context.playerStats;
-            auto line = [&](const char* label, const std::string& val, int row) {
+            auto Line = [&](const char* label, const std::string& val, int row) {
                 bodyFont->Draw(label, kBodyX, kBodyY + row * kRowH, kTextDim, b);
                 bodyFont->Draw(val.c_str(), kBodyX + 220.0f, kBodyY + row * kRowH, kText, b);
                 };
             if (p != NULL) {
-                line("Level", std::to_string(p->GetLevel()), 0);
-                line("Health", std::to_string(p->GetHealth()) + " / " + std::to_string(p->GetMaxHealth()), 1);
-                line("Armor", std::to_string(p->GetArmor()) + " / " + std::to_string(p->GetMaxArmor()), 2);
-                line("Attack", std::to_string(p->GetAttackDamage()), 3);
+                Line("Level", std::to_string(p->GetLevel()), 0);
+                Line("Health", std::to_string(p->GetHealth()) + " / " + std::to_string(p->GetMaxHealth()), 1);
+                Line("Armor", std::to_string(p->GetArmor()) + " / " + std::to_string(p->GetMaxArmor()), 2);
+                Line("Attack", std::to_string(p->GetAttackDamage()), 3);
             }
             bodyFont->Draw("Goal: help Pochi find his way back home.",
                 kBodyX, kBodyY + 5 * kRowH, kTextDim, b);
@@ -196,7 +196,7 @@ namespace {
                 kBodyX, kBodyY + 4 * kRowH + 12.0f, kTextDim, b);
         }
 
-        // --- mouse -------------------------------------------------------
+        // --- Mouse -------------------------------------------------------
         void HandleMouse(GameContext& context) {
             const float mx = context.mouseX, my = context.mouseY;
             const bool moved = (mx != prevMouseX || my != prevMouseY);
@@ -204,7 +204,7 @@ namespace {
             const bool click = context.mouseLeftDown && !mouseWasDown;
             mouseWasDown = context.mouseLeftDown;
 
-            // Tabs.
+            // Tabs
             for (int i = 0; i < TAB_COUNT; ++i) {
                 const float l = kTabAreaL + i * TabWidth();
                 if (InRect(mx, my, l, kTabT, l + TabWidth(), kTabT + kTabH)) {
@@ -236,7 +236,7 @@ namespace {
                 }
             }
 
-            // Drag inside a volume bar even without re-clicking on the row.
+            // Drag inside a volume bar even without re-clicking on the row
             if (context.mouseLeftDown && tab == TAB_SETTINGS && sel <= 2) {
                 const float y = kBodyY + sel * kRowH;
                 if (InRect(mx, my, kMeterX, y - 4.0f, kMeterX + kMeterW, y + kMeterH + 10.0f)) {
@@ -264,7 +264,7 @@ namespace {
 
         void Initialize(GameContext& context) override {
             tab = 0; sel = 0;
-            eWasDown = true;            // the E that opened the menu is still held
+            eWasDown = true;            // The E that opened the menu is still held
             mouseWasDown = true;        // and the mouse button might be too
             escWasDown = aWasDown = dWasDown = false;
             leftWasDown = rightWasDown = upWasDown = downWasDown = enterWasDown = false;
@@ -322,7 +322,7 @@ namespace {
         void Render(GameContext& context) override {
             LPD3DXSPRITE b = context.spriteBrush;
 
-            // The frozen world behind the menu.
+            // The frozen world behind the menu
             if (backdrop != NULL) backdrop->Render(context);
 
             Fill(b, 0.0f, 0.0f, 1280.0f, 720.0f, kDim);
@@ -356,7 +356,7 @@ namespace {
         }
     };
 
-} // namespace
+} // Namespace
 
 std::unique_ptr<GameState> CreateUnifiedMenuState(GameState* backdrop) {
     return std::make_unique<UnifiedMenuState>(backdrop);

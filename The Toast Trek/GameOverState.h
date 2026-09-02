@@ -15,17 +15,10 @@ private:
 
     SoundManage* soundManage;
 
-    // Stats to display
-    int score;
-    int enemiesDefeated;
-    int timeSurvived;
-    std::string levelName;
-
-    float animTimer;
-    float flashTimer;
+    float flashTimer;   // Drives the title colour flash
 
 public:
-    GameOverState(SoundManage* soundMgr, int score = 0, int enemies = 0, int time = 0, const std::string& level = "");
+    explicit GameOverState(SoundManage* soundMgr);
     ~GameOverState();
 
     void Initialize(GameContext& context) override;

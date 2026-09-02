@@ -16,10 +16,9 @@ public:
 	Inventory();
 
 	void Add(ItemType item);
-	bool Has(ItemType item) const;
 	bool Consume(ItemType item);
 	int GetCount(ItemType item) const;
 
-	// Empty the pack - called when a fresh run starts.
+	// Empty the pack - called when a fresh run starts
 	void Reset();
 };

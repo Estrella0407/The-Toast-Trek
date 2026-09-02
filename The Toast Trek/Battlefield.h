@@ -36,16 +36,9 @@ private:
 	unsigned long long lastPlayerHitTime;
 	bool enemyHitAnimating;
 
-	////Button when hover
-	bool fightHovered;
-	bool actHovered;
-	bool itemHovered;
-	bool mercyHovered;
-
 	bool mouseWasDown;
 	bool fled;
 	int fightDamage;
-	int itemHealAmount;
 
 	float projectileTimer;
 	float projectileSpawnInterval;
@@ -53,18 +46,13 @@ private:
 	bool projectileAttackFinished;
 	unsigned long long projectileAttackStart;
 	unsigned long long projectileAttackDuration;
-	int spawningProjectile;			//when to display projectile
+	int spawningProjectile;			// When to display projectile
 	int maxProjectiles;
 
-	//Maki projectile
+	// Maki projectile
 	bool bulletAttackActive;
 	bool bulletAiming;
-	float bulletAimTimer;
-	float bulletAimDuration;
 	int bulletShotCount;
-	int maxBulletShots;
-	float bulletTargetX;
-	float bulletTargetY;
 	unsigned long long bulletAimStartTime;
 	unsigned long long bulletHoleStartTime;
 	Projectile* currentBulletAim;
@@ -75,42 +63,28 @@ private:
 
 
 	bool specialAttackActive;
-	int specialAttackWave;		//combine skull bone, goblin and maki projectile in one go
-	//float specialAttackTimer;
+	int specialAttackWave;		// Combine skull bone, goblin and maki projectile in one go
 
-	bool IsPointOverButton(float pointX, float pointY, BattleButton* button) const;
-	//void UpdateMenuButtons(GameContext& context);
-
-	//Projectiles
-	void FourDirectionAttack();		//skull bones 
+	// Projectiles
+	void FourDirectionAttack();		// Skull bones
 	void SpawnProjectile(IDirect3DDevice9* d3dDevice, float x, float y, float velocityX, float velocityY, ProjectileType type);
 	void SpawnProjectileAtAngle(IDirect3DDevice9* d3dDevice, float x, float y, float angleDegrees, float speed);
-	void StarBounceAttack();		//goblin
+	void StarBounceAttack();		// Goblin
 	void UpdateStarBounce(Projectile* projectile);
-	void StartGunshotAttack();		//maki
+	void StartGunshotAttack();		// Maki
 	void UpdateGunshotAttack();
-	void FireBullet();
-	void ChooseRandomBulletTarget();
 	void StartGunshotBurst();
-
-	//Special 
-	void SpecialAttack();
-	void UpdateSpecialBossAttack();
-	bool AreAllProjectilesInactive();
 
 public:
 	Battlefield(IDirect3DDevice9* d3dDevice, BattleUI* battleUI, BossId bossId, Enemy* enemy, Pochi* pochi, Inventory* inventory);
 	~Battlefield();
 
-	void Init();
 	void Update(GameContext& context);
 	void Render(LPD3DXSPRITE sharedBrush);
-	int GetSelectButton(GameContext& context);
-	void UpdateMenuButtons(GameContext& context);
 
 	void StartEnemyAttack();
-	void PerformFight();	//fight button damage
-	void PerformAct();		//act damage for act cute, roll on ground and bark. All deal the same damage by 2
+	void PerformFight();	// Fight button damage
+	void PerformAct();		// Act damage for act cute, roll on ground and bark. All deal the same damage by 2
 	bool IsEnemyHitAnimationFinished() const;
 	bool PerformItem(ItemType item);
 	void Flee();
@@ -118,7 +92,6 @@ public:
 	bool IsProjectileAttackFinished() const;
 
 	void StartSpecialBossAttack();
-	bool isSpecialAttackFinished() const;
 
 	void StartActAnimation();
 	void UpdateActAnimation();

@@ -11,7 +11,6 @@ BattleUI::BattleUI(IDirect3DDevice9* d3dDevice) : d3dDevice(d3dDevice), selected
 
 	selectedButton = 0;
 	showEncounterMessage = true;
-	//encounterMessage = "You have encounter Skull Bone!";
 	showActChoices = false;
 	showItemChoices = false;
 	selectedItemOption = -1;
@@ -30,7 +29,7 @@ BattleUI::BattleUI(IDirect3DDevice9* d3dDevice) : d3dDevice(d3dDevice), selected
 	mercyHovered = false;
 	mouseWasDown = false;
 
-	//drawing battle box position
+	//Drawing battle box position
 	posX = 300.0f;
 	posY = 200.0f;
 	width = 700.0f;
@@ -139,12 +138,12 @@ void BattleUI::DrawButtonBorder(const RECT& rect, D3DCOLOR color) {
 	right.Draw(color);
 }
 
-//bool BattleUI::IsPointOverButton(float pointX, float pointY, Sprite* button) const {
+//Bool BattleUI::IsPointOverButton(float pointX, float pointY, Sprite* button) const {
 //	if (button == nullptr) return false;
 //
 //	// Button art is a 256x256 canvas with a much smaller pill-shaped label
 //	// centered in it; hit-testing the full canvas would make adjacent
-//	// buttons' clickable areas overlap (they're only spaced 200px apart).
+//	// buttons' clickable areas overlap (they're only spaced 200px apart)
 //	const float hitWidth = 180.0f;
 //	const float hitHeight = 100.0f;
 //
@@ -152,8 +151,8 @@ void BattleUI::DrawButtonBorder(const RECT& rect, D3DCOLOR color) {
 //	float centerX = topLeft.x + 128.0f;
 //	float centerY = topLeft.y + 128.0f;
 //
-//	return pointX >= centerX - hitWidth * 0.5f && pointX <= centerX + hitWidth * 0.5f &&
-//		pointY >= centerY - hitHeight * 0.5f && pointY <= centerY + hitHeight * 0.5f;
+//	Return pointX >= centerX - hitWidth * 0.5f && pointX <= centerX + hitWidth * 0.5f &&
+//		PointY >= centerY - hitHeight * 0.5f && pointY <= centerY + hitHeight * 0.5f;
 //}
 
 int BattleUI::GetSelectButton(GameContext& context) {
@@ -178,21 +177,6 @@ void BattleUI::UpdateMenuButtons(GameContext& context) {
 	actButton->SetHovered(actOver);
 	itemButton->SetHovered(itemOver);
 	mercyButton->SetHovered(mercyOver);
-
-	//if (fightHovered) {
-	//	//enemy->TakeDamage(fightDamage);
-	//	OutputDebugStringA(("Enemy hit for " + std::to_string(fightDamage) +
-	//		", health now " + std::to_string(enemy->GetHealth()) + "\n").c_str());
-	//}
-	//else if (itemHovered) {
-	//	heart->Heal(itemHealAmount);
-	//}
-	//else if (mercyHovered) {
-	//	fled = true;
-	//}
-	//else if (actHovered) {
-	//	// ACT has no per-boss dialogue/options defined yet - clickable, but a no-op for now.
-	//}
 }
 
 BattleUI::~BattleUI() {

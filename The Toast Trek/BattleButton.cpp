@@ -12,18 +12,18 @@ BattleButton::BattleButton(IDirect3DDevice9* d3dDevice, const char* buttonText, 
 	rect.right = x + width;
 	rect.bottom = y + height;
 
-	font = new Font(d3dDevice, x, y, width, height, 25, "Arial");
+	font = new Font(d3dDevice, (float)x, (float)y, width, height, 25, "Arial");
 	topLine = new Line(d3dDevice, (float)x, (float)y, (float)(x + width), (float)y);
 	bottomLine = new Line(d3dDevice, (float)x, (float)(y + height), (float)(x + width), (float)(y + height));
 	leftLine = new Line(d3dDevice, (float)x, (float)y, (float)x, (float)(y + height));
 	rightLine = new Line(d3dDevice, (float)(x + width), (float)y, (float)(x + width), (float)(y + height));
 }
 
-bool BattleButton::IsHovered(int mouseX, int mouseY) const {
-	return mouseX >= rect.left &&
-		mouseX <= rect.right &&
-		mouseY >= rect.top &&
-		mouseY <= rect.bottom;
+bool BattleButton::IsHovered(float mouseX, float mouseY) const {
+	return mouseX >= (float)rect.left &&
+		mouseX <= (float)rect.right &&
+		mouseY >= (float)rect.top &&
+		mouseY <= (float)rect.bottom;
 }
 
 void BattleButton::DrawBackground(D3DCOLOR color) {

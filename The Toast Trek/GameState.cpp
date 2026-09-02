@@ -2,31 +2,17 @@
 #include "Pochi.h"
 #include "Inventory.h"
 
-// This translation unit now owns only GameStateManager.
-//
-// It used to also carry hand-written MainMenuState / TutorialState /
-// MazeState / GameOverState / Level1State classes. Those were superseded by
-// the data-driven OverworldState (see OverworldState.cpp/.h) and the
-// standalone MainMenuState.cpp / BattleState.cpp, and left two copies of
-// CreateMainMenuState() / CreateBattleState() in the link. They've been
-// removed; the concrete screens each live in their own file now:
-//   - MainMenuState.cpp        CreateMainMenuState()
-//   - OverworldState.cpp       CreateForestState() / CreateOverworldState()
-//   - BattleState.cpp          CreateBattleState()
-//   - TutorialPopupState.cpp   CreateForestIntroPopup()
-//
-// A Game Over screen is planned again but not yet reimplemented.
-
 GameStateManager::GameStateManager(GameContext& gameContext)
     : context(gameContext), pendingPopCount(0), clearRequested(false) {
 }
 
+// Resets everything a fresh playthrough starts from (main menu, retry)
 void ResetRunProgress(GameContext& context) {
-    if (context.playerStats != NULL) context.playerStats->SetLevel(1); // fresh Pochi, stats refilled
-    if (context.inventory != NULL) context.inventory->Reset();         // empty the pack
-    context.clearedMaps.clear();                                       // every map locked again
-    context.lastBattleOutcome = BattleOutcome::None;                   // drop any stale battle result
-    context.hasPendingSpawn = false;                                   // and any pending spawn hand-off
+    if (context.playerStats != NULL) context.playerStats->SetLevel(1); // Fresh Pochi, stats refilled
+    if (context.inventory != NULL) context.inventory->Reset();         // Empty the pack
+    context.clearedMaps.clear();                                       // Every map locked again
+    context.lastBattleOutcome = BattleOutcome::None;                   // Drop any stale battle result
+    context.hasPendingSpawn = false;                                   // Drop any pending spawn hand-off
 }
 
 void GameStateManager::Push(std::unique_ptr<GameState> state) {

@@ -28,7 +28,6 @@
     <ClCompile Include="EndingState.cpp" />
     <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="Font.cpp" />
-    <ClCompile Include="FrameBar.cpp" />
     <ClCompile Include="FrameTimer.cpp" />
     <ClCompile Include="GameOverState.cpp" />
     <ClCompile Include="GameState.cpp" />
@@ -60,7 +59,6 @@
     <ClInclude Include="EndingState.h" />
     <ClInclude Include="Enemy.h" />
     <ClInclude Include="Font.h" />
-    <ClInclude Include="FrameBar.h" />
     <ClInclude Include="FrameTimer.h" />
     <ClInclude Include="GameOverState.h" />
     <ClInclude Include="GameState.h" />

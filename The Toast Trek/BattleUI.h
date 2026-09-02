@@ -5,15 +5,13 @@
 #include "Line.h"
 #include "Font.h"
 #include "BattleButton.h"
-#include "GameState.h" //GameContext (mouse input)
+#include "GameState.h"
 #include "Inventory.h"
-#include <string>
-
 
 class BattleUI {
 private:
 	IDirect3DDevice9* d3dDevice;
-	//battle border
+	// Battle border
 	float posX;
 	float posY;
 	float width;
@@ -29,13 +27,13 @@ private:
 	BattleButton* itemButton;
 	BattleButton* mercyButton;
 
-	//when button select
+	// When button select
 	int selectedButton;
-	//act menu button option: 1. act cute, 2. roll on ground, 3. bark
+	// Act menu button option: 1. act cute, 2. roll on ground, 3. bark
 	int selectedActOption;
 	bool actChoiceUsed[3];
 
-	//button when hovered
+	//Button when hovered
 	bool fightHovered;
 	bool actHovered;
 	bool itemHovered;
@@ -47,7 +45,7 @@ private:
 	int fightDamage;
 	int itemHealAmount;
 
-	//"You have encountered <enemyName>!" - set per fight by BattleState.
+	// "You have encountered <enemyName>!" - set per fight by BattleState
 	std::string enemyName = "the enemy";
 	bool showEncounterMessage;
 	std::string encounterMessage;
@@ -58,10 +56,6 @@ private:
 	int boneCount;
 	int toastCount;
 
-	Font* fightFont;
-	Font* actFont;
-	Font* itemFont;
-	Font* mercyFont;
 	Font* encounterFont;
 	Font* actMenuFont;
 

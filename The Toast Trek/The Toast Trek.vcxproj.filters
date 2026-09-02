@@ -96,9 +96,6 @@
     <ClCompile Include="BattleStatusBars.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="FrameBar.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="EndingState.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -180,9 +177,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="BattleStatusBars.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="FrameBar.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="EndingState.h">

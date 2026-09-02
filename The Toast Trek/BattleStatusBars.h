@@ -4,22 +4,21 @@
 
 class Font;
 class Pochi;
-class FrameBar;
 
-// Battle HUD: framed health + shield bars (top-left) and the enemy's HP
-// bar (under the enemy), every fill level a pre-drawn frame in a vertical
-// strip PNG. Create one per battle; call Draw() in Render().
+// Battle HUD: Pochi's health + shield bars  and the enemy's HP bar
+// Create one per battle; call Draw() in Render()
 class BattleStatusBars {
 public:
     explicit BattleStatusBars(IDirect3DDevice9* device);
     ~BattleStatusBars();
 
-    // enemyHpRatio in [0, 1].
+    // EnemyHpRatio in [0, 1]
     void Draw(LPD3DXSPRITE brush, const Pochi& stats, float enemyHpRatio);
 
 private:
-    FrameBar* healthBar;   // Assets/UI/health_strip.png    - frame = health
-    FrameBar* shieldBar;   // Assets/UI/shield_strip.png    - frame = armor
-    FrameBar* enemyBar;    // Assets/UI/enemy_hp_strip.png  - frame = ratio bucket
+    IDirect3DTexture9* healthTex;   // Assets/UI/health_bar_full.png
+    IDirect3DTexture9* shieldTex;   // Assets/UI/shield_bar_full.png
+    IDirect3DTexture9* enemyTex;    // Assets/UI/enemy_hp.png
+    IDirect3DTexture9* whiteTex;    // 1x1 white - drained-tail wash + text shadow
     Font* valueFont;
 };

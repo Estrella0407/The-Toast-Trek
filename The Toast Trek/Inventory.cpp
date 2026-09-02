@@ -8,10 +8,6 @@ void Inventory::Add(ItemType item) {
 	else if (item == ItemType::Toast) ++toast;
 }
 
-bool Inventory::Has(ItemType item) const {
-	return GetCount(item) > 0;
-}
-
 bool Inventory::Consume(ItemType item) {
 	int* count = &toast;
 	if (item == ItemType::HealthPotion) count = &healthPotions;

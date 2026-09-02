@@ -5,26 +5,23 @@
 #include <string>
 #include <vector>
 
-// Which loaded map an OverworldState renders/collides against - resolved
-// against GameContext (context.forestMap / context.mazeMap / ...) at
-// Initialize() time, not baked in at construction.
+// Which loaded map an OverworldState draws / collides against
 enum class MapId : int {   // fixed underlying type: forward-declared in GameState.h
     Forest,
     Maze,
     RuinsExterior,
     RuinsInterior,
-    Tarumt          // secret-boss (Mr Andrew) area off the forest's top-left
+    Tarumt          // Secret boss (Mr Andrew), off the forest's top-left
 };
 
-// One boss standing in the map, waiting to be walked up to (F to fight).
+// A boss standing in the map - walk up and press F to fight
 struct BossSpawn {
     BossId id;
     float x, y;
 };
 
-// One item lying in the map. Walk over it and press F to add it to the
-// inventory. texWidth/texHeight are the PNG's exact pixel dimensions (the
-// Sprite loader needs them so non-power-of-two art isn't silently resized).
+// An item lying in the map - walk over it and press F to pick it up
+// texWidth/texHeight are the PNG's exact pixel size (the loader needs them)
 struct ItemSpawn {
     ItemType type;
     std::string texture;
@@ -33,69 +30,46 @@ struct ItemSpawn {
     float scale;
 };
 
-// Everything that differs between one overworld map and the next. Pochi's
-// forest walk and her maze walk used to be two near-identical copies of
-// the same movement/collision/render loop (TutorialState and MazeState);
-// this is that loop written once, with the differences supplied as data -
-// so the next map (e.g. Maki's, once its art exists) is a new
-// OverworldConfig, not a third copy-pasted state class.
+// Everything that differs between one overworld map and the next, so the
+// shared walk / collide / render loop is written once and fed data
 struct OverworldConfig {
     MapId mapId = MapId::Forest;
 
-    // Drawn in front of Pochi and any bosses (e.g. the forest's leaf
-    // canopy) - everything else on the map draws behind them. Leave empty
-    // if nothing in this map needs to layer in front of the player.
+    // Layers drawn in front of Pochi (a leaf canopy); empty = none
     std::vector<std::string> foregroundLayers;
 
     std::vector<BossSpawn> bosses;
-
     std::vector<ItemSpawn> items;
 
-    // Where Pochi appears when this state starts, given wherever she
-    // currently is - e.g. carry her Y across a map seam, or ignore the
-    // argument and return a fixed spawn point.
-    std::function<D3DXVECTOR2(const D3DXVECTOR2& currentPosition)> computeSpawnPosition;
+    // Where Pochi spawns, given her current position (carry Y across a seam)
+    std::function<D3DXVECTOR2(const D3DXVECTOR2& currentPosition)> ComputeSpawnPosition;
 
-    // Called when Pochi's box touches the map's right edge; return the
-    // next state to push, or nullptr for "no exit on this edge".
-    std::function<std::unique_ptr<GameState>()> onReachRightEdge;
+    // Pochi reaches the right edge -> next state to push (null = no exit)
+    std::function<std::unique_ptr<GameState>()> OnReachRightEdge;
 
-    // The reverse: walking into the map's LEFT edge, to backtrack to the
-    // previous map. Retreat is allowed even while this map's bosses are
-    // uncleared (only the forward exits seal). nullptr = no exit here.
-    std::function<std::unique_ptr<GameState>()> onReachLeftEdge;
+    // Left edge -> backtrack to the previous map, allowed even while bosses
+    // are uncleared (null = no exit)
+    std::function<std::unique_ptr<GameState>()> OnReachLeftEdge;
 
-    // Optional forced spawn point in the DESTINATION map for each of this
-    // map's exits, so Pochi lands on the connecting seam rather than the
-    // destination's own default spawn. Leave as kNoSpawn to let the
-    // destination's computeSpawnPosition decide. A y of kCarryY keeps
-    // Pochi's current y (seamless edge crossings).
+    // Forced spawn in the DESTINATION map per exit, so Pochi lands on the seam
+    // kNoSpawn = let the destination decide; kCarryY = keep current y
     static constexpr float kNoSpawn = -1000000.0f;
     static constexpr float kCarryY  = -1.0f;
     D3DXVECTOR2 rightEdgeSpawn = D3DXVECTOR2(kNoSpawn, kNoSpawn);
     D3DXVECTOR2 leftEdgeSpawn  = D3DXVECTOR2(kNoSpawn, kNoSpawn);
     D3DXVECTOR2 doorwaySpawn   = D3DXVECTOR2(kNoSpawn, kNoSpawn);
 
-    // Called the frame every boss in `bosses` has been cleared (e.g. the
-    // final map pushing the ending). Fired once.
-    std::function<std::unique_ptr<GameState>()> onAllCleared;
+    // Fired once, the frame every boss is cleared (roll the ending)
+    std::function<std::unique_ptr<GameState>()> OnAllCleared;
 
-    // Sequence gating. When requireBossesCleared is true the map's exit
-    // (onReachRightEdge / onEnterDoorway) stays locked until every boss in
-    // `bosses` is beaten - Pochi is walled in until the room is cleared, and
-    // a prompt shows at the blocked exit. When bossesInOrder is true the
-    // bosses must be fought in list order: boss i can't be engaged until
-    // bosses 0..i-1 are down. Both default off. The F8 dev-warp ignores this.
+    // requireBossesCleared: seal the forward exit until every boss is beaten.
+    // bossesInOrder: boss i can't be fought until 0..i-1 are down
     bool requireBossesCleared = false;
     bool bossesInOrder = false;
 
-    // Optional locked gate drawn across the exit while requireBossesCleared
-    // is still unmet - "beat them, then cross". Enabled when gateWidth and
-    // gateHeight are both > 0. It's drawn from gateTexture (a PNG at its
-    // real texWidth/texHeight, positioned at gateX/gateY) if one is given,
-    // otherwise a plain barred gate is drawn to fill the gate rect. While
-    // the gate is up Pochi is also physically stopped at gateX (she can't
-    // walk past it), so it blocks a right-edge exit.
+    // Locked gate across the exit while requireBossesCleared is unmet
+    // Active when gateWidth and gateHeight are both > 0; uses gateTexture if set, else a drawn barred gate
+    // Also physically stops Pochi at gateX
     float gateX = 0.0f;
     float gateY = 0.0f;
     float gateWidth = 0.0f;
@@ -104,23 +78,19 @@ struct OverworldConfig {
     int gateTexWidth = 0;
     int gateTexHeight = 0;
 
-    // A specific spot on the map (e.g. a temple doorway) rather than an
-    // edge - walking within doorwayRadius of doorwayPosition calls
-    // onEnterDoorway the same way onReachRightEdge works. Ignored unless
-    // onEnterDoorway is set.
+    // A point, not an edge: within doorwayRadius of doorwayPosition calls
+    // OnEnterDoorway. Ignored unless OnEnterDoorway is set
     D3DXVECTOR2 doorwayPosition = D3DXVECTOR2(0.0f, 0.0f);
     float doorwayRadius = 40.0f;
-    std::function<std::unique_ptr<GameState>()> onEnterDoorway;
+    std::function<std::unique_ptr<GameState>()> OnEnterDoorway;
 
-    // Invisible top/bottom fence in pixels - Pochi's feet are kept between
-    // these Y values, on top of normal tile collision. Use it to stop the
-    // player walking around a maze along the map's open edges. fenceBottom
-    // <= fenceTop disables it (the default).
+    // Invisible fence: Pochi's feet kept between these Y values, on top of
+    // tile collision. fenceBottom <= fenceTop disables it
     float fenceTop = 0.0f;
     float fenceBottom = 0.0f;
 };
 
 std::unique_ptr<GameState> CreateOverworldState(OverworldConfig config);
 
-// The game's first overworld screen, reached from the main menu.
+// The first overworld screen, reached from the main menu
 std::unique_ptr<GameState> CreateForestState();

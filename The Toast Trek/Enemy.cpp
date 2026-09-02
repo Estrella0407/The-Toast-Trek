@@ -27,7 +27,6 @@ Enemy::Enemy(IDirect3DDevice9* d3dDevice, BossId bossId, const char* spritePath,
 	sprite = new Sprite(d3dDevice, spritePath, texWidth, texHeight, cols, rows, maxFrames, startX, startY);
 	if (sprite != nullptr) sprite->CropToFrame(0);
 
-	//actSprite = new Sprite(d3dDevice, spritePath, texWidth, texHeight, cols, rows, maxFrames, startX, startY);
 	switch (bossId) {
 	case BossId::SkullBones:
 		actSprite = new Sprite(d3dDevice, "Assets/characters/skullBlush.png", 200, 100, 2, 1, 2, startX, startY);
@@ -42,10 +41,10 @@ Enemy::Enemy(IDirect3DDevice9* d3dDevice, BossId bossId, const char* spritePath,
 
 	switch (bossId) {
 	case BossId::SkullBones:
-		attackType = AttackType::FourDirection;		//FourDirection
+		attackType = AttackType::FourDirection;		// FourDirection
 		break;
 	case BossId::Goblin:
-		attackType = AttackType::StarBounce;		//StarBounce
+		attackType = AttackType::StarBounce;		// StarBounce
 		break;
 	case BossId::Maki:
 		attackType = AttackType::Gunshot;
@@ -92,7 +91,7 @@ Sprite* Enemy::GetSprite() const {
 	return sprite;
 }
 
-bool Enemy::isAlive() const{
+bool Enemy::IsAlive() const{
 	return health > 0;
 }
 
@@ -114,7 +113,7 @@ void Enemy::UpdateActAnimation() {
 		actFrame++;
 
 		if (actFrame >= maxFrames) {
-			//when animation finish
+			// When animation finish
 			actAnimation = false;
 			actFrame = 0;
 			return;
@@ -143,7 +142,7 @@ Enemy* CreateBossEnemy(IDirect3DDevice9* d3dDevice, BossId bossId, float startX,
 	case BossId::MrAndrew:
 		return new Enemy(d3dDevice, BossId::MrAndrew, "Assets/characters/MrAndrew.png", startX, startY,
 			100, 100, 1, 1, 1);
-	case BossId::SkullBones: // real art is 1254x1254
+	case BossId::SkullBones:
 	default:
 		return new Enemy(d3dDevice, BossId::SkullBones, "Assets/characters/skullBones.png", startX, startY,
 			100, 100, 1, 1, 1);

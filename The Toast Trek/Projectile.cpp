@@ -11,8 +11,6 @@ Projectile::Projectile(IDirect3DDevice9* d3dDevice, float startX, float startY, 
 
 	active = true;
 
-	//sprite = new Sprite(d3dDevice, "Assets/Attack/fire.png", 32, 32, 1, 1, 1, startX, startY);
-
 	switch (type) {
 	case ProjectileType::fire:
 		sprite = new Sprite(d3dDevice, "Assets/Attack/fire.png", 32, 32, 1, 1, 1, startX, startY);
@@ -97,23 +95,23 @@ AABB Projectile::GetCollisionBounds() const {
 	const D3DXVECTOR2 position = sprite->GetPosition();
 	switch (type) {
 	case ProjectileType::fire:
-		// Visible alpha pixels: x 9..22, y 7..24 on a 32x32 image.
+		// Visible alpha pixels: x 9..22, y 7..24 on a 32x32 image
 		box = { position.x + 9.0f, position.y + 7.0f,
 			position.x + 23.0f, position.y + 25.0f };
 		break;
 	case ProjectileType::star:
 		// Every animation frame uses alpha pixels around x 8..24 and
-		// y 7..23. The sprite is scaled 2x around its 16,16 center.
+		// Y 7..23. The sprite is scaled 2x around its 16,16 center
 		box = { position.x, position.y - 2.0f,
 			position.x + 34.0f, position.y + 32.0f };
 		break;
 	case ProjectileType::bullet:
-		// Visible alpha pixels: x 0..30, y 3..28, also scaled 2x.
+		// Visible alpha pixels: x 0..30, y 3..28, also scaled 2x
 		box = { position.x - 16.0f, position.y - 10.0f,
 			position.x + 46.0f, position.y + 42.0f };
 		break;
 	case ProjectileType::aim:
-		// Aim markers are non-damaging, but return their visible bounds.
+		// Aim markers are non-damaging, but return their visible bounds
 		box = { position.x - 16.0f, position.y - 14.0f,
 			position.x + 48.0f, position.y + 46.0f };
 		break;
