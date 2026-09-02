@@ -1,4 +1,6 @@
 #include "GameState.h"
+#include "Pochi.h"
+#include "Inventory.h"
 
 // This translation unit now owns only GameStateManager.
 //
@@ -16,19 +18,32 @@
 // A Game Over screen is planned again but not yet reimplemented.
 
 GameStateManager::GameStateManager(GameContext& gameContext)
-    : context(gameContext), pendingPopCount(0), clearRequested(false) {}
+    : context(gameContext), pendingPopCount(0), clearRequested(false) {
+}
+
+void ResetRunProgress(GameContext& context) {
+    if (context.playerStats != NULL) context.playerStats->SetLevel(1); // fresh Pochi, stats refilled
+    if (context.inventory != NULL) context.inventory->Reset();         // empty the pack
+    context.clearedMaps.clear();                                       // every map locked again
+    context.lastBattleOutcome = BattleOutcome::None;                   // drop any stale battle result
+    context.hasPendingSpawn = false;                                   // and any pending spawn hand-off
+}
+
 void GameStateManager::Push(std::unique_ptr<GameState> state) {
     if (state != NULL) pendingPushes.push_back(std::move(state));
 }
+
 void GameStateManager::Pop() {
     ++pendingPopCount;
 }
+
 void GameStateManager::ClearAndPush(std::unique_ptr<GameState> state) {
     clearRequested = true;
     pendingPopCount = 0;
     pendingPushes.clear();
     if (state != NULL) pendingPushes.push_back(std::move(state));
 }
+
 void GameStateManager::ApplyPendingChanges() {
     if (clearRequested) stateStack.clear();
     clearRequested = false;
@@ -43,15 +58,19 @@ void GameStateManager::ApplyPendingChanges() {
     }
     pendingPushes.clear();
 }
+
 void GameStateManager::HandleInput() {
     if (!stateStack.empty()) stateStack.back()->HandleInput(context, *this);
 }
+
 void GameStateManager::Update() {
     if (!stateStack.empty()) stateStack.back()->Update(context, *this);
 }
+
 void GameStateManager::Render() {
     if (!stateStack.empty()) stateStack.back()->Render(context);
 }
+
 D3DCOLOR GameStateManager::ClearColor() const {
     return stateStack.empty() ? D3DCOLOR_XRGB(0, 0, 0) : stateStack.back()->ClearColor();
 }

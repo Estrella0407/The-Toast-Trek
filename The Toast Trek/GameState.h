@@ -115,3 +115,9 @@ std::unique_ptr<GameState> CreateBattleState(BossId bossId);
 std::unique_ptr<GameState> CreateGameOverState(SoundManage* sound);
 std::unique_ptr<GameState> CreateEndingState();
 
+// Wipes per-run progress so the next start is a clean playthrough: Pochi
+// back to level 1 (stats refilled), the pack emptied, every map re-locked,
+// and any leftover battle/spawn hand-off flags cleared. Call this from
+// every "start a new run" entry point (main menu Enter, Game Over retry).
+void ResetRunProgress(GameContext& context);
+
