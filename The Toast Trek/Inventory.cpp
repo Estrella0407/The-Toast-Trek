@@ -26,3 +26,9 @@ int Inventory::GetCount(ItemType item) const {
 	if (item == ItemType::Bone) return bones;
 	return toast;
 }
+
+void Inventory::Reset() {
+	healthPotions = 0;
+	bones = 0;
+	toast = 0;
+}

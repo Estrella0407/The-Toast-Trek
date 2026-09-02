@@ -52,8 +52,7 @@ void GameOverState::HandleInput(GameContext& context, GameStateManager& manager)
     // The game-over screen is the only state on the stack, so both choices
     // rebuild it with ClearAndPush.
     if (JustPressed(context.keys, DIK_R, retryWasDown)) {
-        if (context.playerStats != nullptr) context.playerStats->SetLevel(1); // fresh Pochi
-        context.clearedMaps.clear();   // restart from scratch - every map locked again
+        ResetRunProgress(context);   // fresh Pochi, empty pack, every map locked again
         manager.ClearAndPush(CreateForestState());
     }
     if (JustPressed(context.keys, DIK_M, menuWasDown)) {
