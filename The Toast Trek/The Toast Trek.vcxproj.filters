@@ -45,6 +45,9 @@
     <ClCompile Include="MainMenuState.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MenuSelectState.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="OverworldState.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -78,6 +81,12 @@
     <ClCompile Include="SoundManage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SaveGame.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SettingsState.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="GameOverState.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -96,10 +105,10 @@
     <ClCompile Include="BattleStatusBars.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="FrameBar.cpp">
+    <ClCompile Include="EndingState.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="EndingState.cpp">
+    <ClCompile Include="FrameBar.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Cheats.cpp">
@@ -129,6 +138,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MainMenu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MenuSelectState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="OverworldState.h">
@@ -164,6 +176,12 @@
     <ClInclude Include="SoundManage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SaveGame.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SettingsState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="GameOverState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -182,10 +200,10 @@
     <ClInclude Include="BattleStatusBars.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FrameBar.h">
+    <ClInclude Include="EndingState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="EndingState.h">
+    <ClInclude Include="FrameBar.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Cheats.h">

@@ -5,6 +5,7 @@
 #include "Physics.h"
 #include "Pochi.h"
 #include "PochiBadge.h"
+#include "SaveGame.h"
 #include "Sprite.h"
 #include "TileMap.h"
 #include "UiFill.h"
@@ -25,7 +26,7 @@ namespace {
         return keys != NULL && (keys[key] & 0x80) != 0;
     }
 
-    // Arrow keys and WASD both drive movement.
+    // Arrow keys and WASD both can move Pochi
     struct MoveInput {
         bool left, right, up, down;
     };
@@ -50,10 +51,10 @@ namespace {
         }
     }
 
-    // Pochi's sprite canvas (scaled ~100x60) is much bigger than her actual
-    // standing pose, so colliding tiles against the full canvas made gaps
-    // that look easily walkable (a maze corridor, two rocks either side of
-    // a path) feel blocked. Collide a smaller box at her feet instead.
+    // Key for GameContext::collectedItems / clearedBosses (per map + index)
+    int SlotKey(MapId map, int index) { return (int)map * 16 + index; }
+
+    // Collide a smaller box at Pochi's feet
     constexpr float kPochiFootWidthRatio = 0.5f;
     constexpr float kPochiFootHeightRatio = 0.6f;
 
@@ -65,9 +66,8 @@ namespace {
         return (dx * dx + dy * dy) <= (radius * radius);
     }
 
-    // Pochi's foot box overlapping an item's sprite bounds - the same
-    // footprint used for tile collision, so "standing on it" lines up with
-    // where she visually is.
+    // Pochi's foot box overlapping an item's sprite bounds
+    // standing on it lines up with where he visually is
     bool TouchingItem(Sprite* pochi, Sprite* item) {
         if (pochi == NULL || item == NULL) return false;
         return Physics::CheckAABBCollision(
@@ -91,7 +91,7 @@ namespace {
         bool cheatClearWasDown;   // K - clear nearest boss
         bool cheatWarpWasDown;    // L - jump to this map's exit
         bool allClearedFired;
-        bool exitsArmed;          // false until Pochi has stood clear of every exit trigger
+        bool exitsArmed;          // False until Pochi has stood clear of every exit trigger
         std::vector<Enemy*> bossEnemies;
         std::vector<bool> bossCleared;
         Font* interactPrompt;
@@ -100,15 +100,14 @@ namespace {
         std::vector<bool> itemCollected;
         IDirect3DTexture9* exclaimTex;   // "!" bubble, floated over Pochi's head
 
-        PochiBadge* hud;   // top-left HP / DEF / ATK readout
+        PochiBadge* hud;   // Top-left HP / DEF / ATK readout
 
-        Font* levelUpFont;      // floating text over Pochi's head (win / stat-boost)
-        int levelUpFrames;      // frames left to show it (~60/sec)
-        const char* floatText;  // what that floating text says
+        Font* levelUpFont;      // Floating text over Pochi's head (win / stat-boost)
+        int levelUpFrames;      // Frames left to show it (~60/sec)
+        const char* floatText;  // what floating text says
 
-        // Set on the Tarumt map: Pochi's stats are force-boosted to the
-        // Mr Andrew "special level" (HP 99 / armor 50 / ATK 99) on entry and
-        // restored to her real level on every way back out.
+        // Tarumt map: Pochi's stats are force-boosted to (HP 99 / armor 50 / ATK 99)
+        // restored to his real level on every way back out
         Pochi* boostedStats;
 
         void LeaveBoostedMap(GameContext& context) {
@@ -118,9 +117,9 @@ namespace {
             }
         }
 
-        // Stash a forced spawn for the destination map (so Pochi lands on
-        // the connecting seam, not the destination's default spawn). A y of
-        // kCarryY keeps her current y; kNoSpawn means "no override".
+        // Stash a forced spawn for the destination map
+        // A y of OverworldConfig::kCarryY keeps his current y
+        // OverworldConfig::kNoSpawn means "no override"
         void StashSpawn(GameContext& context, const D3DXVECTOR2& s) {
             if (s.x <= OverworldConfig::kNoSpawn) return;
             D3DXVECTOR2 out = s;
@@ -130,14 +129,12 @@ namespace {
             context.hasPendingSpawn = true;
         }
 
-        Sprite* gateSprite;            // exit gate art, if config.gateTexture is set
-        IDirect3DTexture9* whiteTex;   // 1x1 white - FillRect plates + the drawn-gate fallback
+        Sprite* gateSprite;            // Exit gate art, if config.gateTexture is set
+        IDirect3DTexture9* whiteTex;
 
         bool HasGate() const { return config.gateWidth > 0.0f && config.gateHeight > 0.0f; }
 
-        // The locked exit gate. Uses the supplied art if there is any,
-        // otherwise draws a simple iron portcullis (frame + vertical bars)
-        // filling the gate rect with plain sprite-brush quads.
+		// The locked exit gate (block Pochi from leaving before defeating all enemies)
         void DrawGate(GameContext& context) {
             if (gateSprite != NULL) { gateSprite->Draw(context.spriteBrush); return; }
             if (whiteTex == NULL) return;
@@ -148,7 +145,7 @@ namespace {
             const D3DCOLOR iron     = D3DCOLOR_ARGB(255, 84, 88, 100);
             const D3DCOLOR ironDark = D3DCOLOR_ARGB(255, 44, 46, 56);
 
-            ui::FillRect(b, whiteTex, x + 5.0f, y + 6.0f, w, h, D3DCOLOR_ARGB(90, 0, 0, 0)); // drop shadow
+            ui::FillRect(b, whiteTex, x + 5.0f, y + 6.0f, w, h, D3DCOLOR_ARGB(90, 0, 0, 0)); // Drop shadow
             ui::FillRect(b, whiteTex, x, y, w, 12.0f, iron);              // top rail
             ui::FillRect(b, whiteTex, x, y + h - 12.0f, w, 12.0f, iron);  // bottom rail
 
@@ -171,7 +168,7 @@ namespace {
 
         ~OverworldState() {
             // Safety net if this state is torn down (ClearAndPush on defeat)
-            // without going through a normal exit: never leave Pochi boosted.
+            // without going through a normal exit: never leave Pochi boosted
             if (boostedStats != NULL && boostedStats->IsSpecialMode()) {
                 boostedStats->SetSpecialMode(false);
             }
@@ -190,38 +187,39 @@ namespace {
 
             if (whiteTex == NULL) whiteTex = ui::MakeWhiteTexture(context.device);
 
-            // Reset Pochi's pose too - MainMenu (and a previous map) can
-            // leave her mid-animation-frame from wherever she last was.
-            // A pending spawn from the map she just left (placing her on the
-            // connecting seam) wins over this map's own default spawn.
+            // Reset Pochi's pose
+            // A pending spawn from the map she just left
+            // (placing his on the connecting seam) wins over this map's own default spawn
             if (context.pochi != NULL) {
                 if (context.hasPendingSpawn) {
                     context.pochi->SetPosition(context.pendingSpawn.x, context.pendingSpawn.y);
                     context.pochi->CropToFrame(0);
                     context.hasPendingSpawn = false;
                 }
-                else if (config.computeSpawnPosition) {
-                    D3DXVECTOR2 spawn = config.computeSpawnPosition(context.pochi->GetPosition());
+                else if (config.ComputeSpawnPosition) {
+                    D3DXVECTOR2 spawn = config.ComputeSpawnPosition(context.pochi->GetPosition());
                     context.pochi->SetPosition(spawn.x, spawn.y);
                     context.pochi->CropToFrame(0);
                 }
             }
 
-            // Don't let any exit fire until Pochi has first stepped clear of
-            // every trigger - she may spawn right on a seam or in a doorway.
+            // Don't let any exit fire until Pochi has first stepped clear of every trigger
+            // he may spawn right on a seam or in a doorway
             exitsArmed = false;
 
-            // If this map's bosses were already beaten earlier in the run,
-            // it comes back cleared - no enemies to draw or fight, gate open,
-            // and the once-only onAllCleared hook already spent.
+            // Restore per-slot progress: a whole cleared map, or individual
+            // bosses / items already dealt with this run (survives Continue).
             const bool preCleared = context.clearedMaps.count(config.mapId) != 0;
 
             bossEnemies.clear();
-            bossCleared.assign(config.bosses.size(), preCleared);
-            for (const BossSpawn& spawn : config.bosses) {
-                bossEnemies.push_back(CreateBossEnemy(context.device, spawn.id, spawn.x, spawn.y));
+            bossCleared.assign(config.bosses.size(), false);
+            for (size_t i = 0; i < config.bosses.size(); ++i) {
+                bossCleared[i] = preCleared ||
+                    context.clearedBosses.count(SlotKey(config.mapId, (int)i)) != 0;
+                bossEnemies.push_back(CreateBossEnemy(context.device, config.bosses[i].id,
+                    config.bosses[i].x, config.bosses[i].y));
             }
-            allClearedFired = preCleared;
+            allClearedFired = !config.bosses.empty() && AllBossesCleared();
 
             if (!config.bosses.empty()) {
                 interactPrompt = new Font(context.device, 0.0f, 20.0f, 1280, 40, 20, "Arial");
@@ -230,15 +228,16 @@ namespace {
             for (Sprite* item : itemSprites) delete item;
             itemSprites.clear();
             itemCollected.assign(config.items.size(), false);
-            for (const ItemSpawn& spawn : config.items) {
+            for (size_t i = 0; i < config.items.size(); ++i) {
+                const ItemSpawn& spawn = config.items[i];
                 Sprite* item = new Sprite(context.device, spawn.texture.c_str(),
                     spawn.texWidth, spawn.texHeight, 1, 1, 1, spawn.x, spawn.y);
                 item->SetScale(spawn.scale);
                 itemSprites.push_back(item);
+                itemCollected[i] = context.collectedItems.count(SlotKey(config.mapId, (int)i)) != 0;
             }
 
-            // The "!" bubble floats over Pochi whenever she's next to an item
-            // or a fightable enemy, so make it on any map that has either.
+            // The "!" bubble floats over Pochi when he can interact with something (items / enemies)
             if (exclaimTex != NULL) { exclaimTex->Release(); exclaimTex = NULL; }
             if (!config.items.empty() || !config.bosses.empty()) {
                 exclaimTex = ui::LoadTexture(context.device,
@@ -249,17 +248,14 @@ namespace {
             hud = new PochiBadge(context.device);
 
             delete levelUpFont;
-            // Wide rect: Font::Draw(x,y,...) only moves rect.left/top, so a
-            // narrow rect inverts once Pochi walks past x = width.
+
             levelUpFont = new Font(context.device, 0.0f, 0.0f, 1400, 40, 15, "Arial");
             levelUpFrames = 0;
             floatText = "Leveled Up!";
 
-            // Tarumt (Mr Andrew's arena): slam Pochi's stats up to the
-            // "special level" so the 1000-HP secret boss is beatable, and
-            // announce it over her head instead of the usual level-up text.
-            // SetSpecialMode is cleared first so a stale flag (e.g. after a
-            // Game Over -> retry) can't make the boost a no-op.
+            // Tarumt map: slam Pochi's stats up to the "special level"
+            // SetSpecialMode is cleared first so a stale flag
+            // (after a Game Over -> retry) can't make the boost a no-op
             boostedStats = NULL;
             if (config.mapId == MapId::Tarumt && !preCleared && map != NULL && context.playerStats != NULL) {
                 boostedStats = context.playerStats;
@@ -269,8 +265,7 @@ namespace {
                 levelUpFrames = 180;
             }
 
-            // Exit gate: a supplied PNG if there is one, otherwise the drawn
-            // iron portcullis (DrawGate stretches whiteTex into shape).
+            // Exit gate
             delete gateSprite;
             gateSprite = NULL;
             if (HasGate() && !config.gateTexture.empty()) {
@@ -278,23 +273,25 @@ namespace {
                     config.gateTexWidth, config.gateTexHeight, 1, 1, 1,
                     config.gateX, config.gateY);
             }
+
+            // Checkpoint on entering the map. Also saved on item pickup and
+            // battle win (below), and on Exit to Main Menu (UnifiedMenu).
+            context.currentMapId = config.mapId;
+            SaveCurrentRun(context);
         }
 
         void HandleInput(GameContext& context, GameStateManager& manager) override {
             if (context.pochi == NULL) return;
 
-            // E opens the tab menu (Inventory / Status / Settings). Pass
-            // `this` so the menu can redraw the frozen overworld behind it.
+            // E opens the tab menu (Inventory / Status / Settings)
             if (JustPressed(context.keys, DIK_E, menuWasDown)) {
                 manager.Push(CreateUnifiedMenuState(this));
                 return;
             }
 
-            // --- developer cheats (F5 toggles the whole switch) -----------
+            // --- Developer cheats (F5) -----------
             if (Cheats::enabled) {
-                // K: clear the nearest un-cleared boss without fighting.
-                // (Letter keys, not F8/F9 - laptop OEM Fn rows swallow those
-                // for airplane mode / brightness before the game sees them.)
+                // K: clear the nearest un-cleared boss without fighting
                 if (JustPressed(context.keys, DIK_K, cheatClearWasDown)) {
                     D3DXVECTOR2 pochiPos = context.pochi->GetPosition();
                     int best = -1;
@@ -312,12 +309,12 @@ namespace {
                     }
                     return;
                 }
-                // L: jump straight to this map's exit.
+                // L: jump straight to this map's exit
                 if (JustPressed(context.keys, DIK_L, cheatWarpWasDown)) {
                     LeaveBoostedMap(context);
                     std::unique_ptr<GameState> next;
-                    if (config.onReachRightEdge) { next = config.onReachRightEdge(); StashSpawn(context, config.rightEdgeSpawn); }
-                    else if (config.onEnterDoorway) { next = config.onEnterDoorway(); StashSpawn(context, config.doorwaySpawn); }
+                    if (config.OnReachRightEdge) { next = config.OnReachRightEdge(); StashSpawn(context, config.rightEdgeSpawn); }
+                    else if (config.OnEnterDoorway) { next = config.OnEnterDoorway(); StashSpawn(context, config.doorwaySpawn); }
                     if (next != NULL) manager.Push(std::move(next));
                     return;
                 }
@@ -327,21 +324,23 @@ namespace {
 
             D3DXVECTOR2 pochiPos = context.pochi->GetPosition();
 
-            // Items first: standing on one and pressing F picks it up (and
-            // consumes this press, so it never also starts a fight).
+            // Items first: standing on one and pressing F picks it up
             for (size_t i = 0; i < itemSprites.size(); ++i) {
                 if (itemCollected[i]) continue;
                 if (TouchingItem(context.pochi, itemSprites[i])) {
                     itemCollected[i] = true;
+                    context.collectedItems.insert(SlotKey(config.mapId, (int)i));
                     if (context.inventory != NULL) context.inventory->Add(config.items[i].type);
+                    context.currentMapId = config.mapId;
+                    SaveCurrentRun(context);   // checkpoint the pickup
                     return;
                 }
             }
 
             for (size_t i = 0; i < bossEnemies.size(); ++i) {
                 if (bossCleared[i]) continue;
-                // Sequence lock: can't fight this one until the earlier ones
-                // fall (god mode ignores the order).
+                // Sequence lock: can't fight this one until the earlier ones fall
+                // (god mode ignores the order)
                 if (!Cheats::enabled && config.bossesInOrder && i > 0 && !bossCleared[i - 1]) continue;
                 if (IsNear(pochiPos, bossEnemies[i]->GetSprite()->GetPosition(), kInteractRadius)) {
                     manager.Push(CreateBattleState(config.bosses[i].id));
@@ -350,40 +349,40 @@ namespace {
             }
         }
 
-        // True once every boss on this map is down (also true if there are none).
+        // True once every boss on this map is down (also true if there are none)
         bool AllBossesCleared() const {
             for (bool cleared : bossCleared) if (!cleared) return false;
             return true;
         }
 
-        // The map's exit is sealed while it still has enemies to clear.
-        // God mode (cheats) opens every seal - no gate, no "defeat them
-        // first", edge/doorway exits fire straight away.
+        // The map's exit is sealed while it still has enemies to clear
+        // god mode (cheats) opens every seal
         bool ExitLocked() const {
             if (Cheats::enabled) return false;
             return config.requireBossesCleared && !bossCleared.empty() && !AllBossesCleared();
         }
 
         void Update(GameContext& context, GameStateManager& manager) override {
-            // Map failed to resolve (e.g. Tarumt.tmx not added yet) - bounce
-            // straight back instead of stranding the player on a black screen.
+            // Map failed to resolve
+            // bounce straight back instead of stranding the player on a black screen
             if (map == NULL) { manager.Pop(); return; }
 
-            // Pick up the result of whichever battle we just returned from -
-            // BattleState sets this right before popping itself.
+            // Pick up the result of whichever battle we just returned from
+            // BattleState sets this right before popping itself
             if (context.lastBattleOutcome == BattleOutcome::Victory) {
                 for (size_t i = 0; i < config.bosses.size(); ++i) {
-                    if (config.bosses[i].id == context.lastBattleBoss) bossCleared[i] = true;
+                    if (config.bosses[i].id == context.lastBattleBoss) {
+                        bossCleared[i] = true;
+                        context.clearedBosses.insert(SlotKey(config.mapId, (int)i));
+                    }
                 }
-                // Remember a fully-cleared map for the rest of the run, so
-                // walking back into it later doesn't respawn its enemies.
+                // Remember a fully-cleared map for the rest of the run
+                // walking back into it later doesn't respawn its enemies
                 if (!config.bosses.empty() && AllBossesCleared()) {
                     context.clearedMaps.insert(config.mapId);
                 }
-                // Beating an enemy levels Pochi up (which also fully heals
-                // her) and floats "Leveled Up!" over her head for a moment.
-                // Mr Andrew (Tarumt) is outside the 3-level progression - his
-                // fight runs on the temporary special-level boost instead.
+                // Beating an enemy levels Pochi up (fully heals too) and floats "Leveled Up!"
+                // Mr Andrew (Tarumt) is outside the 3-level progression
                 if (context.playerStats != NULL && config.mapId != MapId::Tarumt) {
                     const int lv = context.playerStats->GetLevel();
                     if (lv < 3) {
@@ -392,23 +391,25 @@ namespace {
                         floatText = "Leveled Up!";
                     }
                 }
+                context.currentMapId = config.mapId;
+                SaveCurrentRun(context);   // checkpoint the win
             }
             context.lastBattleOutcome = BattleOutcome::None;
 
             if (levelUpFrames > 0) --levelUpFrames;
 
-            // Every boss on this map down -> fire the once-only hook (the
-            // final map uses it to roll the ending).
-            if (!allClearedFired && config.onAllCleared && !bossCleared.empty()) {
+            // Every boss on this map down -> fire the once-only hook 
+            // (the final map uses it to roll the ending)
+            if (!allClearedFired && config.OnAllCleared && !bossCleared.empty()) {
                 bool all = true;
                 for (bool c : bossCleared) if (!c) { all = false; break; }
                 if (all) {
                     allClearedFired = true;
                     LeaveBoostedMap(context);
                     // Land Pochi on the same seam a normal right-edge exit
-                    // would use (e.g. Tarumt -> forest's top-left path).
+                    // (Tarumt -> forest's top-left path)
                     StashSpawn(context, config.rightEdgeSpawn);
-                    std::unique_ptr<GameState> next = config.onAllCleared();
+                    std::unique_ptr<GameState> next = config.OnAllCleared();
                     if (next != NULL) { manager.Push(std::move(next)); return; }
                 }
             }
@@ -416,7 +417,7 @@ namespace {
             if (context.pochi == NULL) return;
 
             MoveInput input = ReadMoveInput(context.keys);
-            // Cheat mode: walk 3x faster to cross maps quickly.
+            // Cheat mode: walk 3x faster to cross maps quickly
             const int moveSpeed = Cheats::enabled ? context.moveSpeed * 3 : context.moveSpeed;
             bool isMoving = false;
             if (input.left) {
@@ -446,14 +447,11 @@ namespace {
             Physics::ClampToBounds(context.pochi, 0.0f, 0.0f,
                 (float)map->GetWidthPixels(), (float)map->GetHeightPixels());
 
-            // Cheat mode: no-clip - skip solid-tile resolution and the fence so
-            // a tester can walk straight through walls (the edge / doorway
-            // triggers below still fire).
+            // Cheat mode: no collision
             if (!Cheats::enabled) {
                 Physics::ResolveCollisionShapes(context.pochi, map, kPochiFootWidthRatio, kPochiFootHeightRatio);
 
-                // Invisible top/bottom fence: keep Pochi's feet inside the maze
-                // band so she can't walk around it along the map's open edges.
+                // Invisible top/bottom fence: keep Pochi's feet inside the maze boundary
                 if (config.fenceBottom > config.fenceTop) {
                     AABB feet = Physics::GetFootBounds(context.pochi, kPochiFootWidthRatio, kPochiFootHeightRatio);
                     D3DXVECTOR2 p = context.pochi->GetPosition();
@@ -462,7 +460,7 @@ namespace {
                     context.pochi->SetPosition(p.x, p.y);
                 }
 
-                // Closed exit gate: a solid wall at gateX until the map is cleared.
+                // Closed exit gate: a solid wall at gateX until the map is cleared
                 if (HasGate() && ExitLocked()) {
                     AABB pb = Physics::GetBounds(context.pochi);
                     if (pb.right > config.gateX) {
@@ -472,30 +470,29 @@ namespace {
                 }
             }
 
-            // --- map exits ---------------------------------------------------
+            // --- Map exits ---------------------------------------------------
             const AABB pb = Physics::GetBounds(context.pochi);
             const D3DXVECTOR2 pcentre = context.pochi->GetPosition();
-            const bool atRight = config.onReachRightEdge &&
+            const bool atRight = config.OnReachRightEdge &&
                 pb.right >= (float)map->GetWidthPixels() - 5.0f;
-            const bool atLeft = config.onReachLeftEdge && pb.left <= 8.0f;
-            const bool atDoor = config.onEnterDoorway &&
+            const bool atLeft = config.OnReachLeftEdge && pb.left <= 8.0f;
+            const bool atDoor = config.OnEnterDoorway &&
                 IsNear(pcentre, config.doorwayPosition, config.doorwayRadius);
 
-            // Arm exits only once Pochi is clear of all of them - and never
-            // transition on the same frame the latch arms.
+            // Arm exits only once Pochi is clear of all of them
+            // never transition on the same frame the latch arms
             if (!exitsArmed) {
                 if (!atRight && !atLeft && !atDoor) exitsArmed = true;
                 return;
             }
 
-            // Forward exits (right edge / doorway) stay sealed while this
-            // map still has bosses to beat; the L dev-warp bypasses this.
+            // Forward exits (right edge / doorway) stay sealed while this map still has bosses to beat
             const bool exitLocked = ExitLocked();
 
             if (atRight && !exitLocked) {
                 LeaveBoostedMap(context);
                 StashSpawn(context, config.rightEdgeSpawn);
-                std::unique_ptr<GameState> next = config.onReachRightEdge();
+                std::unique_ptr<GameState> next = config.OnReachRightEdge();
                 if (next != NULL) manager.Push(std::move(next));
                 return;
             }
@@ -503,16 +500,16 @@ namespace {
             if (atDoor && !exitLocked) {
                 LeaveBoostedMap(context);
                 StashSpawn(context, config.doorwaySpawn);
-                std::unique_ptr<GameState> next = config.onEnterDoorway();
+                std::unique_ptr<GameState> next = config.OnEnterDoorway();
                 if (next != NULL) manager.Push(std::move(next));
                 return;
             }
 
-            // Backtracking out the left edge - allowed even while sealed.
+            // Backtracking out the left edge - allowed even while sealed
             if (atLeft) {
                 LeaveBoostedMap(context);
                 StashSpawn(context, config.leftEdgeSpawn);
-                std::unique_ptr<GameState> next = config.onReachLeftEdge();
+                std::unique_ptr<GameState> next = config.OnReachLeftEdge();
                 if (next != NULL) manager.Push(std::move(next));
                 return;
             }
@@ -525,8 +522,7 @@ namespace {
             if (hasForeground) map->DrawExcludingLayers(context.spriteBrush, config.foregroundLayers);
             else map->Draw(context.spriteBrush);
 
-            // Items sit on the ground - drawn before Pochi/bosses so they
-            // walk over them.
+            // Items sit on the ground - drawn before Pochi/bosses so they walk over them
             for (size_t i = 0; i < itemSprites.size(); ++i) {
                 if (!itemCollected[i]) itemSprites[i]->Draw(context.spriteBrush);
             }
@@ -535,21 +531,18 @@ namespace {
                 if (!bossCleared[i]) bossEnemies[i]->Render(context.spriteBrush);
             }
 
-            // The exit gate stands until the map is cleared; Pochi draws in
-            // front of it.
+            // The exit gate stands until the map is cleared
+            // Pochi draws in front of it
             if (HasGate() && ExitLocked()) DrawGate(context);
 
             if (context.pochi != NULL) context.pochi->Draw(context.spriteBrush);
 
-            // Pochi's 50x30 frame is drawn 2x about its centre, so her
-            // visible pose is centred at (pos + (25, 15)); her head is a
-            // bit above that.
             if (context.pochi != NULL) {
                 const D3DXVECTOR2 pp = context.pochi->GetPosition();
                 const float headX = pp.x + 25.0f;
                 const float headTop = pp.y - 12.0f;
 
-                // "!" bubble over Pochi's head near an item or fightable enemy.
+                // "!" bubble over Pochi's head near an item or fightable enemy
                 if (exclaimTex != NULL) {
                     bool nearInteractable = false;
                     for (size_t i = 0; i < itemSprites.size() && !nearInteractable; ++i)
@@ -569,11 +562,7 @@ namespace {
                     }
                 }
 
-                // Floating "Leveled Up!" centred over Pochi's head. Drawn
-                // through the shared brush (a NULL-sprite font draw is
-                // unreliable inside Main's frame-long batch), with the
-                // transform reset first so it doesn't inherit Pochi's 2x
-                // transform from pochi->Draw().
+                // Floating "Leveled Up!" centred over Pochi's head
                 if (levelUpFrames > 0 && levelUpFont != NULL && floatText != NULL) {
                     D3DXMATRIX ident;
                     D3DXMatrixIdentity(&ident);
@@ -582,7 +571,7 @@ namespace {
                     const float rise = (150 - levelUpFrames) * 0.10f;
                     // ~7px per glyph at this font size - centre the string on
                     // Pochi's head rather than a fixed offset (the boost text
-                    // is much longer than "Leveled Up!").
+                    // is much longer than "Leveled Up!")
                     const float tx = headX - (float)strlen(floatText) * 3.5f;
                     const float ty = headTop - 24.0f - rise;
                     levelUpFont->Draw(floatText, tx + 1.0f, ty + 1.0f, D3DCOLOR_XRGB(20, 15, 0), context.spriteBrush);
@@ -590,32 +579,30 @@ namespace {
                 }
             }
 
-            // Layers like the forest's leaf canopy draw last, in front of
-            // both Pochi and any bosses.
+            // Layers like the forest's leaf canopy draw last
+            // in front of both Pochi and any enemies
             if (hasForeground) map->DrawOnlyLayers(context.spriteBrush, config.foregroundLayers);
 
             if (context.pochi != NULL && interactPrompt != NULL) {
                 D3DXVECTOR2 pochiPos = context.pochi->GetPosition();
 
-                // Same gold-with-drop-shadow look as the "Leveled Up!" text,
-                // centred across the top of the screen.
-                auto drawPrompt = [&](const char* text) {
+                auto DrawPrompt = [&](const char* text) {
                     const float tx = 640.0f - (float)strlen(text) * 5.2f;
                     const float ty = 26.0f;
                     interactPrompt->Draw(text, tx + 1.0f, ty + 1.0f, D3DCOLOR_XRGB(20, 15, 0), context.spriteBrush);
                     interactPrompt->Draw(text, tx, ty, D3DCOLOR_XRGB(255, 232, 120), context.spriteBrush);
                 };
 
-                // At a sealed exit: tell the player why they can't leave yet.
+                // At a sealed exit: tell the player why they can't leave yet
                 bool shownExitLock = false;
                 if (ExitLocked()) {
                     AABB pb = Physics::GetBounds(context.pochi);
-                    const bool atRightEdge = config.onReachRightEdge &&
+                    const bool atRightEdge = config.OnReachRightEdge &&
                         pb.right >= (float)map->GetWidthPixels() - 40.0f;
-                    const bool atDoorway = config.onEnterDoorway &&
+                    const bool atDoorway = config.OnEnterDoorway &&
                         IsNear(pochiPos, config.doorwayPosition, config.doorwayRadius + 40.0f);
                     if (atRightEdge || atDoorway) {
-                        drawPrompt("DEFEAT ALL ENEMIES FIRST");
+                        DrawPrompt("DEFEAT ALL ENEMIES FIRST");
                         shownExitLock = true;
                     }
                 }
@@ -625,9 +612,9 @@ namespace {
                     if (!IsNear(pochiPos, bossEnemies[i]->GetSprite()->GetPosition(), kInteractRadius)) continue;
 
                     if (!Cheats::enabled && config.bossesInOrder && i > 0 && !bossCleared[i - 1])
-                        drawPrompt("DEFEAT THE OTHER ENEMY FIRST");
+                        DrawPrompt("DEFEAT THE OTHER ENEMY FIRST");
                     else
-                        drawPrompt("PRESS F TO FIGHT");
+                        DrawPrompt("PRESS F TO FIGHT");
                     break;
                 }
             }
@@ -635,17 +622,11 @@ namespace {
             if (hud != NULL && context.playerStats != NULL) {
                 hud->Draw(context.spriteBrush, *context.playerStats);
             }
-            // The "CHEAT MODE" indicator is drawn globally in Main.cpp so it
-            // shows in every state, not just here.
         }
 
         D3DCOLOR ClearColor() const override { return D3DCOLOR_XRGB(0, 0, 0); }
     };
 
-    // Boss coordinates place each boss (a ~100px-ish canvas) centered in
-    // the room it was circled in on a render of the maze: SkullBones in
-    // the top-left room, Goblin in the open pocket mid-map. Nudge these if
-    // they don't line up with the final art.
     OverworldConfig MakeMazeConfig() {
         OverworldConfig config;
         config.mapId = MapId::Maze;
@@ -653,35 +634,33 @@ namespace {
             { BossId::SkullBones, 440.0f, 100.0f },
             { BossId::Goblin, 780.0f, 317.0f }
         };
-        // The forest and maze art line up at the shared edge, so Pochi
-        // keeps whatever Y she had when she walked off the forest's right
-        // edge - only X resets, just inside the maze's left edge (far enough
-        // in that the left-edge backtrack trigger doesn't fire on arrival) -
-        // for a seamless crossing instead of snapping to one spot.
-        config.computeSpawnPosition = [](const D3DXVECTOR2& current) {
+        // The forest and maze art line up at the shared edge
+        config.ComputeSpawnPosition = [](const D3DXVECTOR2& current) {
             return D3DXVECTOR2(40.0f, current.y);
         };
-        // Walk back into the left edge to return to the forest, landing at
-        // the forest's right edge with the same Y.
-        config.onReachLeftEdge = [] { return CreateForestState(); };
+        // Walk back into the left edge to return to the forest
+        config.OnReachLeftEdge = [] { return CreateForestState(); };
         config.leftEdgeSpawn = D3DXVECTOR2(1160.0f, OverworldConfig::kCarryY);
-        // The Maze wall layer occupies pixel Y 32..688. Fence Pochi's feet
-        // just inside that so she can't slip along the open grass above or
-        // below the hedges and skip the whole maze.
+        // Fence Pochi's feet inside so he can't skip the whole maze
         config.fenceTop = 40.0f;
         config.fenceBottom = 680.0f;
-        // Pochi has to clear the maze - SkullBones then the Goblin - before
-        // the right-edge exit to the ruins will open.
+        // Pochi has to clear the maze - SkullBones then the Goblin
+        // before the right-edge exit to the ruins will open
         config.requireBossesCleared = true;
         config.bossesInOrder = true;
-        // A barred gate across the right-edge opening while the maze is
-        // uncleared - stands in the fence band (y 40..680), stops Pochi at
-        // x 1232. Drop a PNG in via config.gateTexture to replace the bars.
+        // A barred gate across the right-edge opening while the maze is uncleared
         config.gateX = 1232.0f;
         config.gateY = 40.0f;
         config.gateWidth = 34.0f;
         config.gateHeight = 640.0f;
-        config.onReachRightEdge = [] { return CreateRuinsExteriorState(); };
+        config.OnReachRightEdge = [] { return CreateRuinsExteriorState(); };
+
+        config.items = {
+            { ItemType::HealthPotion, "Assets/Item/heathPotion.png", 18, 20, 380.0f, 392.0f, 2.0f },
+            { ItemType::Bone, "Assets/Item/bone.png", 32, 32, 180.0f, 75.0f, 2.0f },
+            { ItemType::Toast, "Assets/Item/toast.png", 16, 16, 1090.0f, 620.0f, 2.0f }
+        };
+
         return config;
     }
 
@@ -692,49 +671,36 @@ namespace {
     OverworldConfig MakeForestConfig() {
         OverworldConfig config;
         config.mapId = MapId::Forest;
-        config.foregroundLayers = { "Tree_Leaf" }; // only the leaf canopy draws in front of Pochi
-        config.computeSpawnPosition = [](const D3DXVECTOR2&) {
+        config.foregroundLayers = { "Tree_Leaf" }; // Only the leaf canopy draws in front of Pochi
+        config.ComputeSpawnPosition = [](const D3DXVECTOR2&) {
             return D3DXVECTOR2(100.0f, 380.0f);
         };
-        // A couple of pickups along the walk to the maze, so the tutorial's
-        // "stand on it and press F" has something to land on. Nudge these if
-        // they end up inside a tree once the final art is in.
+        // A couple of pickups along the walk to the maze
         config.items = {
             { ItemType::HealthPotion, "Assets/Item/heathPotion.png", 18, 20, 380.0f, 392.0f, 2.0f },
             { ItemType::Bone,         "Assets/Item/bone.png",        32, 32, 680.0f, 360.0f, 1.5f },
+            { ItemType::Toast,        "Assets/Item/toast.png",       16, 16, 380.0f, 75.0f, 2.0f },
         };
-        config.onReachRightEdge = [] { return CreateMazeState(); };
+        config.OnReachRightEdge = [] { return CreateMazeState(); };
 
-        // The path leading off the forest's TOP-LEFT corner goes to the
-        // hidden Tarumt area where the secret boss (Mr Andrew) waits. Nudge
-        // the position/radius to sit on the actual path tile.
+        // The path leading off the forest's TOP-LEFT corner goes to the secret Tarumt area where Mr Andrew is
         config.doorwayPosition = D3DXVECTOR2(110.0f, 30.0f);
         config.doorwayRadius = 90.0f;
-        config.onEnterDoorway = [] { return CreateTarumtState(); };
+        config.OnEnterDoorway = [] { return CreateTarumtState(); };
         return config;
     }
 
-    // The hidden Tarumt arena - one enemy, Mr Andrew. Beating him (or just
-    // walking back out the right edge) returns to the forest.
+    // The hidden Tarumt arena - one enemy, Mr Andrew
     OverworldConfig MakeTarumtConfig() {
         OverworldConfig config;
         config.mapId = MapId::Tarumt;
-        config.foregroundLayers = { "Tree_leaf" }; // canopy draws in front of Pochi
-        // Mr Andrew stands IN FRONT OF the campus gate (on Pochi's side of
-        // it), not behind it. Nudge to line up with the gate art.
+        config.foregroundLayers = { "Tree_leaf" };
         config.bosses = { { BossId::MrAndrew, 640.0f, 470.0f } };
-        // The forest's top-left path connects to Tarumt's BOTTOM-RIGHT, so
-        // Pochi walks in from that corner. Kept clear of the right-edge exit
-        // trigger (~x 1275) so arriving doesn't immediately bounce her back.
-        config.computeSpawnPosition = [](const D3DXVECTOR2&) {
+        config.ComputeSpawnPosition = [](const D3DXVECTOR2&) {
             return D3DXVECTOR2(1120.0f, 600.0f);
         };
-        // Walk back to the bottom-right corner (right edge) to return to the
-        // forest the way she came - or beat Mr Andrew and get sent back the
-        // same way. Either way she lands on the forest's top-left path,
-        // clear of the doorway that would just bring her straight back.
-        config.onReachRightEdge = [] { return CreateForestState(); };
-        config.onAllCleared     = [] { return CreateForestState(); };
+        config.OnReachRightEdge = [] { return CreateForestState(); };
+        config.OnAllCleared     = [] { return CreateForestState(); };
         config.rightEdgeSpawn   = D3DXVECTOR2(110.0f, 150.0f);
         return config;
     }
@@ -743,30 +709,23 @@ namespace {
         return CreateOverworldState(MakeTarumtConfig());
     }
 
-    // The maze (boxy garden hedges) and the ruins exterior (an organic
-    // lake/forest scene) aren't drawn to line up at any edge, and the
-    // ruins' upper-left is water - so Pochi enters from the LEFT edge
-    // carrying her maze-exit Y (clamped to the dry lower-left band) and
-    // then walks in, rather than snapping to a point mid-map. Tile
-    // collision nudges her off the water if the clamped Y still lands wet.
     OverworldConfig MakeRuinsExteriorConfig() {
         OverworldConfig config;
         config.mapId = MapId::RuinsExterior;
         config.foregroundLayers = { "Tree_leaf" };
-        config.computeSpawnPosition = [](const D3DXVECTOR2& current) {
-            // A little way in from the left edge so the left-edge backtrack
-            // trigger doesn't fire the instant she arrives from the maze.
+        config.ComputeSpawnPosition = [](const D3DXVECTOR2& current) {
             return D3DXVECTOR2(55.0f, std::clamp(current.y, 360.0f, 630.0f));
         };
-        // The dark doorway opening between the two gargoyle statues at the
-        // temple's entrance - walking up to it leads inside.
         config.doorwayPosition = D3DXVECTOR2(780.0f, 190.0f);
         config.doorwayRadius = 60.0f;
-        config.onEnterDoorway = [] { return CreateRuinsInteriorState(); };
-        // Backtrack out the left edge to the maze (re-enters it fresh - its
-        // gate and bosses reset, since map progress isn't persisted).
-        config.onReachLeftEdge = [] { return CreateMazeState(); };
+        config.OnEnterDoorway = [] { return CreateRuinsInteriorState(); };
+        config.OnReachLeftEdge = [] { return CreateMazeState(); };
         config.leftEdgeSpawn = D3DXVECTOR2(1160.0f, OverworldConfig::kCarryY);
+
+        config.items = {
+            { ItemType::Bone, "Assets/Item/bone.png", 32, 32, 380.0f, 550.0f, 2.0f },
+            { ItemType::Toast, "Assets/Item/toast.png", 16, 16, 780.0f, 460.0f, 2.0f }
+        };
         return config;
     }
 
@@ -774,21 +733,15 @@ namespace {
         return CreateOverworldState(MakeRuinsExteriorConfig());
     }
 
-    // Maki (final boss) stands at the top of the main hall. Beating her is
-    // the end of the journey - the ending screen rolls after the fight.
+    // Maki (final boss)
     OverworldConfig MakeRuinsInteriorConfig() {
         OverworldConfig config;
         config.mapId = MapId::RuinsInterior;
         config.bosses = {
             { BossId::Maki, 610.0f, 200.0f }
         };
-        config.onAllCleared = [] { return CreateEndingState(); };
-        config.computeSpawnPosition = [](const D3DXVECTOR2&) {
-            // The entrance corridor is the open gap in the Walls_top layer,
-            // cols 38-41 (x 608-672); its bottom row is the map's outer
-            // boundary wall. Spawn centred in that gap and a few tiles up, so
-            // Pochi's foot-box starts on clear floor instead of clipped into
-            // the corridor wall / bottom edge.
+        config.OnAllCleared = [] { return CreateEndingState(); };
+        config.ComputeSpawnPosition = [](const D3DXVECTOR2&) {
             return D3DXVECTOR2(614.0f, 540.0f);
         };
         return config;
@@ -805,4 +758,17 @@ std::unique_ptr<GameState> CreateOverworldState(OverworldConfig config) {
 
 std::unique_ptr<GameState> CreateForestState() {
     return CreateOverworldState(MakeForestConfig());
+}
+
+// Rebuilds the overworld state for a given map - used by "Continue" to drop
+// the player back on the map their save was taken in
+std::unique_ptr<GameState> CreateOverworldStateForMap(MapId id) {
+    switch (id) {
+    case MapId::Maze:          return CreateOverworldState(MakeMazeConfig());
+    case MapId::RuinsExterior: return CreateOverworldState(MakeRuinsExteriorConfig());
+    case MapId::RuinsInterior: return CreateOverworldState(MakeRuinsInteriorConfig());
+    case MapId::Tarumt:        return CreateOverworldState(MakeTarumtConfig());
+    case MapId::Forest:
+    default:                   return CreateOverworldState(MakeForestConfig());
+    }
 }

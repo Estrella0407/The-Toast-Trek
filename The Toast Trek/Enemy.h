@@ -3,9 +3,9 @@
 #include <d3dx9.h>
 #include "Sprite.h"
 
-// Identifies which boss is being fought/represented, so the maze and the
-// battle screen can agree on a single sprite/health/scale definition
-// (see CreateBossEnemy()) instead of duplicating those numbers.
+// Identifies which boss is being fought/represented
+// The maze and the battle screen can agree on a single sprite/health/scale definition
+// (see CreateBossEnemy()) instead of duplicating those numbers
 enum class BossId {
 	SkullBones, // Level 1
 	Goblin,     // Level 2
@@ -15,15 +15,17 @@ enum class BossId {
 
 enum class AttackType {
 	FourDirection,
-	StarBounce
+	StarBounce,
+	Gunshot,
+	SpecialAttack
 };
 
 class Enemy {
 private:
 	BossId bossId;
 	AttackType attackType;
-	Sprite* sprite;		//static enemy image
-	Sprite* actSprite;	//act button->enemy blushing animation
+	Sprite* sprite;		// Static enemy image
+	Sprite* actSprite;	// Act button -> enemy blushing animation
 	Sprite* enemyHealthBar;
 
 	int health;
@@ -61,11 +63,9 @@ public:
 	int GetMaxHealth() const;
 	int GetAttackDamage() const;
 	Sprite* GetSprite() const;
-	bool isAlive() const;
+	bool IsAlive() const;
 
 };
 
-// Builds a fully-configured Enemy for the given boss - sprite file, texture
-// size, health and display scale all come from this one place so the maze
-// (walk-up encounter) and the battle screen (portrait) always agree.
+// Builds a fully-configured Enemy for the given boss
 Enemy* CreateBossEnemy(IDirect3DDevice9* d3dDevice, BossId bossId, float startX, float startY);

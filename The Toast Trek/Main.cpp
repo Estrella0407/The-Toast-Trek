@@ -1,10 +1,10 @@
-//	Ask the compiler to include minimal header files for our program.
+//	Ask the compiler to include minimal header files for our program
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <iostream>
 #include <fstream>
 
-//	include the Direct3D 9 library
+//	Include the Direct3D 9 library
 #include <d3d9.h>
 #include <d3dx9.h>
 #include<string>
@@ -19,12 +19,13 @@
 #include "Battlefield.h"
 #include "Heart.h"
 #include "SoundManage.h"
+#include "SaveGame.h"
 #include "Inventory.h"
 #include "Pochi.h"
 #include "Cheats.h"
 #include "UiFill.h"
 
-//--------------------------------------------------------------------
+//	--------------------------------------------------------------------
 //	Window handle
 HWND g_hWnd = NULL;
 WNDCLASS wndClass;
@@ -49,7 +50,7 @@ TileMap* forestMap = NULL;
 TileMap* mazeMap = NULL;
 TileMap* ruinsExteriorMap = NULL;
 TileMap* ruinsInteriorMap = NULL;
-TileMap* tarumtMap = NULL;   // optional secret-boss map, loaded only if present
+TileMap* tarumtMap = NULL;
 Sprite* pochi = NULL;
 GameContext gameContext = {};
 GameStateManager* gameStates = NULL;
@@ -58,8 +59,7 @@ Pochi* playerStats = NULL;
 Battlefield* battlefield;
 SoundManage* g_soundManager = nullptr;
 
-// Global "CHEAT MODE" overlay - drawn over whatever state is on top so the
-// indicator shows everywhere F5 works (menu, overworld, battle, ...).
+// Global "CHEAT MODE" overlay
 Font* g_cheatFont = NULL;
 IDirect3DTexture9* g_cheatPlateTex = NULL;
 
@@ -67,13 +67,13 @@ int spriteVelocity = 5;
 
 using namespace std;
 
-//--------------------------------------------------------------------
+//	--------------------------------------------------------------------
 //	Window Procedure, for event handling
 LRESULT CALLBACK WindowProcedure(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
 	{
-		//	The message is post when we destroy the window.
+		//	The message is post when we destroy the window
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
@@ -92,11 +92,11 @@ LRESULT CALLBACK WindowProcedure(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 			break;
 
 		// ESC is a normal gameplay key (the tab menu uses it to close);
-		// quitting is via the window's close button.
+		// quitting is via the window's close button
 		}
 		break;
 
-		//	Default handling for other messages.
+		//	Default handling for other messages
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
@@ -113,11 +113,11 @@ void CreateMyWindow()
 		Define and Register a Window.
 	*/
 
-	//	Set all members in wndClass to 0.
+	//	Set all members in wndClass to 0
 	ZeroMemory(&wndClass, sizeof(wndClass));
 
-	//	Filling wndClass. You are to refer to MSDN for each of the members details.
-	//	These are the fundamental structure members to be specify, in order to create your window.
+	//	Filling wndClass. You are to refer to MSDN for each of the members details
+	//	these are the fundamental structure members to be specify, in order to create your window
 	wndClass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
 	wndClass.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wndClass.hInstance = GetModuleHandle(NULL); // Replaced hInstance to reduced the passing of hInstance as a parameter
@@ -125,7 +125,7 @@ void CreateMyWindow()
 	wndClass.lpszClassName = "My Window";
 	wndClass.style = CS_HREDRAW | CS_VREDRAW;
 
-	//	Register the window.
+	//	Register the window
 	RegisterClass(&wndClass);
 
 	/*
@@ -149,7 +149,7 @@ void DestroyMyWindow()
 	}
 
 	// Step 2: Unregister the class so the name "My Window" can be reused
-	// Use the same instance handle used during registration
+	// use the same instance handle used during registration
 	HINSTANCE hInstance = GetModuleHandle(NULL);
 	UnregisterClass("My Window", hInstance);
 
@@ -159,32 +159,32 @@ void DestroyMyWindow()
 
 void CreateDirectX()
 {
-	// Define Direct3D 9.
-	// Instantiate the Direct3D 9 object.
+	// Define Direct3D 9
+	// instantiate the Direct3D 9 object
 	IDirect3D9* direct3D9 = Direct3DCreate9(D3D_SDK_VERSION);
 	if (!direct3D9) {
 		MessageBox(NULL, "Direct3DCreate9 failed", "Error", MB_OK | MB_ICONERROR);
 		return;
 	}
 
-	// Define how the screen presents.
+	// Define how the screen presents
 	ZeroMemory(&d3dPP, sizeof(d3dPP));
 
-	// Refer to Direct3D 9 documentation for the meaning of the members.
-	d3dPP.Windowed = true;						// Run in windowed view mode
-	d3dPP.SwapEffect = D3DSWAPEFFECT_DISCARD;	// Discard the back buffer contents after presenting
+	// Refer to Direct3D 9 documentation for the meaning of the members
+	d3dPP.Windowed = true;						// run in windowed view mode
+	d3dPP.SwapEffect = D3DSWAPEFFECT_DISCARD;	// discard the back buffer contents after presenting
 	d3dPP.BackBufferFormat = D3DFMT_X8R8G8B8;	// Back buffer format
-	d3dPP.BackBufferCount = 1;					// Number of back buffers
+	d3dPP.BackBufferCount = 1;					// number of back buffers
 	d3dPP.BackBufferWidth = 1280;
 	d3dPP.BackBufferHeight = 720;
 	d3dPP.hDeviceWindow = g_hWnd;				// Handle to the window associated with the device
 
-	// Use the Direct3D 9 object to call the CreateDevice() funcition.
-	// Create a Direct3D 9 device (returns either it succeeded or failed).									How it should look (declared above)
-	HRESULT hr = direct3D9->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, g_hWnd, D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dPP, &d3dDevice); // The address of the pointer
+	// Use the Direct3D 9 object to call the CreateDevice() funcition
+	// create a Direct3D 9 device (returns either it succeeded or failed).									How it should look (declared above)
+	HRESULT hr = direct3D9->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, g_hWnd, D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dPP, &d3dDevice); // the address of the pointer
 
-	// To Do: Cout out the message to indicate the failure.
-	// Read why CreateDevice() failed.
+	// To Do: Cout out the message to indicate the failure
+	// read why CreateDevice() failed
 	if (FAILED(hr)) {
 		MessageBox(NULL, "CreateDevice failed", "Error", MB_OK | MB_ICONERROR);
 		d3dDevice = NULL;
@@ -193,25 +193,25 @@ void CreateDirectX()
 
 void CreateDirectInput()
 {
-	// Create the Direct Input object.
+	// Create the Direct Input object
 	HRESULT hr = DirectInput8Create(GetModuleHandle(NULL), 0x0800, IID_IDirectInput8, (void**)&dInput, NULL);
 
-	// Create the keyboard device.
+	// Create the keyboard device
 	hr = dInput->CreateDevice(GUID_SysKeyboard, &dInputKeyboardDevice, NULL);
 
-	// Set the input data format.
+	// Set the input data format
 	dInputKeyboardDevice->SetDataFormat(&c_dfDIKeyboard);
 
-	// Set the cooperative level.
+	// Set the cooperative level
 	dInputKeyboardDevice->SetCooperativeLevel(g_hWnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
 
 	/*---
 		For buffered data
-		// Define buffer for input.
+		// Define buffer for input
 		const int DEVICE_BUFFER_SIZE = 4;
 		DIDEVICEOBJECTDATA deviceBuffer[DEVICE_BUFFER_SIZE];
 
-		// Set the event buffer / properties.
+		// Set the event buffer / properties
 		DIPROPDWORD dipdw;
 		dipdw.diph.dwSize = sizeof(DIPROPDWORD);
 		dipdw.diph.dwHeaderSize = sizeof(DIPROPHEADER);
@@ -222,19 +222,19 @@ void CreateDirectInput()
 		hr = dInputKeyboardDevice->SetProperty(DIPROP_BUFFERSIZE, &dipdw.diph);
 	--*/
 
-	// Acquire the device.
+	// Acquire the device
 	dInputKeyboardDevice->Acquire();
 
-	// Create the mouse device.
+	// Create the mouse device
 	hr = dInput->CreateDevice(GUID_SysMouse, &dInputMouseDevice, NULL);
 
-	// Set the input data format.
+	// Set the input data format
 	dInputMouseDevice->SetDataFormat(&c_dfDIMouse);
 
-	// Set the cooperative level.
+	// Set the cooperative level
 	dInputMouseDevice->SetCooperativeLevel(g_hWnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
 
-	// Acquire the device.
+	// Acquire the device
 	dInputMouseDevice->Acquire();
 }
 
@@ -243,7 +243,7 @@ void CreateSprite()
 	HRESULT hr = D3DXCreateSprite(d3dDevice, &spriteBrush);
 
 	// Wide rect so the banner still renders when drawn far to the right
-	// (Font::Draw(x,y,...) inverts its rect once x passes the width).
+	// (Font::Draw(x,y,...) inverts its rect once x passes the width)
 	g_cheatFont = new Font(d3dDevice, 0.0f, 0.0f, 1600, 30, 18, "Arial");
 	g_cheatPlateTex = ui::MakeWhiteTexture(d3dDevice);
 
@@ -260,10 +260,10 @@ void CreateSprite()
 	ruinsInteriorMap = new TileMap(d3dDevice, "Assets/TileMap/Ruined_Temple_Interior.tmx", "Assets/TileMap/");
 	// Decorative_objects1/2 are floor clutter (pots, rubble, banner poles) -
 	// they were blocking the middle of the path up to Maki, so only the real
-	// walls + the dragon statue are solid.
+	// walls + the dragon statue are solid
 	ruinsInteriorMap->SetSolidLayers({ "Walls_back", "Walls_top", "Statue" });
 
-	// Secret-boss area, reached from the forest's top-left.
+	// Secret-boss area, reached from the forest's top-left
 	tarumtMap = new TileMap(d3dDevice, "Assets/TileMap/Tarumt.tmx", "Assets/TileMap/");
 	tarumtMap->SetSolidLayers({ "Tree", "Structure1", "Structure2", "Building" });
 
@@ -273,8 +273,8 @@ void CreateSprite()
 		pochi->SetScale(2.0f);
 	}
 
-	// Sound. Initialize() and every call are safe even with no audio files -
-	// missing sounds just no-op.
+	// Sound\
+	// Initialize() and every call are safe even with no audio files - missing sounds just no-op
 	g_soundManager = new SoundManage();
 	g_soundManager->Initialize();
 
@@ -285,6 +285,15 @@ void CreateSprite()
 	g_soundManager->LoadSound("battle", "Assets/Sounds/battle.wav", true);
 	g_soundManager->LoadSound("attack", "Assets/Sounds/attack.wav");   // Pochi's FIGHT swing
 	g_soundManager->LoadSound("hurt", "Assets/Sounds/hurt.ogg");       // Pochi takes damage
+
+	// Apply the saved audio settings (defaults if there's no settings.txt yet).
+	{
+		save::Settings st = save::LoadSettings();
+		g_soundManager->SetMasterVolume(st.master);
+		g_soundManager->SetMusicVolume(st.music);
+		g_soundManager->SetSFXVolume(st.sfx);
+		g_soundManager->SetMute(st.muted);
+	}
 
 	g_soundManager->PlayMusic("background", 0.6f);
 }
@@ -314,7 +323,7 @@ bool WindowIsRunning()
 
 void GetInput()
 {
-	// Get immediate Keyboard Data.
+	// Get immediate Keyboard Data
 	HRESULT hr = dInputKeyboardDevice->GetDeviceState(256, diKeys);
 	if (hr == DIERR_INPUTLOST || hr == DIERR_NOTACQUIRED) {
 		dInputKeyboardDevice->Acquire();
@@ -322,7 +331,7 @@ void GetInput()
 	}
 	if (FAILED(hr)) ZeroMemory(diKeys, sizeof(diKeys));
 
-	// Get immediate Mouse Data.
+	// Get immediate Mouse Data
 	hr = dInputMouseDevice->GetDeviceState(sizeof(DIMOUSESTATE), &mouseState);
 
 	if (hr == DIERR_INPUTLOST || hr == DIERR_NOTACQUIRED) {
@@ -331,7 +340,7 @@ void GetInput()
 	}
 
 	// DIMOUSESTATE above is relative motion (deltas), not an absolute
-	// position, so button hit-testing reads the cursor directly instead.
+	// position, so button hit-testing reads the cursor directly instead
 	POINT cursor;
 	GetCursorPos(&cursor);
 	ScreenToClient(g_hWnd, &cursor);
@@ -346,25 +355,24 @@ void GetInput()
 
 void Render()
 {
-	// Update.
+	// Update
 	if (!d3dDevice) return;
 
-	// Clear the back buffer (into a colour).
+	// Clear the back buffer (into a colour)
 	D3DCOLOR clearColor = gameStates ? gameStates->ClearColor() : D3DCOLOR_XRGB(0, 0, 0);
 	d3dDevice->Clear(0, NULL, D3DCLEAR_TARGET, clearColor, 1.0f, 0);
 
-	// Begin the scene -> Unlocks the buffer for drawing.
+	// Begin the scene -> Unlocks the buffer for drawing
 	d3dDevice->BeginScene();
 
-	// Drawing.
+	// Drawing
 	// Clear and begin scene
-
-	// Specify alpha blend will ensure that the sprite will render the background with alpha.
+	// Specify alpha blend will ensure that the sprite will render the background with alpha
 	spriteBrush->Begin(D3DXSPRITE_ALPHABLEND);
 
 	if (gameStates) gameStates->Render();
 
-	// Global CHEAT MODE banner, upper-right, over every state.
+	// Global CHEAT MODE banner, upper-right, over every state
 	if (Cheats::enabled && g_cheatFont != NULL) {
 		const char* txt = "CHEAT MODE";
 		const float pw = 118.0f, ph = 24.0f;
@@ -380,10 +388,10 @@ void Render()
 
 	spriteBrush->End();
 
-	// End the scene -> Locks the buffer for presenting.
+	// End the scene -> Locks the buffer for presenting
 	d3dDevice->EndScene();
 
-	// Present the back buffer to screen -> Swap the back buffer to the front buffer.
+	// Present the back buffer to screen -> Swap the back buffer to the front buffer
 	d3dDevice->Present(NULL, NULL, NULL, NULL);
 }
 
@@ -415,38 +423,37 @@ void CleanupSprite()
 
 void CleanupDirectX()
 {
-	// Release the device when exiting.
+	// Release the device when exiting
 	d3dDevice->Release();
 
-	// Reset pointer to NULL, a good practice.
+	// Reset pointer to NULL, a good practice
 	d3dDevice = NULL;
 }
 
 void CleanupDirectInput()
 {
-	// Release keyboard device.
+	// Release keyboard device
 	dInputKeyboardDevice->Unacquire();
 	dInputKeyboardDevice->Release();
 	dInputKeyboardDevice = NULL;
 
-	// Release mouse device.
+	// Release mouse device
 	dInputMouseDevice->Unacquire();
 	dInputMouseDevice->Release();
 	dInputMouseDevice = NULL;
 
-	// Release DirectInput.
+	// Release DirectInput
 	dInput->Release();
 	dInput = NULL;
 }
 
 void CleanupWindow()
 {
-	// Free up the memory.
+	// Free up the memory
 	UnregisterClass(wndClass.lpszClassName, GetModuleHandle(NULL));
 }
 
 //--------------------------------------------------------------------
-
 //	Use WinMain if you don't want the console
 //  int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
@@ -480,16 +487,16 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nSho
 
 	while (WindowIsRunning())
 	{
-		// Deleting the outer loop od WIndowIsRunning() will cause the Game loop to be non-executable, 
-		// as the window will not be able to process messages and will not be able to close properly. 
-		// The outer loop is necessary to keep the window running and responsive to user input and system messages.
+		// Deleting the outer loop of WIndowIsRunning() will cause the Game loop to be non-executable, 
+		// as the window will not be able to process messages and will not be able to close properly
+		// the outer loop is necessary to keep the window running and responsive to user input and system messages
 
 		// GAME LOOP
-		// One application loop delegates work to the state on top of the stack.
+		// One application loop delegates work to the state on top of the stack
 		GetInput();
 
-		// Developer cheat switch (F5). Reads the same key buffer GetInput()
-		// just filled - Lecture 4.
+		// Developer cheat switch (F5)
+		// Reads the same key buffer GetInput()
 		Cheats::Update(diKeys);
 
 		// Update Sound system

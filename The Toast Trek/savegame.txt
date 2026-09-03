@@ -1,0 +1,7 @@
+map 1
+pos 478 97
+level 2
+inv 1 3 0
+cleared
+items 1
+bosses 16

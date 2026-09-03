@@ -12,11 +12,6 @@ private:
 	int shield;
 	int maxShield;
 	float moveSpeed;
-	
-	float boundaryLeft;
-	float boundaryRight;
-	float boundaryTop;
-	float boundaryBottom;
 
 public:
 	Heart(IDirect3DDevice9* d3dDevice);
@@ -25,9 +20,6 @@ public:
 	void Update(BYTE* keys);
 	void Render(LPD3DXSPRITE sharedBrush);
 
-	void Move(float deltaTime);
-
-	void setBoundaries(float left, float right, float top, float bottom);
 	void TakeDamage(int damage);
 	void Heal(int amount);
 

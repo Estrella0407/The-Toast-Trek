@@ -27,20 +27,20 @@ const char* BossDisplayName(BossId id) {
 }
 
 // Defined here (not =default in the header) so Battlefield / BattleUI are
-// complete types when the unique_ptr members are destroyed.
+// complete types when the unique_ptr members are destroyed
 BattleState::~BattleState() = default;
 
 void BattleState::Initialize(GameContext& context) {
 	pochi = context.playerStats;
 	lastPochiHealth = (pochi != nullptr) ? (pochi->GetHealth() + pochi->GetArmor()) : 0;
     battleUI = std::make_unique<BattleUI>(context.device);
-    battleUI->SetEnemyName(BossDisplayName(bossId));
     Enemy* enemy = CreateBossEnemy(context.device, bossId, 600.0f, 50.0f);
-    battlefield = std::make_unique<Battlefield>(context.device, battleUI.get(), enemy, pochi, context.inventory);
+    battlefield = std::make_unique<Battlefield>(context.device, battleUI.get(), bossId, enemy, pochi, context.inventory);
 }
 
 namespace {
-    // Pochi's FIGHT swing sfx. Called from every place that runs a fight.
+    // Pochi's FIGHT swing sfx
+    // Called from every place that runs a fight
     void PlayAttackSfx(GameContext& context) {
         if (context.sound != nullptr) context.sound->PlaySfx("attack");
     }
@@ -58,14 +58,14 @@ void BattleState::HandleInput(GameContext& context, GameStateManager&) {
         for (int i = 0; i < 4; ++i) {
             if (JustPressed(context.keys, actionKeys[i], actionKeyWasDown[i])) action = i;
         }
-        //Fight
+        // Fight
         if (action == 0) {
             phase = ENEMY_HIT;
             battleUI->SetShowEncounterMessage(false);
             PlayAttackSfx(context);
             battlefield->PerformFight();
         }
-        //Act
+        // Act
         else if (action == 1) {
             phase = ACT_MENU;
             battleUI->SetShowEncounterMessage(false);
@@ -76,7 +76,7 @@ void BattleState::HandleInput(GameContext& context, GameStateManager&) {
                     (context.keys[choiceKeys[i]] & 0x80) != 0;
             }
         }
-        //Item
+        // Item
         else if (action == 2) {
 			phase = ITEM_MENU;
 			battleUI->SetShowEncounterMessage(false);
@@ -85,7 +85,7 @@ void BattleState::HandleInput(GameContext& context, GameStateManager&) {
 			for (int i = 0; i < 3; ++i) itemChoiceWasDown[i] =
 				context.keys != nullptr && (context.keys[itemKeys[i]] & 0x80) != 0;
         }
-        //Mercy
+        // Mercy
         else if (action == 3) {
             battlefield->Flee();
         }
@@ -157,7 +157,7 @@ void BattleState::HandleInput(GameContext& context, GameStateManager&) {
             }
 		}
 		if (choice >= 0 && !actChoiceUsed[choice]) {
-			// All three ACT choices intentionally share this outcome.
+			// All three ACT choices intentionally share this outcome
             actChoiceUsed[choice] = true;
             battleUI->SetActChoiceUsed(choice, true);
             battlefield->PerformAct();
@@ -188,13 +188,9 @@ void BattleState::HandleInput(GameContext& context, GameStateManager&) {
 }
 
 void BattleState::Update(GameContext& context, GameStateManager& manager) {
-    // --- developer cheats (F5 toggles the switch, see Cheats.h) -----------
+    // --- Developer cheats (F5) -----------
     if (Cheats::enabled) {
-        // Keep the tester alive: top Pochi's health/armor back up every frame.
-        if (pochi != nullptr) pochi->RestoreFull();
-        // K: win the fight immediately. (Plain letter keys - laptop OEM
-        // Fn rows eat F8/F9 for airplane mode / brightness before the game
-        // ever sees them.)
+        // K: win the fight immediately
         if (JustPressed(context.keys, DIK_K, cheatWinWasDown)) {
             context.lastBattleOutcome = BattleOutcome::Victory;
             context.lastBattleBoss = bossId;
@@ -222,7 +218,11 @@ void BattleState::Update(GameContext& context, GameStateManager& manager) {
     }
     battlefield->Update(context);
 
-    // Pochi took damage this frame (armour or heart) -> play the hurt sfx.
+    // Cheat mode: undo any damage taken this frame so Maki (etc.) can't chip
+    // the tester down, and don't let the fight be lost
+    if (Cheats::enabled && pochi != nullptr) pochi->RestoreFull();
+
+    // Pochi took damage this frame (armour or heart) -> play the hurt sfx
     if (pochi != nullptr) {
         const int hpNow = pochi->GetHealth() + pochi->GetArmor();
         if (hpNow < lastPochiHealth && context.sound != nullptr) {
@@ -231,11 +231,11 @@ void BattleState::Update(GameContext& context, GameStateManager& manager) {
         lastPochiHealth = hpNow;
     }
 
-    if (battlefield->IsPlayerDefeated()) {
+    if (!Cheats::enabled && battlefield->IsPlayerDefeated()) {
         context.lastBattleOutcome = BattleOutcome::Defeat;
         context.lastBattleBoss = bossId;
-        // Pochi is out of health -> game over screen (replaces the whole
-        // stack; the ruins/forest run doesn't continue).
+        // Pochi is out of health -> game over screen
+        // (replaces the whole stack, the ruins/forest run doesn't continue)
         manager.ClearAndPush(CreateGameOverState(context.sound));
     }
     else if (phase != ENEMY_HIT && battlefield->IsEnemyDefeated()) {

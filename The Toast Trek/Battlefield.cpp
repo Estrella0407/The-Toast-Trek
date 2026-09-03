@@ -10,7 +10,7 @@
 #include <cmath>
 #include <cstdlib>
 
-Battlefield::Battlefield(IDirect3DDevice9* d3dDevice, BattleUI* battleUI, Enemy* enemy, Pochi* pochi, Inventory* inventory) {
+Battlefield::Battlefield(IDirect3DDevice9* d3dDevice, BattleUI* battleUI, BossId bossId, Enemy* enemy, Pochi* pochi, Inventory* inventory) {
 	this->d3dDevice = d3dDevice;
 	this->battleUI = battleUI;
 	this->enemy = enemy;
@@ -21,6 +21,7 @@ Battlefield::Battlefield(IDirect3DDevice9* d3dDevice, BattleUI* battleUI, Enemy*
 	displayedEnemyHealth = (float)enemy->GetHealth();
 	hitStartHealth = displayedEnemyHealth;
 	hitAnimationStart = 0;
+	lastPlayerHitTime = 0;
 	enemyHitAnimating = false;
 
 	posX = 300.0f;
@@ -36,22 +37,33 @@ Battlefield::Battlefield(IDirect3DDevice9* d3dDevice, BattleUI* battleUI, Enemy*
 	spawningProjectile = 0;
 	maxProjectiles = 26;
 
+	currentBulletAim = nullptr;
+	currentBulletHole = nullptr;
+	bulletAttackActive = false;
+	bulletAiming = false;
+	bulletShotCount = 0;
+	bulletAimStartTime = 0;
+	bulletHoleStartTime = 0;
+
 	projectileTimer = 0.0f;
 	projectileSpawnInterval = 750.0f;
 
 	heart = new Heart(d3dDevice);
 	heart->SetPosition(posX + width / 2.0f - 32.0f, posY + height / 2.0f - 32.0f);
 
-	//enemy = CreateBossEnemy(d3dDevice, bossId, 600.0f, 50.0f);
-	fightHovered = false;
-
 	mouseWasDown = false;
 	fled = false;
-	fightDamage = 10;
-	itemHealAmount = 5;
 
-
-	//enemyHealthBar = new Sprite(d3dDevice, ....);
+	// Special lvl
+	if (bossId == BossId::MrAndrew) {
+		pochi->SetMaxHealth(99);
+		pochi->SetHealth(99);
+		pochi->SetMaxArmor(50);
+		pochi->SetArmor(50);
+		pochi->SetAttackDamage(99);
+	}
+	specialAttackActive = false;
+	specialAttackWave = 0;
 }
 
 
@@ -80,9 +92,8 @@ void Battlefield::FourDirectionAttack() {
 void Battlefield::StarBounceAttack() {
 	const int STAR_COUNT = 3;
 
-	// The star sprite is ~64x64 on screen. Keep the whole wave clear of the
-	// heart's current position - a star spawned on top of it used to hit
-	// before the player could react (several at once = instant death).
+	// Keep the whole wave clear of the heart's current position
+	// A star spawned on top of it used to hit before the player could react (several at once = instant death)
 	const D3DXVECTOR2 heartPos = heart->GetPosition();
 	const float keepOut = 150.0f;
 
@@ -99,7 +110,7 @@ void Battlefield::StarBounceAttack() {
 		float velocityY = (rand() % 201 - 100) / 100.0f;
 
 		// No near-stationary stars - normalise slow ones up to a real speed
-		// so the wave actually travels and bounces.
+		// so the wave actually travels and bounces
 		float speed = sqrtf(velocityX * velocityX + velocityY * velocityY);
 		if (speed < 0.6f) {
 			if (speed < 0.001f) { velocityX = 1.0f; velocityY = 0.4f; speed = sqrtf(1.16f); }
@@ -114,21 +125,37 @@ void Battlefield::StarBounceAttack() {
 void Battlefield::StartEnemyAttack() {
 	for (Projectile* projectile : projectiles) delete projectile;
 	projectiles.clear();
-
-	switch (enemy->GetAttackType()) {
-	case AttackType::FourDirection:
-		// Fire projectiles are spawned gradually from random sides in Update().
-		break;
-	case AttackType::StarBounce:
-		StarBounceAttack();
-		spawningProjectile = 3;
-		break;
-	}
+	currentBulletAim = nullptr;
+	currentBulletHole = nullptr;
+	currentBulletAims.clear();
+	currentBulletHoles.clear();
+	currentBulletTargets.clear();
+	bulletAttackActive = false;
+	specialAttackActive = false;
 	showProjectiles = true;
 	projectileAttackFinished = false;
 	projectileAttackStart = GetTickCount64();
-	if (enemy->GetAttackType() == AttackType::FourDirection) spawningProjectile = 0;
-	projectileTimer = enemy->GetAttackType() == AttackType::StarBounce ? 4000.0f : projectileSpawnInterval;
+	lastPlayerHitTime = 0;
+	spawningProjectile = 0;
+	projectileTimer = projectileSpawnInterval;
+
+	switch (enemy->GetAttackType()) {
+	case AttackType::FourDirection:
+		// Fire projectiles are spawned gradually from random sides in Update()
+		break;
+	case AttackType::StarBounce:
+		StarBounceAttack();
+		spawningProjectile = 6;
+		projectileTimer = 4000.0f;
+		break;
+	case AttackType::Gunshot:
+		StartGunshotAttack();
+		break;
+	case AttackType::SpecialAttack:
+		StartSpecialBossAttack();
+		spawningProjectile = 3;
+		break;
+	}
 }
 
 void Battlefield::PerformFight() {
@@ -138,17 +165,40 @@ void Battlefield::PerformFight() {
 		return;
 	int damage = pochi->GetAttackDamage();
 	enemy->TakeDamage(damage);
-	
-	//Health bar sprite decreasing
-	float percentage = (float)enemy->GetHealth() / (float)enemy->GetMaxHealth();
-	int frame = (int)((1.0f - percentage) * 10);
-	//enemyHealthBar->CropToFrame(frame);
 
 	hitAnimationStart = GetTickCount64();
 	enemyHitAnimating = true;
 	OutputDebugStringA(("Enemy hit for " + std::to_string(damage) +
 				", health now " + std::to_string(enemy->GetHealth()) + "\n").c_str());
 
+}
+
+void Battlefield::StartGunshotAttack() {
+	bulletAttackActive = true;
+	bulletShotCount = 0;
+	currentBulletAims.clear();
+	currentBulletHoles.clear();
+	currentBulletTargets.clear();
+	StartGunshotBurst();
+}
+
+void Battlefield::StartGunshotBurst() {
+	currentBulletAims.clear();
+	currentBulletHoles.clear();
+	currentBulletTargets.clear();
+
+	const int randomBurstSize = 3 + rand() % 4;
+	const int burstSize = randomBurstSize;
+	for (int i = 0; i < burstSize; ++i) {
+		const float targetX = posX + 30.0f + (float)(rand() % (int)(width - 60.0f));
+		const float targetY = posY + 30.0f + (float)(rand() % (int)(height - 60.0f));
+		currentBulletTargets.push_back(D3DXVECTOR2(targetX, targetY));
+		Projectile* aim = new Projectile(d3dDevice, targetX, targetY, 0.0f, 0.0f, ProjectileType::aim);
+		currentBulletAims.push_back(aim);
+		projectiles.push_back(aim);
+	}
+	bulletAiming = true;
+	bulletAimStartTime = GetTickCount64();
 }
 
 void Battlefield::PerformAct() {
@@ -158,10 +208,6 @@ void Battlefield::PerformAct() {
 	const int actDamage = 2;
 	hitStartHealth = displayedEnemyHealth;
 	enemy->TakeDamage(actDamage);
-	float percentage = (float)enemy->GetHealth() / (float)enemy->GetMaxHealth();
-	
-	int frame = (int)((1.0f - percentage) * 10);
-	//enemyHealthBar->CropToFrame(frame);
 
 	hitAnimationStart = GetTickCount64();
 	enemyHitAnimating = true;
@@ -222,6 +268,15 @@ bool Battlefield::IsProjectileAttackFinished() const {
 	return projectileAttackFinished;
 }
 
+void Battlefield::StartSpecialBossAttack() {
+	specialAttackActive = true;
+	specialAttackWave = 0;
+	StarBounceAttack();
+	spawningProjectile = 6;
+	projectileTimer = projectileSpawnInterval;
+	StartGunshotAttack();
+}
+
 Battlefield::~Battlefield() {
 	delete statusFont;
 	delete playerBars;
@@ -232,39 +287,6 @@ Battlefield::~Battlefield() {
 		delete projectile;
 	}
 	projectiles.clear();
-}
-
-void Battlefield::Init() {
-
-}
-
-void Battlefield::UpdateMenuButtons(GameContext& context) {
-	battleUI->UpdateMenuButtons(context);
-	bool clicked = context.mouseLeftDown && !mouseWasDown;
-	mouseWasDown = context.mouseLeftDown;
-
-	if (!clicked) return;
-
-	//if (fightHovered) {
-	//	enemy->TakeDamage(fightDamage);
-	//	OutputDebugStringA(("Enemy hit for " + std::to_string(fightDamage) +
-	//		", health now " + std::to_string(enemy->GetHealth()) + "\n").c_str());
-	//}
-	//else if (itemHovered) {
-	//	heart->Heal(itemHealAmount);
-	//}
-	//else if (mercyHovered) {
-	//	fled = true;
-	//}
-	//else if (actHovered) {
-	//	// ACT has no per-boss dialogue/options defined yet - clickable, but a no-op for now.
-	//}
-
-	//fightButton->SetHovered(fightHovered);
-}
-
-int Battlefield::GetSelectButton(GameContext& context) {
-	return battleUI->GetSelectButton(context);
 }
 
 void Battlefield::Update(GameContext& context) {
@@ -282,10 +304,16 @@ void Battlefield::Update(GameContext& context) {
 
 	if (!showProjectiles) return;
 
-	const bool starAttack = enemy->GetAttackType() == AttackType::StarBounce;
+	const AttackType attackType = enemy->GetAttackType();
+	const bool starAttack = attackType == AttackType::StarBounce;
+	const bool fireSpawner = attackType == AttackType::FourDirection || attackType == AttackType::SpecialAttack;
 	const unsigned long long elapsedAttackTime = GetTickCount64() - projectileAttackStart;
 	const bool attackTimedOut = elapsedAttackTime >= projectileAttackDuration;
-	if (!attackTimedOut && spawningProjectile < maxProjectiles && elapsedAttackTime >= projectileTimer) {
+	if ((attackType == AttackType::Gunshot || attackType == AttackType::SpecialAttack) && !attackTimedOut) {
+		UpdateGunshotAttack();
+	}
+	if (!attackTimedOut && (starAttack || fireSpawner) &&
+		spawningProjectile < maxProjectiles && elapsedAttackTime >= projectileTimer) {
 		if (starAttack) {
 			StarBounceAttack();
 			spawningProjectile += 3;
@@ -301,22 +329,22 @@ void Battlefield::Update(GameContext& context) {
 			float angle = 0.0f;
 
 			switch (side) {
-			case 0: // top, moving down
+			case 0: // Top, moving down
 				spawnX = posX + 20.0f + static_cast<float>(rand() % static_cast<int>(width - 64.0f));
 				spawnY = posY + 20.0f;
 				angle = 90.0f;
 				break;
-			case 1: // bottom, moving up
+			case 1: // Bottom, moving up
 				spawnX = posX + 20.0f + static_cast<float>(rand() % static_cast<int>(width - 64.0f));
 				spawnY = posY + height - 32.0f;
 				angle = 270.0f;
 				break;
-			case 2: // left, moving right
+			case 2: // Left, moving right
 				spawnX = posX + 20.0f;
 				spawnY = posY + 20.0f + static_cast<float>(rand() % static_cast<int>(height - 64.0f));
 				angle = 0.0f;
 				break;
-			case 3: // right, moving left
+			case 3: // Right, moving left
 				spawnX = posX + width - 32.0f;
 				spawnY = posY + 20.0f + static_cast<float>(rand() % static_cast<int>(height - 64.0f));
 				angle = 180.0f;
@@ -362,9 +390,8 @@ void Battlefield::Update(GameContext& context) {
 			projectile->SetVelocity(velocity.x, velocity.y);
 		}
 		else {
-			// The PNG has transparent padding around the visible flame. Test its
-			// visible pixels so the fire vanishes at the border instead of looking
-			// as though it passes through the line.
+			// Test the visible pixels so the fire vanishes at the border instead of looking
+			// as though it passes through the line
 			const float fireLeft = position.x + 9.0f;
 			const float fireRight = position.x + 32.0f - 9.0f;
 			const float fireTop = position.y + 7.0f;
@@ -376,10 +403,19 @@ void Battlefield::Update(GameContext& context) {
 			}
 		}
 
-		AABB projectileBounds = Physics::GetBounds(projectile->GetSprite());
-		if (Physics::CheckAABBCollision(heartBounds, projectileBounds)) {
+		AABB projectileBounds = projectile->GetCollisionBounds();
+		if (projectile->GetType() != ProjectileType::aim &&
+			!projectile->HasAppliedDamage() &&
+			(lastPlayerHitTime == 0 || GetTickCount64() - lastPlayerHitTime >= 1000) &&
+			Physics::CheckAABBCollision(heartBounds, projectileBounds)) {
 			pochi->TakeDamage(enemy->GetAttackDamage());
-			projectile->Deactivate();
+			lastPlayerHitTime = GetTickCount64();
+			projectile->MarkDamageApplied();
+			// Keep the bullet visible for its short impact duration
+			// Moving projectiles disappear immediately after landing a hit
+			if (projectile->GetType() != ProjectileType::bullet) {
+				projectile->Deactivate();
+			}
 		}
 	}
 
@@ -396,6 +432,8 @@ void Battlefield::Update(GameContext& context) {
 	if (attackTimedOut && projectiles.empty()) {
 		projectileAttackFinished = true;
 		showProjectiles = false;
+		bulletAttackActive = false;
+		specialAttackActive = false;
 		OutputDebugStringA("PROJECTILE ATTACK FINISHED!\n");
 	}
 }
@@ -414,12 +452,50 @@ void Battlefield::UpdateStarBounce(Projectile* projectile) {
 	}
 }
 
+void Battlefield::UpdateGunshotAttack() {
+	if (!bulletAttackActive)
+		return;
+	// Aiming phase
+	if (bulletAiming) {
+		unsigned long long elapsed = GetTickCount64() - bulletAimStartTime;
+		if (elapsed >= 500) {		// 500 milliseconds = 0.5 seconds
+			bulletAiming = false;
+			for (Projectile* aim : currentBulletAims) {
+				if (aim != nullptr) aim->Deactivate();
+			}
+			currentBulletAims.clear();
+			for (const D3DXVECTOR2& target : currentBulletTargets) {
+				Projectile* bullet = new Projectile(d3dDevice, target.x, target.y, 0.0f, 0.0f, ProjectileType::bullet);
+				currentBulletHoles.push_back(bullet);
+				projectiles.push_back(bullet);
+			}
+			bulletHoleStartTime = GetTickCount64();
+			bulletShotCount += (int)currentBulletTargets.size();
+		}
+	}
+	// Bullet hole phase
+	else if (!currentBulletHoles.empty()) {
+		unsigned long long elapsed = GetTickCount64() - bulletHoleStartTime;
+		if (elapsed >= 180) {
+			for (Projectile* bullet : currentBulletHoles) {
+				if (bullet != nullptr) bullet->Deactivate();
+			}
+			currentBulletHoles.clear();
+			currentBulletTargets.clear();
+
+			// Keep producing randomized bursts
+			// Battlefield::Update stops this attack when the shared 20-second projectile timer expires
+			StartGunshotBurst();
+		}
+	}
+}
+
 bool Battlefield::IsPlayerDefeated() const {
-	return pochi != nullptr && !pochi->isAlive();
+	return pochi != nullptr && !pochi->IsAlive();
 }
 
 bool Battlefield::IsEnemyDefeated() const {
-	return enemy != nullptr && !enemy->isAlive();
+	return enemy != nullptr && !enemy->IsAlive();
 }
 
 bool Battlefield::HasFled() const {
@@ -439,12 +515,13 @@ void Battlefield::Render(LPD3DXSPRITE sharedBrush) {
 		? D3DCOLOR_XRGB(255, 60, 60)
 		: D3DCOLOR_XRGB(255, 255, 255));
 
-	// Player health + shield bars (top-left) and the enemy HP bar (under
-	// the enemy) - all framed strips, driven by live values.
+	// Player health + shield bars and the enemy HP bar
 	const float enemyRatio = enemy->GetMaxHealth() > 0
 		? std::clamp(displayedEnemyHealth / enemy->GetMaxHealth(), 0.0f, 1.0f) : 0.0f;
 
+	
 	if (playerBars != nullptr && pochi != nullptr) {
-		playerBars->Draw(sharedBrush, *pochi, enemyRatio);
+		playerBars->Draw(sharedBrush, *pochi, enemyRatio,
+			enemy->GetHealth(), enemy->GetMaxHealth());
 	}
 }
