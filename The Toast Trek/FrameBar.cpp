@@ -3,10 +3,8 @@
 #include <algorithm>
 #include <cmath>
 
-FrameBar::FrameBar(IDirect3DDevice9* device, const char* path,
-                   int frameW, int frameH, int frameCount)
-    : device(device), texture(NULL), frameW(frameW), frameH(frameH),
-      frameCount(frameCount > 0 ? frameCount : 1), texW(0), texH(0) {
+FrameBar::FrameBar(IDirect3DDevice9* device, const char* path, int frameW, int frameH, int frameCount)
+    : device(device), texture(NULL), frameW(frameW), frameH(frameH), frameCount(frameCount > 0 ? frameCount : 1), texW(0), texH(0) {
     texture = ui::LoadTexture(device, path,
                               (UINT)frameW, (UINT)(frameH * this->frameCount));
     if (texture != NULL) {
@@ -24,8 +22,7 @@ FrameBar::~FrameBar() {
     if (texture != NULL) texture->Release();
 }
 
-void FrameBar::DrawFrame(LPD3DXSPRITE brush, int index, float x, float y, float scale,
-                        D3DCOLOR tint) const {
+void FrameBar::DrawFrame(LPD3DXSPRITE brush, int index, float x, float y, float scale, D3DCOLOR tint) const {
     if (texture == NULL) return;
     index = std::clamp(index, 0, frameCount - 1);
 
@@ -49,8 +46,7 @@ void FrameBar::DrawFrame(LPD3DXSPRITE brush, int index, float x, float y, float 
     ui::DrawTextureRegion(brush, texture, src, x, y, sx, sy, tint);
 }
 
-void FrameBar::DrawRatio(LPD3DXSPRITE brush, float ratio, float x, float y, float scale,
-                        D3DCOLOR tint) const {
+void FrameBar::DrawRatio(LPD3DXSPRITE brush, float ratio, float x, float y, float scale, D3DCOLOR tint) const {
     ratio = std::clamp(ratio, 0.0f, 1.0f);
     const int index = (int)std::lround(ratio * (frameCount - 1));
     DrawFrame(brush, index, x, y, scale, tint);
