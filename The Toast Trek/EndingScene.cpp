@@ -19,12 +19,6 @@
 namespace {
 
     // True on the frame `key` goes from up to down
-    bool JustPressed(BYTE* keys, int key, bool& wasDown) {
-        const bool isDown = keys != NULL && (keys[key] & 0x80) != 0;   // 0x80 bit = held
-        const bool pressed = isDown && !wasDown;
-        wasDown = isDown;
-        return pressed;
-    }
 
     constexpr int kUpdateFps = 60;   // Fixed updates per second
 

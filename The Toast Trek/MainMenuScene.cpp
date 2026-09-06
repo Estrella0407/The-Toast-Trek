@@ -8,12 +8,6 @@
 #include <dinput.h>
 
 namespace {
-    bool JustPressed(BYTE* keys, int key, bool& wasDown) {
-        bool isDown = keys != NULL && (keys[key] & 0x80) != 0;
-        bool pressed = isDown && !wasDown;
-        wasDown = isDown;
-        return pressed;
-    }
 
     // The title screen: "THE TOAST TREK" + Pochi + "PRESS ENTER TO CONTINUE"
     // Enter opens the New Game / Continue / Settings / Quit choice screen

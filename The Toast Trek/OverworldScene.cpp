@@ -24,16 +24,7 @@
 #include <dinput.h>
 
 namespace {
-    bool JustPressed(BYTE* keys, int key, bool& wasDown) {
-        bool isDown = keys != NULL && (keys[key] & 0x80) != 0;
-        bool pressed = isDown && !wasDown;
-        wasDown = isDown;
-        return pressed;
-    }
 
-    bool IsKeyDown(BYTE* keys, int key) {
-        return keys != NULL && (keys[key] & 0x80) != 0;
-    }
 
     // Arrow keys and WASD both can move Pochi
     struct MoveInput {
@@ -42,10 +33,10 @@ namespace {
 
     MoveInput ReadMoveInput(BYTE* keys) {
         MoveInput input;
-        input.left = IsKeyDown(keys, DIK_LEFT) || IsKeyDown(keys, DIK_A);
-        input.right = IsKeyDown(keys, DIK_RIGHT) || IsKeyDown(keys, DIK_D);
-        input.up = IsKeyDown(keys, DIK_UP) || IsKeyDown(keys, DIK_W);
-        input.down = IsKeyDown(keys, DIK_DOWN) || IsKeyDown(keys, DIK_S);
+        input.left = GameScene::IsKeyDown(keys, DIK_LEFT) || GameScene::IsKeyDown(keys, DIK_A);
+        input.right = GameScene::IsKeyDown(keys, DIK_RIGHT) || GameScene::IsKeyDown(keys, DIK_D);
+        input.up = GameScene::IsKeyDown(keys, DIK_UP) || GameScene::IsKeyDown(keys, DIK_W);
+        input.down = GameScene::IsKeyDown(keys, DIK_DOWN) || GameScene::IsKeyDown(keys, DIK_S);
         return input;
     }
 

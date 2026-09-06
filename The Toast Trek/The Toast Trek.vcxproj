@@ -35,6 +35,7 @@
     <ClCompile Include="FrameBar.cpp" />
     <ClCompile Include="FrameTimer.cpp" />
     <ClCompile Include="GameOverScene.cpp" />
+    <ClCompile Include="GameScene.cpp" />
     <ClCompile Include="GameStateManager.cpp" />
     <ClCompile Include="GameContext.cpp" />
     <ClCompile Include="Heart.cpp" />

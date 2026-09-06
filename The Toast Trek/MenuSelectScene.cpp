@@ -18,12 +18,6 @@
 
 namespace {
 
-    bool JustPressed(BYTE* keys, int key, bool& wasDown) {
-        const bool isDown = keys != NULL && (keys[key] & 0x80) != 0;
-        const bool pressed = isDown && !wasDown;
-        wasDown = isDown;
-        return pressed;
-    }
 
     bool InRect(float x, float y, float l, float t, float r, float b) {
         return x >= l && x <= r && y >= t && y <= b;

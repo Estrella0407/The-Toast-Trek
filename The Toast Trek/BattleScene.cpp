@@ -9,12 +9,6 @@
 #include <dinput.h>
 
 namespace {
-bool JustPressed(BYTE* keys, int key, bool& wasDown) {
-    const bool down = keys != nullptr && (keys[key] & 0x80) != 0;
-    const bool pressed = down && !wasDown;
-    wasDown = down;
-    return pressed;
-}
 
 const char* BossDisplayName(BossId id) {
     switch (id) {

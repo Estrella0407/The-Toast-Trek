@@ -8,12 +8,6 @@
 #include <cmath>
 
 namespace {
-    bool JustPressed(BYTE* keys, int key, bool& wasDown) {
-        bool isDown = keys != NULL && (keys[key] & 0x80) != 0;
-        bool pressed = isDown && !wasDown;
-        wasDown = isDown;
-        return pressed;
-    }
 }
 
 GameOverScene::GameOverScene(SoundManager* soundMgr)
