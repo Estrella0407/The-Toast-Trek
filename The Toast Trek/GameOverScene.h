@@ -1,32 +1,9 @@
 #pragma once
-#include "GameStateManager.h"
-#include "Font.h"
-#include "SoundManager.h"
 #include <memory>
+#include "GameScene.h"
 
-class GameOverScene : public GameScene {
-private:
-    Font* titleFont;
-    Font* statsFont;
-    Font* promptFont;
+class SoundManager;
 
-    bool retryWasDown;
-    bool menuWasDown;
-
-    SoundManager* soundManage;
-
-    float flashTimer;   // Drives the title colour flash
-
-public:
-    explicit GameOverScene(SoundManager* soundMgr);
-    ~GameOverScene();
-
-    void Initialize(GameContext& context) override;
-    void HandleInput(GameContext& context, GameStateManager& manager) override;
-    void Update(GameContext& context, GameStateManager& manager) override;
-    void Render(GameContext& context) override;
-    D3DCOLOR ClearColor() const override;
-};
-
-// Pushed by BattleScene when Pochi loses a fight
+// Pushed by BattleScene when Pochi loses a fight. R retries from the start,
+// M returns to the main menu. The concrete class is private to GameOverScene.cpp.
 std::unique_ptr<GameScene> CreateGameOverScene(SoundManager* sound);

@@ -119,6 +119,15 @@ void OverworldScene::StashSpawn(GameContext& context, const D3DXVECTOR2& s) {
     context.hasPendingSpawn = true;
 }
 
+void OverworldScene::TakeExit(GameContext& context, GameStateManager& manager,
+                              const D3DXVECTOR2& spawn,
+                              const std::function<std::unique_ptr<GameScene>()>& makeNext) {
+    LeaveBoostedMap(context);
+    StashSpawn(context, spawn);
+    std::unique_ptr<GameScene> next = makeNext();
+    if (next != NULL) manager.Push(std::move(next));
+}
+
 bool OverworldScene::HasGate() const {
     return config.gateWidth > 0.0f && config.gateHeight > 0.0f;
 }
@@ -361,19 +370,12 @@ void OverworldScene::Update(GameContext& context, GameStateManager& manager) {
     if (levelUpFrames > 0) --levelUpFrames;
 
     // Every boss on this map down -> fire the once-only hook
-    // (the final map uses it to roll the ending)
-    if (!allClearedFired && config.OnAllCleared && !bossCleared.empty()) {
-        bool all = true;
-        for (bool c : bossCleared) if (!c) { all = false; break; }
-        if (all) {
-            allClearedFired = true;
-            LeaveBoostedMap(context);
-            // Land Pochi on the same seam a normal right-edge exit
-            // (Tarumt -> forest's top-left path)
-            StashSpawn(context, config.rightEdgeSpawn);
-            std::unique_ptr<GameScene> next = config.OnAllCleared();
-            if (next != NULL) { manager.Push(std::move(next)); return; }
-        }
+    // (the final map uses it to roll the ending; Tarumt lands Pochi back on
+    // the forest's top-left seam, hence rightEdgeSpawn)
+    if (!allClearedFired && config.OnAllCleared && !bossCleared.empty() && AllBossesCleared()) {
+        allClearedFired = true;
+        TakeExit(context, manager, config.rightEdgeSpawn, config.OnAllCleared);
+        return;
     }
 
     if (context.pochi == NULL) return;
@@ -451,30 +453,10 @@ void OverworldScene::Update(GameContext& context, GameStateManager& manager) {
     // Forward exits (right edge / doorway) stay sealed while this map still has bosses to beat
     const bool exitLocked = ExitLocked();
 
-    if (atRight && !exitLocked) {
-        LeaveBoostedMap(context);
-        StashSpawn(context, config.rightEdgeSpawn);
-        std::unique_ptr<GameScene> next = config.OnReachRightEdge();
-        if (next != NULL) manager.Push(std::move(next));
-        return;
-    }
-
-    if (atDoor && !exitLocked) {
-        LeaveBoostedMap(context);
-        StashSpawn(context, config.doorwaySpawn);
-        std::unique_ptr<GameScene> next = config.OnEnterDoorway();
-        if (next != NULL) manager.Push(std::move(next));
-        return;
-    }
-
+    if (atRight && !exitLocked) { TakeExit(context, manager, config.rightEdgeSpawn, config.OnReachRightEdge); return; }
+    if (atDoor  && !exitLocked) { TakeExit(context, manager, config.doorwaySpawn,   config.OnEnterDoorway);   return; }
     // Backtracking out the left edge - allowed even while sealed
-    if (atLeft) {
-        LeaveBoostedMap(context);
-        StashSpawn(context, config.leftEdgeSpawn);
-        std::unique_ptr<GameScene> next = config.OnReachLeftEdge();
-        if (next != NULL) manager.Push(std::move(next));
-        return;
-    }
+    if (atLeft)                 { TakeExit(context, manager, config.leftEdgeSpawn,   config.OnReachLeftEdge);  return; }
 }
 
 void OverworldScene::Render(GameContext& context) {

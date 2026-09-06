@@ -1,4 +1,5 @@
 #include "BattleScene.h"
+#include "GameStateManager.h"
 #include "GameOverScene.h"
 #include "Battlefield.h"
 #include "BattleUI.h"
@@ -7,6 +8,47 @@
 #include "Enemy.h"
 #include "SoundManager.h"
 #include <dinput.h>
+#include <memory>
+
+// The turn-based boss fight. Private to this file - the rest of the game only
+// ever calls CreateBattleScene(bossId).
+class BattleScene : public GameScene {
+private:
+	std::unique_ptr<Battlefield> battlefield;
+	std::unique_ptr<BattleUI> battleUI;
+	Pochi* pochi;
+	BossId bossId;
+
+	enum BattlePhase {
+		ENCOUNTER, PLAYER_TURN, ACT_MENU, ITEM_MENU, ACT_ANIMATION, ENEMY_HIT, ENEMY_ATTACK
+	};
+
+	bool showEncounterMessage;
+	float enemyFlashTimer;
+	int enemyHitFrames;
+	bool actionKeyWasDown[4];
+	bool actChoiceWasDown[3];
+	bool itemChoiceWasDown[3];
+	bool actChoiceUsed[3];	// After use, the selected button is gone
+	bool cheatWinWasDown;	// Dev cheat: K ends the fight in a win
+	int lastPochiHealth;	// Prev-frame heart + armour total -> a drop plays "hurt"
+
+public:
+	explicit BattleScene(BossId bossId) : bossId(bossId), battlefield(nullptr), battleUI(nullptr), phase(ENCOUNTER),
+		showEncounterMessage(true), enemyFlashTimer(0.0f), enemyHitFrames(0),
+		actionKeyWasDown{ false, false, false, false }, actChoiceWasDown{ false, false, false },
+		itemChoiceWasDown{ false, false, false }, actChoiceUsed{ false, false, false },
+		cheatWinWasDown(false), lastPochiHealth(0) {}
+
+	~BattleScene() override;
+	BattlePhase phase;
+
+	void Initialize(GameContext& context) override;
+	void HandleInput(GameContext& context, GameStateManager& manager) override;
+	void Update(GameContext& context, GameStateManager& manager) override;
+	void Render(GameContext& context) override;
+	D3DCOLOR ClearColor() const override;
+};
 
 namespace {
 

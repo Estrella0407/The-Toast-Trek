@@ -121,6 +121,12 @@ public:
 private:
     void LeaveBoostedMap(GameContext& context);
     void StashSpawn(GameContext& context, const D3DXVECTOR2& s);
+    // Drop any stat boost, stash the destination spawn, push the scene the
+    // hook builds. Shared by every map exit (right edge / doorway / left edge
+    // / all-cleared).
+    void TakeExit(GameContext& context, GameStateManager& manager,
+                  const D3DXVECTOR2& spawn,
+                  const std::function<std::unique_ptr<GameScene>()>& makeNext);
     bool HasGate() const;
     void DrawGate(GameContext& context);
     bool AllBossesCleared() const;
