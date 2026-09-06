@@ -1,4 +1,6 @@
 #include "EndingScene.h"
+#include "Pochi.h"
+#include "Sprite.h"
 #include "MainMenuScene.h"
 #include "FrameTimer.h"
 #include "Font.h"
@@ -6,6 +8,7 @@
 #include "SoundManager.h"
 #include "SaveGame.h"
 #include "TileMap.h"
+#include "MapLibrary.h"
 #include "UiFill.h"
 #include <d3dx9.h>
 #include <dinput.h>
@@ -200,7 +203,7 @@ namespace {
             // Advance Pochi's walk animation during the cutscene
             if (phase != Phase::Credits && context.pochi != NULL && ++pochiAnimAccum >= 12) {
                 pochiAnimAccum = 0;
-                context.pochi->NextFrame();
+                context.pochi->GetSprite()->NextFrame();
             }
         }
 
@@ -239,9 +242,9 @@ namespace {
             dialogFont = new Font(context.device, 0.0f, 0.0f, 1000, 44, 26, "Arial");
 
             if (context.pochi != NULL) {
-                context.pochi->SetPosition(kPochiCutsceneX, kPochiCutsceneY);
-                context.pochi->SetScale(2.0f);
-                context.pochi->CropToFrame(0);
+                context.pochi->GetSprite()->SetPosition(kPochiCutsceneX, kPochiCutsceneY);
+                context.pochi->GetSprite()->SetScale(2.0f);
+                context.pochi->GetSprite()->CropToFrame(0);
             }
 
             timer.Init(kUpdateFps);
@@ -294,10 +297,10 @@ namespace {
         void RenderCutscene(GameContext& context) {
             LPD3DXSPRITE b = context.spriteBrush;
 
-            if (context.ruinsInteriorMap != NULL) context.ruinsInteriorMap->Draw(b);
+            if (context.maps->RuinsInterior() != NULL) context.maps->RuinsInterior()->Draw(b);
             else ui::FillRect(b, whiteTex, 0.0f, 0.0f, 1280.0f, 720.0f, D3DCOLOR_XRGB(14, 12, 18));
 
-            if (context.pochi != NULL) context.pochi->Draw(b);
+            if (context.pochi != NULL) context.pochi->GetSprite()->Draw(b);
             if (denjiTex != NULL) {
                 ui::DrawTexture(b, denjiTex, kDenjiTexW, kDenjiTexH,
                                 kMeetX - kDenjiDrawW * 0.5f, denjiY - kDenjiDrawH,

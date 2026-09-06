@@ -91,7 +91,7 @@ namespace {
             if (!p.valid) return;
 
             ResetRunProgress(context);   // Clean slate, then layer the save on top
-            if (context.playerStats != NULL) context.playerStats->SetLevel(p.level);
+            if (context.pochi != NULL) context.pochi->SetLevel(p.level);
             if (context.inventory != NULL) {
                 context.inventory->SetCount(ItemType::HealthPotion, p.potions);
                 context.inventory->SetCount(ItemType::Bone, p.bones);
@@ -173,7 +173,7 @@ namespace {
         void Render(GameContext& context) override {
             LPD3DXSPRITE b = context.spriteBrush;
 
-            if (context.pochi != NULL) context.pochi->Draw(b);
+            if (context.pochi != NULL) context.pochi->GetSprite()->Draw(b);
 
             // Choice panel
             ui::FillRect(b, whiteTex, kPanelL, kPanelT, kPanelR - kPanelL, kPanelB - kPanelT, kPanel);

@@ -1,7 +1,10 @@
 #include "TutorialPopupScene.h"
+#include "Pochi.h"
+#include "Sprite.h"
 #include "Font.h"
 #include "Sprite.h"
 #include "TileMap.h"
+#include "MapLibrary.h"
 #include "UiFill.h"
 #include <d3dx9.h>
 #include <dinput.h>
@@ -184,9 +187,9 @@ namespace {
 
             // Static snapshot of the forest (background)
             const std::vector<std::string> leaf = { "Tree_Leaf" };
-            if (context.forestMap != NULL) context.forestMap->DrawExcludingLayers(brush, leaf);
-            if (context.pochi != NULL) context.pochi->Draw(brush);
-            if (context.forestMap != NULL) context.forestMap->DrawOnlyLayers(brush, leaf);
+            if (context.maps->Forest() != NULL) context.maps->Forest()->DrawExcludingLayers(brush, leaf);
+            if (context.pochi != NULL) context.pochi->GetSprite()->Draw(brush);
+            if (context.maps->Forest() != NULL) context.maps->Forest()->DrawOnlyLayers(brush, leaf);
 
             // Dim the whole screen (overlay), then a panel with a thin border
             FillRect(brush, 0.0f, 0.0f, 1280.0f, 720.0f, D3DCOLOR_ARGB(200, 10, 10, 14));

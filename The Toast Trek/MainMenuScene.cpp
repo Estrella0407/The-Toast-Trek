@@ -1,5 +1,7 @@
 #include "GameStateManager.h"
 #include "MainMenu.h"
+#include "Pochi.h"
+#include "Sprite.h"
 #include "MenuSelectScene.h"
 #include "MainMenuScene.h"
 #include "EndingScene.h"
@@ -25,7 +27,7 @@ namespace {
         ~MainMenuScene() { delete menu; }
 
         void Initialize(GameContext& context) override {
-            menu = new MainMenu(context.device, context.pochi);
+            menu = new MainMenu(context.device, context.pochi->GetSprite());
             // Start "down" so a key/click still held from launch doesn't skip
             // this screen - it must be released and pressed again here
             enterWasDown = true;

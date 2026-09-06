@@ -32,6 +32,7 @@ public:
     Sprite* GetSprite() const { return sprite; }
     RigidBody& Body() { return body; }
 
-    D3DXVECTOR2 GetPosition() const { return position; }
+    // The sprite is the source of truth once it exists (subclasses move it directly)
+    D3DXVECTOR2 GetPosition() const { return sprite != nullptr ? sprite->GetPosition() : position; }
     void SetPosition(float x, float y);
 };

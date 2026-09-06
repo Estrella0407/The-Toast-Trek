@@ -32,7 +32,7 @@ const char* BossDisplayName(BossId id) {
 BattleScene::~BattleScene() = default;
 
 void BattleScene::Initialize(GameContext& context) {
-	pochi = context.playerStats;
+	pochi = context.pochi;
 	lastPochiHealth = (pochi != nullptr) ? (pochi->GetHealth() + pochi->GetArmor()) : 0;
     battleUI = std::make_unique<BattleUI>(context.device);
     Enemy* enemy = CreateBossEnemy(context.device, bossId, 600.0f, 50.0f);

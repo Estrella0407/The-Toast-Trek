@@ -39,9 +39,6 @@
     <ClCompile Include="GameStateManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GameScene.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="GameContext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -142,9 +139,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="CheatOverlay.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Item.cpp">
@@ -294,9 +288,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="CheatOverlay.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Item.h">

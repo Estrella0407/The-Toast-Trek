@@ -9,13 +9,10 @@ class GameStateManager;
 // The stack only ever ticks and renders its top entry.
 class GameScene {
 public:
-    virtual ~GameScene();   // out-of-line anchor - see GameScene.cpp
+    virtual ~GameScene() = default;
     virtual void Initialize(GameContext& context) {}
     virtual void HandleInput(GameContext& context, GameStateManager& manager) = 0;
     virtual void Update(GameContext& context, GameStateManager& manager) = 0;
-    // Optional fixed-step hook, called once per frame before Update(). Most
-    // scenes resolve their own collisions inside Update() and leave this empty.
-    virtual void Physics(GameContext& context, GameStateManager& manager) {}
     virtual void Render(GameContext& context) = 0;
     virtual D3DCOLOR ClearColor() const = 0;
 };

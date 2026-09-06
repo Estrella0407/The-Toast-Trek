@@ -11,7 +11,6 @@
 #include "CheatOverlay.h"
 
 class SoundManager;
-class Player;
 
 // The lecture-notes "GameStateStackManager": owns the engine subsystems
 // (window, device, input, sound) AND the scene stack, and drives the frame.
@@ -29,7 +28,6 @@ private:
     InputManager input;
     FrameTimer timer;
     SoundManager* sound;
-    Player* player;              // overworld Pochi - owns her sprite
 
     MapLibrary maps;             // owns the overworld tilemaps
     CheatOverlay cheatOverlay;   // red "CHEAT MODE" plate over every scene
@@ -59,8 +57,7 @@ public:
     void Init();                 // engine bring-up + top scene Initialize()
     bool WindowIsRunning();       // -> Window::IsRunning()
     void GetInput();              // engine: input devices + cursor + sound tick
-    void Physics();               // engine: rigid-body step + scene Physics() hook
-    void Update();                // top scene HandleInput + Update
+    void Update();                // top scene HandleInput + Update (scenes call PhysicsManager here)
     void Render();                // engine: clear / draw scene / overlay / present
     void Shutdown();             // reverse-order teardown
 

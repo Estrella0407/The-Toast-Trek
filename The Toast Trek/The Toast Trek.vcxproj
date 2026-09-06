@@ -36,7 +36,6 @@
     <ClCompile Include="FrameTimer.cpp" />
     <ClCompile Include="GameOverScene.cpp" />
     <ClCompile Include="GameStateManager.cpp" />
-    <ClCompile Include="GameScene.cpp" />
     <ClCompile Include="GameContext.cpp" />
     <ClCompile Include="Heart.cpp" />
 	<ClCompile Include="Inventory.cpp" />
@@ -54,7 +53,6 @@
     <ClCompile Include="RuinsInteriorScene.cpp" />
     <ClCompile Include="TarumtScene.cpp" />
     <ClCompile Include="PhysicsManager.cpp" />
-    <ClCompile Include="Player.cpp" />
     <ClCompile Include="Item.cpp" />
     <ClCompile Include="RigidBody.cpp" />
     <ClCompile Include="Window.cpp" />
@@ -106,7 +104,6 @@
     <ClInclude Include="RuinsInteriorScene.h" />
     <ClInclude Include="TarumtScene.h" />
     <ClInclude Include="PhysicsManager.h" />
-    <ClInclude Include="Player.h" />
     <ClInclude Include="Item.h" />
     <ClInclude Include="RigidBody.h" />
     <ClInclude Include="Window.h" />

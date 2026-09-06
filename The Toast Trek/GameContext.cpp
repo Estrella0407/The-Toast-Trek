@@ -6,7 +6,7 @@
 
 // Resets everything a fresh playthrough starts from (main menu, retry)
 void ResetRunProgress(GameContext& context) {
-    if (context.playerStats != NULL) context.playerStats->SetLevel(1); // Fresh Pochi, stats refilled
+    if (context.pochi != NULL) context.pochi->SetLevel(1); // Fresh Pochi, stats refilled
     if (context.inventory != NULL) context.inventory->Reset();         // Empty the pack
     context.clearedMaps.clear();                                       // Every map locked again
     context.collectedItems.clear();
@@ -24,7 +24,7 @@ void SaveCurrentRun(const GameContext& context) {
         p.px = pos.x;
         p.py = pos.y;
     }
-    p.level = context.playerStats != NULL ? context.playerStats->GetLevel() : 1;
+    p.level = context.pochi != NULL ? context.pochi->GetLevel() : 1;
     if (context.inventory != NULL) {
         p.potions = context.inventory->GetCount(ItemType::HealthPotion);
         p.bones = context.inventory->GetCount(ItemType::Bone);

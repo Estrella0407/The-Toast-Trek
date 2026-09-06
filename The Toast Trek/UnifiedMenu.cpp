@@ -126,20 +126,20 @@ namespace {
         }
 
         void UseSelectedItem(GameContext& context) {
-            if (context.inventory == NULL || context.playerStats == NULL) return;
+            if (context.inventory == NULL || context.pochi == NULL) return;
             const ItemType type = kItems[sel].type;
             if (context.inventory->GetCount(type) <= 0) return;
             if (!context.inventory->Consume(type)) return;
 
             if (type == ItemType::HealthPotion) {
-                context.playerStats->Heal(3);
+                context.pochi->Heal(3);
             }
             else if (type == ItemType::Bone) {
-                context.playerStats->RecoverArmor(2);
+                context.pochi->RecoverArmor(2);
             }
             else {
-                context.playerStats->Heal(context.playerStats->GetMaxHealth());
-                context.playerStats->RecoverArmor(context.playerStats->GetMaxArmor());
+                context.pochi->Heal(context.pochi->GetMaxHealth());
+                context.pochi->RecoverArmor(context.pochi->GetMaxArmor());
             }
             if (context.sound != NULL) context.sound->PlaySfx("click");
         }
@@ -181,7 +181,7 @@ namespace {
 
         void RenderStatus(LPD3DXSPRITE b, GameContext& context) {
             headFont->Draw("Pochi", kBodyX, kHeadingY, kHeading, b);
-            const Pochi* p = context.playerStats;
+            const Pochi* p = context.pochi;
             auto Line = [&](const char* label, const std::string& val, int row) {
                 bodyFont->Draw(label, kBodyX, kBodyY + row * kRowH, kTextDim, b);
                 bodyFont->Draw(val.c_str(), kBodyX + 220.0f, kBodyY + row * kRowH, kText, b);

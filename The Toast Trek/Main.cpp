@@ -13,7 +13,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     while (game->WindowIsRunning())
     {
         game->GetInput();               // engine: input devices + cursor + sound  (code once)
-        game->Physics();                // engine: rigid-body step + scene hook     (code once)
         game->Update();                 // top scene HandleInput + Update           (per scene)
         game->Render();                 // engine: clear / draw / overlay / present (code once)
     }

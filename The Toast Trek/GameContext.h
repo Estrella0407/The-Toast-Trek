@@ -4,11 +4,10 @@
 #include <set>
 #include "Enemy.h" // BossId
 
-class Sprite;
-class TileMap;
 class Pochi;
 class Inventory;
 class SoundManager;
+class MapLibrary;
 
 // Full definition in OverworldScene.h; opaque here so GameContext can hold a
 // std::set<MapId> without the whole overworld header
@@ -27,15 +26,10 @@ enum class BattleOutcome {
 struct GameContext {
     IDirect3DDevice9* device;
     LPD3DXSPRITE spriteBrush;
-    Sprite* pochi;
-    TileMap* forestMap;
-    TileMap* mazeMap;
-	Pochi* playerStats;
-	Inventory* inventory;
+    Pochi* pochi;                // the player character - sprite + stats in one
+    MapLibrary* maps;            // owns every overworld tilemap
+    Inventory* inventory;
     SoundManager* sound;         // May be null if audio failed to init
-    TileMap* ruinsExteriorMap;
-    TileMap* ruinsInteriorMap;
-    TileMap* tarumtMap;         // Secret-boss area off the forest's top-left; may be null
     BYTE* keys;
     int moveSpeed;
 

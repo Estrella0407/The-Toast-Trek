@@ -16,6 +16,7 @@
 #include "SaveGame.h"
 #include "Sprite.h"
 #include "TileMap.h"
+#include "MapLibrary.h"
 #include "UiFill.h"
 #include "UnifiedMenu.h"
 #include <algorithm>
@@ -50,12 +51,12 @@ namespace {
 
     TileMap* ResolveMap(GameContext& context, MapId id) {
         switch (id) {
-        case MapId::Maze: return context.mazeMap;
-        case MapId::RuinsExterior: return context.ruinsExteriorMap;
-        case MapId::RuinsInterior: return context.ruinsInteriorMap;
-        case MapId::Tarumt: return context.tarumtMap;
+        case MapId::Maze: return context.maps->Maze();
+        case MapId::RuinsExterior: return context.maps->RuinsExterior();
+        case MapId::RuinsInterior: return context.maps->RuinsInterior();
+        case MapId::Tarumt: return context.maps->Tarumt();
         case MapId::Forest:
-        default: return context.forestMap;
+        default: return context.maps->Forest();
         }
     }
 
@@ -109,7 +110,7 @@ OverworldScene::~OverworldScene() {
 }
 
 void OverworldScene::LeaveBoostedMap(GameContext& context) {
-    if (boostedStats != NULL && context.playerStats == boostedStats &&
+    if (boostedStats != NULL && context.pochi == boostedStats &&
         boostedStats->IsSpecialMode()) {
         boostedStats->SetSpecialMode(false);
     }
@@ -227,8 +228,8 @@ void OverworldScene::Initialize(GameContext& context) {
     // SetSpecialMode is cleared first so a stale flag
     // (after a Game Over -> retry) can't make the boost a no-op
     boostedStats = NULL;
-    if (config.mapId == MapId::Tarumt && !preCleared && map != NULL && context.playerStats != NULL) {
-        boostedStats = context.playerStats;
+    if (config.mapId == MapId::Tarumt && !preCleared && map != NULL && context.pochi != NULL) {
+        boostedStats = context.pochi;
         boostedStats->SetSpecialMode(false);
         boostedStats->SetSpecialMode(true);
         floatText = "Stats boosted to max!";
@@ -297,7 +298,7 @@ void OverworldScene::HandleInput(GameContext& context, GameStateManager& manager
     // Items first: standing on one and pressing F picks it up
     for (size_t i = 0; i < itemSprites.size(); ++i) {
         if (itemCollected[i]) continue;
-        if (TouchingItem(context.pochi, itemSprites[i]->GetSprite())) {
+        if (TouchingItem(context.pochi->GetSprite(), itemSprites[i]->GetSprite())) {
             itemCollected[i] = true;
             context.collectedItems.insert(SlotKey(config.mapId, (int)i));
             if (context.inventory != NULL) context.inventory->Add(config.items[i].type);
@@ -353,10 +354,10 @@ void OverworldScene::Update(GameContext& context, GameStateManager& manager) {
         }
         // Beating an enemy levels Pochi up (fully heals too) and floats "Leveled Up!"
         // Mr Andrew (Tarumt) is outside the 3-level progression
-        if (context.playerStats != NULL && config.mapId != MapId::Tarumt) {
-            const int lv = context.playerStats->GetLevel();
+        if (context.pochi != NULL && config.mapId != MapId::Tarumt) {
+            const int lv = context.pochi->GetLevel();
             if (lv < 3) {
-                context.playerStats->SetLevel(lv + 1);
+                context.pochi->SetLevel(lv + 1);
                 levelUpFrames = 150;
                 floatText = "Leveled Up!";
             }
@@ -414,16 +415,16 @@ void OverworldScene::Update(GameContext& context, GameStateManager& manager) {
 
     if (map == NULL) return;
 
-    PhysicsManager::ClampToBounds(context.pochi, 0.0f, 0.0f,
+    PhysicsManager::ClampToBounds(context.pochi->GetSprite(), 0.0f, 0.0f,
         (float)map->GetWidthPixels(), (float)map->GetHeightPixels());
 
     // Cheat mode: no collision
     if (!Cheats::enabled) {
-        PhysicsManager::ResolveCollisionShapes(context.pochi, map, kPochiFootWidthRatio, kPochiFootHeightRatio);
+        PhysicsManager::ResolveCollisionShapes(context.pochi->GetSprite(), map, kPochiFootWidthRatio, kPochiFootHeightRatio);
 
         // Invisible top/bottom fence: keep Pochi's feet inside the maze boundary
         if (config.fenceBottom > config.fenceTop) {
-            AABB feet = PhysicsManager::GetFootBounds(context.pochi, kPochiFootWidthRatio, kPochiFootHeightRatio);
+            AABB feet = PhysicsManager::GetFootBounds(context.pochi->GetSprite(), kPochiFootWidthRatio, kPochiFootHeightRatio);
             D3DXVECTOR2 p = context.pochi->GetPosition();
             if (feet.top < config.fenceTop)       p.y += config.fenceTop - feet.top;
             if (feet.bottom > config.fenceBottom) p.y -= feet.bottom - config.fenceBottom;
@@ -432,7 +433,7 @@ void OverworldScene::Update(GameContext& context, GameStateManager& manager) {
 
         // Closed exit gate: a solid wall at gateX until the map is cleared
         if (HasGate() && ExitLocked()) {
-            AABB pb = PhysicsManager::GetBounds(context.pochi);
+            AABB pb = PhysicsManager::GetBounds(context.pochi->GetSprite());
             if (pb.right > config.gateX) {
                 D3DXVECTOR2 p = context.pochi->GetPosition();
                 context.pochi->SetPosition(p.x - (pb.right - config.gateX), p.y);
@@ -441,7 +442,7 @@ void OverworldScene::Update(GameContext& context, GameStateManager& manager) {
     }
 
     // --- Map exits ---------------------------------------------------
-    const AABB pb = PhysicsManager::GetBounds(context.pochi);
+    const AABB pb = PhysicsManager::GetBounds(context.pochi->GetSprite());
     const D3DXVECTOR2 pcentre = context.pochi->GetPosition();
     const bool atRight = config.OnReachRightEdge &&
         pb.right >= (float)map->GetWidthPixels() - 5.0f;
@@ -505,7 +506,7 @@ void OverworldScene::Render(GameContext& context) {
     // Pochi draws in front of it
     if (HasGate() && ExitLocked()) DrawGate(context);
 
-    if (context.pochi != NULL) context.pochi->Draw(context.spriteBrush);
+    if (context.pochi != NULL) context.pochi->Render(context.spriteBrush);
 
     if (context.pochi != NULL) {
         const D3DXVECTOR2 pp = context.pochi->GetPosition();
@@ -516,7 +517,7 @@ void OverworldScene::Render(GameContext& context) {
         if (exclaimTex != NULL) {
             bool nearInteractable = false;
             for (size_t i = 0; i < itemSprites.size() && !nearInteractable; ++i)
-                if (!itemCollected[i] && TouchingItem(context.pochi, itemSprites[i]->GetSprite()))
+                if (!itemCollected[i] && TouchingItem(context.pochi->GetSprite(), itemSprites[i]->GetSprite()))
                     nearInteractable = true;
             for (size_t i = 0; i < bossEnemies.size() && !nearInteractable; ++i) {
                 if (bossCleared[i]) continue;
@@ -566,7 +567,7 @@ void OverworldScene::Render(GameContext& context) {
         // At a sealed exit: tell the player why they can't leave yet
         bool shownExitLock = false;
         if (ExitLocked()) {
-            AABB pb = PhysicsManager::GetBounds(context.pochi);
+            AABB pb = PhysicsManager::GetBounds(context.pochi->GetSprite());
             const bool atRightEdge = config.OnReachRightEdge &&
                 pb.right >= (float)map->GetWidthPixels() - 40.0f;
             const bool atDoorway = config.OnEnterDoorway &&
@@ -589,8 +590,8 @@ void OverworldScene::Render(GameContext& context) {
         }
     }
 
-    if (hud != NULL && context.playerStats != NULL) {
-        hud->Draw(context.spriteBrush, *context.playerStats);
+    if (hud != NULL && context.pochi != NULL) {
+        hud->Draw(context.spriteBrush, *context.pochi);
     }
 }
 

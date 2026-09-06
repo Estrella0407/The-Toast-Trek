@@ -1,16 +1,14 @@
 #include "GameStateManager.h"
 #include "SoundManager.h"
-#include "Sprite.h"
 #include "Inventory.h"
 #include "Pochi.h"
-#include "Player.h"
 #include "Cheats.h"
 
 static const int kScreenWidth = 1280;
 static const int kScreenHeight = 720;
 
 GameStateManager::GameStateManager()
-    : sound(nullptr), player(nullptr), context{}, pendingPopCount(0), clearRequested(false)
+    : sound(nullptr), context{}, pendingPopCount(0), clearRequested(false)
 {
 }
 
@@ -61,11 +59,6 @@ void GameStateManager::GetInput()
     if (sound) sound->Update();
 }
 
-void GameStateManager::Physics()
-{
-    if (!stateStack.empty()) stateStack.back()->Physics(context, *this);
-}
-
 void GameStateManager::Update()
 {
     if (!stateStack.empty()) stateStack.back()->HandleInput(context, *this);
@@ -91,12 +84,10 @@ void GameStateManager::Shutdown()
     pendingPushes.clear();
 
     if (context.inventory) { delete context.inventory; context.inventory = nullptr; }
-    if (context.playerStats) { delete context.playerStats; context.playerStats = nullptr; }
-    if (player) { delete player; player = nullptr; context.pochi = nullptr; }
+    if (context.pochi) { delete context.pochi; context.pochi = nullptr; }
 
-    // Tilemaps are owned by `maps`; the cheat overlay owns its own font/tex.
-    context.forestMap = context.mazeMap = nullptr;
-    context.ruinsExteriorMap = context.ruinsInteriorMap = context.tarumtMap = nullptr;
+    // `maps` owns the tilemaps; CheatOverlay owns its own font/texture.
+    context.maps = nullptr;
 
     if (sound) {
         sound->Shutdown();
@@ -110,7 +101,8 @@ void GameStateManager::Shutdown()
 }
 
 // ---------------------------------------------------------------------------
-// Assets (the player sprite still lives here until the GameObject retrofit)
+// Assets - each class loads its own; GameStateManager just wires them into
+// the shared GameContext.
 // ---------------------------------------------------------------------------
 
 void GameStateManager::LoadAssets()
@@ -120,17 +112,10 @@ void GameStateManager::LoadAssets()
     cheatOverlay.Load(device);
 
     maps.Load(device);
-    context.forestMap = maps.Forest();
-    context.mazeMap = maps.Maze();
-    context.ruinsExteriorMap = maps.RuinsExterior();
-    context.ruinsInteriorMap = maps.RuinsInterior();
-    context.tarumtMap = maps.Tarumt();
+    context.maps = &maps;
 
-    player = new Player(device);
-    context.pochi = player->GetSprite();   // scenes borrow the sprite; Player owns it
-
+    context.pochi = new Pochi(device, 1);   // sprite + stats in one
     context.inventory = new Inventory();
-    context.playerStats = new Pochi(1);
 
     sound = new SoundManager();
     sound->Initialize();
