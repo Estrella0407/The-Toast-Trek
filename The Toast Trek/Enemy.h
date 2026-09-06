@@ -26,7 +26,6 @@ private:
 	BossId bossId;
 	AttackType attackType;
 	Sprite* actSprite;	// Act button -> enemy blushing animation
-	Sprite* enemyHealthBar;
 
 	int health;
 	int maxHealth;
