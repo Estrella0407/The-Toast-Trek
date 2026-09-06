@@ -1,7 +1,8 @@
 #include "GameOverScene.h"
 #include "MainMenuScene.h"
 #include "GameStateManager.h"
-#include "OverworldScene.h"   // CreateForestScene
+#include "OverworldScene.h"   // CreateOverworldSceneForMap
+#include "ForestScene.h"
 #include "SoundManager.h"
 #include <dinput.h>
 #include <cmath>
@@ -46,7 +47,7 @@ void GameOverScene::HandleInput(GameContext& context, GameStateManager& manager)
     // Both choices rebuild it with ClearAndPush
     if (JustPressed(context.keys, DIK_R, retryWasDown)) {
         ResetRunProgress(context);   // Fresh Pochi, empty pack, every map locked again
-        manager.ClearAndPush(CreateForestScene());
+        manager.ClearAndPush(std::make_unique<ForestScene>());
     }
     if (JustPressed(context.keys, DIK_M, menuWasDown)) {
         manager.ClearAndPush(CreateMainMenuScene());

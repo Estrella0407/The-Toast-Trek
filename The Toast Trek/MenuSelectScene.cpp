@@ -2,6 +2,7 @@
 #include "GameStateManager.h"
 #include "MainMenuScene.h"
 #include "OverworldScene.h"
+#include "ForestScene.h"
 #include "TutorialPopupScene.h"
 #include "SettingsScene.h"
 #include "SaveGame.h"
@@ -78,7 +79,7 @@ namespace {
         void StartNewRun(GameContext& context, GameStateManager& manager) {
             save::ClearProgress();
             ResetRunProgress(context);
-            manager.ClearAndPush(CreateForestScene());
+            manager.ClearAndPush(std::make_unique<ForestScene>());
             if (!s_forestIntroShown && !Cheats::enabled) {
                 manager.Push(CreateForestIntroPopup());
                 s_forestIntroShown = true;

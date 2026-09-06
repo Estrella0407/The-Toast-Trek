@@ -48,6 +48,11 @@
     <ClCompile Include="MenuSelectScene.cpp" />
     <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="OverworldScene.cpp" />
+    <ClCompile Include="ForestScene.cpp" />
+    <ClCompile Include="MazeScene.cpp" />
+    <ClCompile Include="RuinsExteriorScene.cpp" />
+    <ClCompile Include="RuinsInteriorScene.cpp" />
+    <ClCompile Include="TarumtScene.cpp" />
     <ClCompile Include="PhysicsManager.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="Item.cpp" />
@@ -95,6 +100,11 @@
     <ClInclude Include="MapLibrary.h" />
     <ClInclude Include="MenuSelectScene.h" />
     <ClInclude Include="OverworldScene.h" />
+    <ClInclude Include="ForestScene.h" />
+    <ClInclude Include="MazeScene.h" />
+    <ClInclude Include="RuinsExteriorScene.h" />
+    <ClInclude Include="RuinsInteriorScene.h" />
+    <ClInclude Include="TarumtScene.h" />
     <ClInclude Include="PhysicsManager.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="Item.h" />

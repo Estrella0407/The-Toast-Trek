@@ -9,7 +9,7 @@ class GameStateManager;
 // The stack only ever ticks and renders its top entry.
 class GameScene {
 public:
-    virtual ~GameScene() {}
+    virtual ~GameScene();   // out-of-line anchor - see GameScene.cpp
     virtual void Initialize(GameContext& context) {}
     virtual void HandleInput(GameContext& context, GameStateManager& manager) = 0;
     virtual void Update(GameContext& context, GameStateManager& manager) = 0;

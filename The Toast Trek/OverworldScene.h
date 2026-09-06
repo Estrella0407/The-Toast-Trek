@@ -1,12 +1,22 @@
 #pragma once
-#include "GameStateManager.h"
+#include "GameScene.h"
 #include "Inventory.h" // ItemType
 #include <functional>
+#include <memory>
 #include <string>
 #include <vector>
 
+class TileMap;
+class Enemy;
+class Font;
+class Item;
+class Pochi;
+class PochiBadge;
+class Sprite;
+class GameStateManager;
+
 // Which loaded map an OverworldScene draws / collides against
-enum class MapId : int {   // fixed underlying type: forward-declared in GameScene.h
+enum class MapId : int {   // fixed underlying type: forward-declared in GameContext.h
     Forest,
     Maze,
     RuinsExterior,
@@ -31,7 +41,8 @@ struct ItemSpawn {
 };
 
 // Everything that differs between one overworld map and the next, so the
-// shared walk / collide / render loop is written once and fed data
+// shared walk / collide / render loop is written once and fed data. Each map
+// subclass fills one of these in its constructor.
 struct OverworldConfig {
     MapId mapId = MapId::Forest;
 
@@ -44,7 +55,7 @@ struct OverworldConfig {
     // Where Pochi spawns, given his current position (carry Y across a seam)
     std::function<D3DXVECTOR2(const D3DXVECTOR2& currentPosition)> ComputeSpawnPosition;
 
-    // Pochi reaches the right edge -> next state to push (null = no exit)
+    // Pochi reaches the right edge -> next scene to push (null = no exit)
     std::function<std::unique_ptr<GameScene>()> OnReachRightEdge;
 
     // Left edge -> backtrack to the previous map, allowed even while bosses
@@ -90,10 +101,59 @@ struct OverworldConfig {
     float fenceBottom = 0.0f;
 };
 
-std::unique_ptr<GameScene> CreateOverworldScene(OverworldConfig config);
+// Shared behaviour for every overworld map: the walk / collide / interact /
+// render loop, written once. Each map is a subclass whose constructor hands
+// up its own OverworldConfig. Construct via std::make_unique<ForestScene>()
+// etc. - there is no factory function.
+class OverworldScene : public GameScene {
+protected:
+    explicit OverworldScene(OverworldConfig cfg);
 
-// The first overworld screen, reached from the main menu
-std::unique_ptr<GameScene> CreateForestScene();
+public:
+    ~OverworldScene() override;
 
-// Rebuilds the overworld state for `id` - used by "Continue"
+    void Initialize(GameContext& context) override;
+    void HandleInput(GameContext& context, GameStateManager& manager) override;
+    void Update(GameContext& context, GameStateManager& manager) override;
+    void Render(GameContext& context) override;
+    D3DCOLOR ClearColor() const override;
+
+private:
+    void LeaveBoostedMap(GameContext& context);
+    void StashSpawn(GameContext& context, const D3DXVECTOR2& s);
+    bool HasGate() const;
+    void DrawGate(GameContext& context);
+    bool AllBossesCleared() const;
+    bool ExitLocked() const;
+
+    OverworldConfig config;
+    TileMap* map;
+
+    bool interactWasDown;
+    bool menuWasDown;
+    bool cheatClearWasDown;   // K - clear nearest boss
+    bool cheatWarpWasDown;    // L - jump to this map's exit
+    bool allClearedFired;
+    bool exitsArmed;          // False until Pochi has stood clear of every exit trigger
+    std::vector<Enemy*> bossEnemies;
+    std::vector<bool> bossCleared;
+    Font* interactPrompt;
+
+    std::vector<Item*> itemSprites;
+    std::vector<bool> itemCollected;
+    IDirect3DTexture9* exclaimTex;   // "!" bubble, floated over Pochi's head
+
+    PochiBadge* hud;   // Top-left HP / DEF / ATK readout
+
+    Font* levelUpFont;      // Floating text over Pochi's head (win / stat-boost)
+    int levelUpFrames;      // Frames left to show it (~60/sec)
+    const char* floatText;  // what floating text says
+
+    Pochi* boostedStats;    // Tarumt map: Pochi's stats force-boosted, restored on the way out
+
+    Sprite* gateSprite;            // Exit gate art, if config.gateTexture is set
+    IDirect3DTexture9* whiteTex;
+};
+
+// "Continue" - rebuild the scene for the map a save was taken in
 std::unique_ptr<GameScene> CreateOverworldSceneForMap(MapId id);
