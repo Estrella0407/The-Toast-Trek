@@ -3,7 +3,7 @@
 #include "PhysicsManager.h"
 
 Projectile::Projectile(IDirect3DDevice9* d3dDevice, float startX, float startY, float velocityX, float velocityY, ProjectileType type)
-	: sprite(nullptr), type(type), velocity(velocityX, velocityY), width(32.0f), height(32.0f),
+	: GameObject(), type(type), velocity(velocityX, velocityY), width(32.0f), height(32.0f),
 	active(true), damageApplied(false), frameCounter(0), frameDelay(10) {
 	velocity = D3DXVECTOR2(velocityX, velocityY);
 	width = 32.0f;
@@ -35,8 +35,7 @@ Projectile::Projectile(IDirect3DDevice9* d3dDevice, float startX, float startY, 
 }
 
 Projectile::~Projectile() {
-	delete sprite;
-	sprite = nullptr;
+	// GameObject deletes the sprite
 }
 
 void Projectile::Update() {
@@ -56,19 +55,11 @@ void Projectile::Update() {
 	}
 }
 
-void Projectile::Render(LPD3DXSPRITE sharedBrush) {
+void Projectile::Render(LPD3DXSPRITE sharedBrush, D3DCOLOR tint) {
 	if (!active)
 		return;
 
-	sprite->Draw(sharedBrush);
-}
-
-D3DXVECTOR2 Projectile::GetPosition() const {
-	return sprite->GetPosition();
-}
-
-void Projectile::SetPosition(float x, float y) {
-	if (sprite != nullptr) sprite->SetPosition(x, y);
+	if (sprite != nullptr) sprite->Draw(sharedBrush, tint);
 }
 
 D3DXVECTOR2 Projectile::GetVelocity() const {
@@ -82,10 +73,6 @@ void Projectile::SetVelocity(float velocityX, float velocityY) {
 
 ProjectileType Projectile::GetType() const {
 	return type;
-}
-
-Sprite* Projectile::GetSprite() const {
-	return sprite;
 }
 
 AABB Projectile::GetCollisionBounds() const {

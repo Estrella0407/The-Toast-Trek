@@ -2,20 +2,17 @@
 #include "Sprite.h"
 #include <Windows.h>
 
-Heart::Heart(IDirect3DDevice9* d3dDevice) {
+Heart::Heart(IDirect3DDevice9* d3dDevice)
+	: GameObject(new Sprite(d3dDevice, "Assets/characters/pochiHeart.png", 64, 64, 1, 1, 1, 0.0f, 0.0f)) {
 	moveSpeed = 3.0f;
 	health = 20;
 	maxHealth = 20;
 	shield = 10;
 	maxShield = 10;
-
-	sprite = new Sprite(d3dDevice, "Assets/characters/pochiHeart.png", 64, 64, 1, 1, 1, 0.0f, 0.0f);
-
 }
 
 Heart::~Heart() {
-	delete sprite;
-	sprite = nullptr;
+	// GameObject deletes the sprite
 }
 
 void Heart::Update(BYTE* keys) {
@@ -35,22 +32,6 @@ void Heart::Update(BYTE* keys) {
 		position.y += moveSpeed;
 
 	sprite->SetPosition(position.x, position.y);
-}
-
-void Heart::Render(LPD3DXSPRITE sharedBrush) {
-	sprite->Draw(sharedBrush);
-}
-
-D3DXVECTOR2 Heart::GetPosition() const {
-	return sprite->GetPosition();
-}
-
-Sprite* Heart::GetSprite() const {
-	return sprite;
-}
-
-void Heart::SetPosition(float x, float y) {
-	sprite->SetPosition(x, y);
 }
 
 // Heart collision

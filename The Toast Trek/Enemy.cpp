@@ -1,9 +1,13 @@
 #include "Enemy.h"
 
-Enemy::Enemy(IDirect3DDevice9* d3dDevice, BossId bossId, const char* spritePath, float startX, float startY, int texWidth, 
-	int texHeight, int cols, int rows, int maxFrames) : bossId(bossId), sprite(nullptr), actSprite(nullptr), health(0), 
+Enemy::Enemy(IDirect3DDevice9* d3dDevice, BossId bossId, const char* spritePath, float startX, float startY, int texWidth,
+	int texHeight, int cols, int rows, int maxFrames)
+	: GameObject(new Sprite(d3dDevice, spritePath, texWidth, texHeight, cols, rows, maxFrames, startX, startY)),
+	bossId(bossId), actSprite(nullptr), health(0),
 	maxHealth(0), attackDamage(0), actAnimation(false), actFrame(0), maxFrames(0), actFrameCounter(0), actFrameDelay(90) {
-	
+
+	if (sprite != nullptr) sprite->CropToFrame(0);
+
 	switch (bossId) {
 	case BossId::SkullBones:
 		health = 10;
@@ -23,9 +27,6 @@ Enemy::Enemy(IDirect3DDevice9* d3dDevice, BossId bossId, const char* spritePath,
 		break;
 	}
 	maxHealth = health;
-
-	sprite = new Sprite(d3dDevice, spritePath, texWidth, texHeight, cols, rows, maxFrames, startX, startY);
-	if (sprite != nullptr) sprite->CropToFrame(0);
 
 	switch (bossId) {
 	case BossId::SkullBones:
@@ -56,7 +57,7 @@ Enemy::Enemy(IDirect3DDevice9* d3dDevice, BossId bossId, const char* spritePath,
 }
 
 Enemy::~Enemy() {
-	delete sprite;
+	// GameObject deletes the main sprite
 	delete actSprite;
 }
 
@@ -85,10 +86,6 @@ int Enemy::GetMaxHealth() const {
 
 int Enemy::GetAttackDamage() const {
 	return attackDamage;
-}
-
-Sprite* Enemy::GetSprite() const {
-	return sprite;
 }
 
 bool Enemy::IsAlive() const{

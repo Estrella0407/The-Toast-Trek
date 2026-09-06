@@ -49,6 +49,8 @@
     <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="OverworldScene.cpp" />
     <ClCompile Include="PhysicsManager.cpp" />
+    <ClCompile Include="Player.cpp" />
+    <ClCompile Include="Item.cpp" />
     <ClCompile Include="RigidBody.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="Pochi.cpp" />
@@ -94,6 +96,8 @@
     <ClInclude Include="MenuSelectScene.h" />
     <ClInclude Include="OverworldScene.h" />
     <ClInclude Include="PhysicsManager.h" />
+    <ClInclude Include="Player.h" />
+    <ClInclude Include="Item.h" />
     <ClInclude Include="RigidBody.h" />
     <ClInclude Include="Window.h" />
     <ClInclude Include="Pochi.h" />

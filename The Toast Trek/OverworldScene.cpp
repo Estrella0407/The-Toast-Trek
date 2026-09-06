@@ -1,6 +1,8 @@
 #include "OverworldScene.h"
 #include "BattleScene.h"
 #include "EndingScene.h"
+#include "Item.h"
+#include "Player.h"
 #include "Cheats.h"
 #include "Enemy.h"
 #include "Font.h"
@@ -98,7 +100,7 @@ namespace {
         std::vector<bool> bossCleared;
         Font* interactPrompt;
 
-        std::vector<Sprite*> itemSprites;
+        std::vector<Item*> itemSprites;
         std::vector<bool> itemCollected;
         IDirect3DTexture9* exclaimTex;   // "!" bubble, floated over Pochi's head
 
@@ -175,7 +177,7 @@ namespace {
                 boostedStats->SetSpecialMode(false);
             }
             for (Enemy* enemy : bossEnemies) delete enemy;
-            for (Sprite* item : itemSprites) delete item;
+            for (Item* item : itemSprites) delete item;
             delete interactPrompt;
             if (exclaimTex != NULL) exclaimTex->Release();
             delete hud;
@@ -227,14 +229,13 @@ namespace {
                 interactPrompt = new Font(context.device, 0.0f, 20.0f, 1280, 40, 20, "Arial");
             }
 
-            for (Sprite* item : itemSprites) delete item;
+            for (Item* item : itemSprites) delete item;
             itemSprites.clear();
             itemCollected.assign(config.items.size(), false);
             for (size_t i = 0; i < config.items.size(); ++i) {
                 const ItemSpawn& spawn = config.items[i];
-                Sprite* item = new Sprite(context.device, spawn.texture.c_str(),
-                    spawn.texWidth, spawn.texHeight, 1, 1, 1, spawn.x, spawn.y);
-                item->SetScale(spawn.scale);
+                Item* item = new Item(context.device, spawn.type, spawn.texture.c_str(),
+                    spawn.texWidth, spawn.texHeight, spawn.x, spawn.y, spawn.scale);
                 itemSprites.push_back(item);
                 itemCollected[i] = context.collectedItems.count(SlotKey(config.mapId, (int)i)) != 0;
             }
@@ -329,7 +330,7 @@ namespace {
             // Items first: standing on one and pressing F picks it up
             for (size_t i = 0; i < itemSprites.size(); ++i) {
                 if (itemCollected[i]) continue;
-                if (TouchingItem(context.pochi, itemSprites[i])) {
+                if (TouchingItem(context.pochi, itemSprites[i]->GetSprite())) {
                     itemCollected[i] = true;
                     context.collectedItems.insert(SlotKey(config.mapId, (int)i));
                     if (context.inventory != NULL) context.inventory->Add(config.items[i].type);
@@ -526,7 +527,7 @@ namespace {
 
             // Items sit on the ground - drawn before Pochi/bosses so they walk over them
             for (size_t i = 0; i < itemSprites.size(); ++i) {
-                if (!itemCollected[i]) itemSprites[i]->Draw(context.spriteBrush);
+                if (!itemCollected[i]) itemSprites[i]->Render(context.spriteBrush);
             }
 
             for (size_t i = 0; i < bossEnemies.size(); ++i) {
@@ -548,7 +549,7 @@ namespace {
                 if (exclaimTex != NULL) {
                     bool nearInteractable = false;
                     for (size_t i = 0; i < itemSprites.size() && !nearInteractable; ++i)
-                        if (!itemCollected[i] && TouchingItem(context.pochi, itemSprites[i]))
+                        if (!itemCollected[i] && TouchingItem(context.pochi, itemSprites[i]->GetSprite()))
                             nearInteractable = true;
                     for (size_t i = 0; i < bossEnemies.size() && !nearInteractable; ++i) {
                         if (bossCleared[i]) continue;

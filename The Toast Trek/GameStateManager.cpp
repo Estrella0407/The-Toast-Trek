@@ -3,13 +3,14 @@
 #include "Sprite.h"
 #include "Inventory.h"
 #include "Pochi.h"
+#include "Player.h"
 #include "Cheats.h"
 
 static const int kScreenWidth = 1280;
 static const int kScreenHeight = 720;
 
 GameStateManager::GameStateManager()
-    : sound(nullptr), context{}, pendingPopCount(0), clearRequested(false)
+    : sound(nullptr), player(nullptr), context{}, pendingPopCount(0), clearRequested(false)
 {
 }
 
@@ -91,7 +92,7 @@ void GameStateManager::Shutdown()
 
     if (context.inventory) { delete context.inventory; context.inventory = nullptr; }
     if (context.playerStats) { delete context.playerStats; context.playerStats = nullptr; }
-    if (context.pochi) { delete context.pochi; context.pochi = nullptr; }
+    if (player) { delete player; player = nullptr; context.pochi = nullptr; }
 
     // Tilemaps are owned by `maps`; the cheat overlay owns its own font/tex.
     context.forestMap = context.mazeMap = nullptr;
@@ -125,11 +126,8 @@ void GameStateManager::LoadAssets()
     context.ruinsInteriorMap = maps.RuinsInterior();
     context.tarumtMap = maps.Tarumt();
 
-    context.pochi = new Sprite(device, "Assets/Characters/Pochi.png", 250, 60, 5, 2, 10, 100.0f, 380.0f);
-    if (context.pochi != nullptr) {
-        context.pochi->CropToFrame(0);
-        context.pochi->SetScale(2.0f);
-    }
+    player = new Player(device);
+    context.pochi = player->GetSprite();   // scenes borrow the sprite; Player owns it
 
     context.inventory = new Inventory();
     context.playerStats = new Pochi(1);

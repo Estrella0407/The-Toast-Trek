@@ -19,6 +19,10 @@ public:
     explicit GameObject(Sprite* ownedSprite);
     virtual ~GameObject();
 
+    // Owns a raw Sprite* - copying would double-free
+    GameObject(const GameObject&) = delete;
+    GameObject& operator=(const GameObject&) = delete;
+
     virtual void Update();
     virtual void Render(LPD3DXSPRITE sharedBrush,
                         D3DCOLOR tint = D3DCOLOR_XRGB(255, 255, 255));
