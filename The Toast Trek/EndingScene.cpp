@@ -3,7 +3,7 @@
 #include "FrameTimer.h"
 #include "Font.h"
 #include "Sprite.h"
-#include "SoundManage.h"
+#include "SoundManager.h"
 #include "SaveGame.h"
 #include "TileMap.h"
 #include "UiFill.h"

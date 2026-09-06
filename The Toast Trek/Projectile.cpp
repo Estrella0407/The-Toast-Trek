@@ -1,6 +1,6 @@
 #include "Projectile.h"
 #include "Sprite.h"
-#include "Physics.h"
+#include "PhysicsManager.h"
 
 Projectile::Projectile(IDirect3DDevice9* d3dDevice, float startX, float startY, float velocityX, float velocityY, ProjectileType type)
 	: sprite(nullptr), type(type), velocity(velocityX, velocityY), width(32.0f), height(32.0f),

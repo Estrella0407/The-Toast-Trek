@@ -8,7 +8,7 @@ class Sprite;
 class TileMap;
 class Pochi;
 class Inventory;
-class SoundManage;
+class SoundManager;
 
 // Full definition in OverworldScene.h; opaque here so GameContext can hold a
 // std::set<MapId> without the whole overworld header
@@ -32,7 +32,7 @@ struct GameContext {
     TileMap* mazeMap;
 	Pochi* playerStats;
 	Inventory* inventory;
-    SoundManage* sound;         // May be null if audio failed to init
+    SoundManager* sound;         // May be null if audio failed to init
     TileMap* ruinsExteriorMap;
     TileMap* ruinsInteriorMap;
     TileMap* tarumtMap;         // Secret-boss area off the forest's top-left; may be null

@@ -5,7 +5,7 @@
 #include "TileMap.h"
 #include "AABB.h"
 
-class Physics {
+class PhysicsManager {
 public:
     // Screen-space bounding box of a sprite (position + scaled frame size)
     static AABB GetBounds(Sprite* sprite);

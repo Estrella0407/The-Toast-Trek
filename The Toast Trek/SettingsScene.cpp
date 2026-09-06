@@ -1,6 +1,6 @@
 #include "SettingsScene.h"
 #include "SaveGame.h"
-#include "SoundManage.h"
+#include "SoundManager.h"
 #include "UiFill.h"
 #include "Font.h"
 #include <dinput.h>
@@ -54,7 +54,7 @@ namespace {
         }
 
         void SetVolume(GameContext& context, int which, float value) {
-            SoundManage* s = context.sound;
+            SoundManager* s = context.sound;
             if (s == NULL) return;
             value = std::clamp(value, 0.0f, 1.0f);
             if (which == 0) s->SetMasterVolume(value);
@@ -63,14 +63,14 @@ namespace {
         }
 
         void Persist(GameContext& context) {
-            SoundManage* s = context.sound;
+            SoundManager* s = context.sound;
             if (s == NULL) return;
             save::SaveSettings({ s->GetMasterVolume(), s->GetMusicVolume(),
                                  s->GetSFXVolume(), s->IsMuted() });
         }
 
         void Adjust(GameContext& context, int dir) {
-            SoundManage* s = context.sound;
+            SoundManager* s = context.sound;
             if (s == NULL) return;
             const float step = 0.1f * dir;
             switch (sel) {
@@ -165,7 +165,7 @@ namespace {
 
             titleFont->Draw("SOUND SETTINGS", kBodyX, kPanelT + 30.0f, kHeading, b);
 
-            SoundManage* s = context.sound;
+            SoundManager* s = context.sound;
             const char* labels[3] = { "Master", "Music", "SFX" };
             const float vols[3] = {
                 s ? s->GetMasterVolume() : 0.0f,

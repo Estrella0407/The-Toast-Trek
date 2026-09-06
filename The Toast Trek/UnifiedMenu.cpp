@@ -5,7 +5,7 @@
 #include "Font.h"
 #include "Inventory.h"
 #include "Pochi.h"
-#include "SoundManage.h"
+#include "SoundManager.h"
 #include "SaveGame.h"
 #include <dinput.h>
 #include <algorithm>
@@ -147,7 +147,7 @@ namespace {
         void NudgeVolume(GameContext& context, int dir) {
             if (context.sound == NULL) return;
             const float step = 0.1f * dir;
-            SoundManage* s = context.sound;
+            SoundManager* s = context.sound;
             switch (sel) {
             case 0: s->SetMasterVolume(s->GetMasterVolume() + step); break;
             case 1: s->SetMusicVolume(s->GetMusicVolume() + step); break;
@@ -198,7 +198,7 @@ namespace {
 
         void RenderSettings(LPD3DXSPRITE b, GameContext& context) {
             headFont->Draw("Sound", kBodyX, kHeadingY, kHeading, b);
-            SoundManage* s = context.sound;
+            SoundManager* s = context.sound;
             if (s == NULL) {
                 bodyFont->Draw("Audio unavailable.", kBodyX, kBodyY, kTextDim, b);
                 return;

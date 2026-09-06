@@ -13,13 +13,13 @@
 #include "Font.h"
 #include "Line.h"
 #include "FrameTimer.h"
-#include "Physics.h"
+#include "PhysicsManager.h"
 #include "TileMap.h"
 #include "GameStateManager.h"
 #include "MainMenuScene.h"
 #include "Battlefield.h"
 #include "Heart.h"
-#include "SoundManage.h"
+#include "SoundManager.h"
 #include "SaveGame.h"
 #include "Inventory.h"
 #include "Pochi.h"
@@ -58,7 +58,7 @@ GameStateManager* gameStates = NULL;
 Inventory* playerInventory = NULL;
 Pochi* playerStats = NULL;
 Battlefield* battlefield;
-SoundManage* g_soundManager = nullptr;
+SoundManager* g_soundManager = nullptr;
 
 // Global "CHEAT MODE" overlay
 Font* g_cheatFont = NULL;
@@ -276,7 +276,7 @@ void CreateSprite()
 
 	// Sound\
 	// Initialize() and every call are safe even with no audio files - missing sounds just no-op
-	g_soundManager = new SoundManage();
+	g_soundManager = new SoundManager();
 	g_soundManager->Initialize();
 
 	g_soundManager->LoadSound("click", "Assets/Sounds/click.wav");

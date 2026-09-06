@@ -1,4 +1,4 @@
-#include "Physics.h"
+#include "PhysicsManager.h"
 #include <cmath>
 
 namespace {
@@ -36,7 +36,7 @@ namespace {
     }
 }
 
-AABB Physics::GetBounds(Sprite* sprite) {
+AABB PhysicsManager::GetBounds(Sprite* sprite) {
     AABB box = { 0.0f, 0.0f, 0.0f, 0.0f };
 
     if (sprite == NULL) return box;
@@ -57,7 +57,7 @@ AABB Physics::GetBounds(Sprite* sprite) {
     return box;
 }
 
-AABB Physics::GetFootBounds(Sprite* sprite, float widthRatio, float heightRatio) {
+AABB PhysicsManager::GetFootBounds(Sprite* sprite, float widthRatio, float heightRatio) {
     AABB full = GetBounds(sprite);
 
     if (widthRatio >= 1.0f && heightRatio >= 1.0f) return full;
@@ -77,7 +77,7 @@ AABB Physics::GetFootBounds(Sprite* sprite, float widthRatio, float heightRatio)
     return box;
 }
 
-AABB Physics::GetHeartBounds(Sprite* sprite) {
+AABB PhysicsManager::GetHeartBounds(Sprite* sprite) {
     AABB box = { 0.0f, 0.0f, 0.0f, 0.0f };
 
     if (sprite == NULL) return box;
@@ -97,14 +97,14 @@ AABB Physics::GetHeartBounds(Sprite* sprite) {
     return box;
 }
 
-bool Physics::CheckAABBCollision(const AABB& a, const AABB& b) {
+bool PhysicsManager::CheckAABBCollision(const AABB& a, const AABB& b) {
     return(a.left < b.right &&
         a.right > b.left &&
         a.top < b.bottom &&
         a.bottom > b.top);
 }
 
-void Physics::ClampToBounds(Sprite* sprite, float minX, float minY, float maxX, float maxY) {
+void PhysicsManager::ClampToBounds(Sprite* sprite, float minX, float minY, float maxX, float maxY) {
     if (sprite == NULL) return;
 
     D3DXVECTOR2 pos = sprite->GetPosition();
@@ -122,7 +122,7 @@ void Physics::ClampToBounds(Sprite* sprite, float minX, float minY, float maxX, 
     sprite->SetPosition(pos.x + moveX, pos.y + moveY);
 }
 
-bool Physics::ResolveCollisionShapes(Sprite* sprite, const TileMap* map,
+bool PhysicsManager::ResolveCollisionShapes(Sprite* sprite, const TileMap* map,
     float footWidthRatio, float footHeightRatio) {
     if (sprite == NULL || map == NULL) return false;
 

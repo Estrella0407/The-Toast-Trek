@@ -4,7 +4,7 @@
 #include "BattleStatusBars.h"
 #include "Pochi.h"
 #include "Heart.h"
-#include "Physics.h"
+#include "PhysicsManager.h"
 #include <algorithm>
 #include <string>
 #include <cmath>
@@ -300,7 +300,7 @@ void Battlefield::Update(GameContext& context) {
 	heart->Update(context.keys);
 
 	heart->ClampToBoundary(posX, posY, posX + width, posY + height);
-	AABB heartBounds = Physics::GetHeartBounds(heart->GetSprite());
+	AABB heartBounds = PhysicsManager::GetHeartBounds(heart->GetSprite());
 
 	if (!showProjectiles) return;
 
@@ -407,7 +407,7 @@ void Battlefield::Update(GameContext& context) {
 		if (projectile->GetType() != ProjectileType::aim &&
 			!projectile->HasAppliedDamage() &&
 			(lastPlayerHitTime == 0 || GetTickCount64() - lastPlayerHitTime >= 1000) &&
-			Physics::CheckAABBCollision(heartBounds, projectileBounds)) {
+			PhysicsManager::CheckAABBCollision(heartBounds, projectileBounds)) {
 			pochi->TakeDamage(enemy->GetAttackDamage());
 			lastPlayerHitTime = GetTickCount64();
 			projectile->MarkDamageApplied();

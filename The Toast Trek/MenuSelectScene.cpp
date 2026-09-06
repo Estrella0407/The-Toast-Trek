@@ -10,7 +10,7 @@
 #include "Sprite.h"
 #include "Pochi.h"
 #include "Inventory.h"
-#include "SoundManage.h"
+#include "SoundManager.h"
 #include "UiFill.h"
 #include <Windows.h>
 #include <dinput.h>

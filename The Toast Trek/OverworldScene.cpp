@@ -4,7 +4,7 @@
 #include "Cheats.h"
 #include "Enemy.h"
 #include "Font.h"
-#include "Physics.h"
+#include "PhysicsManager.h"
 #include "Pochi.h"
 #include "PochiBadge.h"
 #include "SaveGame.h"
@@ -72,9 +72,9 @@ namespace {
     // standing on it lines up with where he visually is
     bool TouchingItem(Sprite* pochi, Sprite* item) {
         if (pochi == NULL || item == NULL) return false;
-        return Physics::CheckAABBCollision(
-            Physics::GetFootBounds(pochi, kPochiFootWidthRatio, kPochiFootHeightRatio),
-            Physics::GetBounds(item));
+        return PhysicsManager::CheckAABBCollision(
+            PhysicsManager::GetFootBounds(pochi, kPochiFootWidthRatio, kPochiFootHeightRatio),
+            PhysicsManager::GetBounds(item));
     }
 
 
@@ -446,16 +446,16 @@ namespace {
 
             if (map == NULL) return;
 
-            Physics::ClampToBounds(context.pochi, 0.0f, 0.0f,
+            PhysicsManager::ClampToBounds(context.pochi, 0.0f, 0.0f,
                 (float)map->GetWidthPixels(), (float)map->GetHeightPixels());
 
             // Cheat mode: no collision
             if (!Cheats::enabled) {
-                Physics::ResolveCollisionShapes(context.pochi, map, kPochiFootWidthRatio, kPochiFootHeightRatio);
+                PhysicsManager::ResolveCollisionShapes(context.pochi, map, kPochiFootWidthRatio, kPochiFootHeightRatio);
 
                 // Invisible top/bottom fence: keep Pochi's feet inside the maze boundary
                 if (config.fenceBottom > config.fenceTop) {
-                    AABB feet = Physics::GetFootBounds(context.pochi, kPochiFootWidthRatio, kPochiFootHeightRatio);
+                    AABB feet = PhysicsManager::GetFootBounds(context.pochi, kPochiFootWidthRatio, kPochiFootHeightRatio);
                     D3DXVECTOR2 p = context.pochi->GetPosition();
                     if (feet.top < config.fenceTop)       p.y += config.fenceTop - feet.top;
                     if (feet.bottom > config.fenceBottom) p.y -= feet.bottom - config.fenceBottom;
@@ -464,7 +464,7 @@ namespace {
 
                 // Closed exit gate: a solid wall at gateX until the map is cleared
                 if (HasGate() && ExitLocked()) {
-                    AABB pb = Physics::GetBounds(context.pochi);
+                    AABB pb = PhysicsManager::GetBounds(context.pochi);
                     if (pb.right > config.gateX) {
                         D3DXVECTOR2 p = context.pochi->GetPosition();
                         context.pochi->SetPosition(p.x - (pb.right - config.gateX), p.y);
@@ -473,7 +473,7 @@ namespace {
             }
 
             // --- Map exits ---------------------------------------------------
-            const AABB pb = Physics::GetBounds(context.pochi);
+            const AABB pb = PhysicsManager::GetBounds(context.pochi);
             const D3DXVECTOR2 pcentre = context.pochi->GetPosition();
             const bool atRight = config.OnReachRightEdge &&
                 pb.right >= (float)map->GetWidthPixels() - 5.0f;
@@ -598,7 +598,7 @@ namespace {
                 // At a sealed exit: tell the player why they can't leave yet
                 bool shownExitLock = false;
                 if (ExitLocked()) {
-                    AABB pb = Physics::GetBounds(context.pochi);
+                    AABB pb = PhysicsManager::GetBounds(context.pochi);
                     const bool atRightEdge = config.OnReachRightEdge &&
                         pb.right >= (float)map->GetWidthPixels() - 40.0f;
                     const bool atDoorway = config.OnEnterDoorway &&

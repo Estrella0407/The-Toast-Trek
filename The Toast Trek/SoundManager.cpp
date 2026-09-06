@@ -1,4 +1,4 @@
-#include "SoundManage.h"
+#include "SoundManager.h"
 #include <fmod.hpp>
 #include <Windows.h>   // OutputDebugStringA
 
@@ -9,17 +9,17 @@ static float ClampVolume(float v) {
     return v;
 }
 
-SoundManage::SoundManage()
+SoundManager::SoundManager()
     : system(0), soundCount(0), musicChannel(0), extraDriverData(0),
       masterVolume(1.0f), sfxVolume(1.0f), musicVolume(0.8f), muted(false) {
     for (int i = 0; i < kMaxSounds; ++i) sounds[i] = 0;
 }
 
-SoundManage::~SoundManage() {
+SoundManager::~SoundManager() {
     Shutdown();
 }
 
-bool SoundManage::Initialize() {
+bool SoundManager::Initialize() {
     FMOD_RESULT result;
     result = FMOD::System_Create(&system);                          // Create the FMOD system object
     if (result != FMOD_OK) { system = 0; return false; }
@@ -29,7 +29,7 @@ bool SoundManage::Initialize() {
     return true;
 }
 
-void SoundManage::Shutdown() {
+void SoundManager::Shutdown() {
     for (int i = 0; i < soundCount; ++i) {
         if (sounds[i]) sounds[i]->release();
         sounds[i] = 0;
@@ -44,14 +44,14 @@ void SoundManage::Shutdown() {
     }
 }
 
-int SoundManage::FindSound(const std::string& name) const {
+int SoundManager::FindSound(const std::string& name) const {
     for (int i = 0; i < soundCount; ++i) {
         if (soundNames[i] == name) return i;
     }
     return -1;
 }
 
-bool SoundManage::LoadSound(const std::string& name, const std::string& filePath, bool isLooping) {
+bool SoundManager::LoadSound(const std::string& name, const std::string& filePath, bool isLooping) {
     if (!system || soundCount >= kMaxSounds) return false;
 
     FMOD::Sound* sound = 0;
@@ -59,7 +59,7 @@ bool SoundManage::LoadSound(const std::string& name, const std::string& filePath
     // File name, default settings, extra info (none), address of sound
     result = system->createSound(filePath.c_str(), FMOD_DEFAULT, 0, &sound);
     if (result != FMOD_OK) {
-        OutputDebugStringA(("SoundManage: could not load " + filePath + "\n").c_str());
+        OutputDebugStringA(("SoundManager: could not load " + filePath + "\n").c_str());
         return false;
     }
     result = sound->setMode(isLooping ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF);
@@ -70,7 +70,7 @@ bool SoundManage::LoadSound(const std::string& name, const std::string& filePath
     return true;
 }
 
-void SoundManage::PlaySfx(const std::string& name, float volume) {
+void SoundManager::PlaySfx(const std::string& name, float volume) {
     if (!system || muted) return;
     const int i = FindSound(name);
     if (i < 0) return;
@@ -83,7 +83,7 @@ void SoundManage::PlaySfx(const std::string& name, float volume) {
     }
 }
 
-void SoundManage::PlayMusic(const std::string& name, float volume) {
+void SoundManager::PlayMusic(const std::string& name, float volume) {
     if (!system || muted) return;
     const int i = FindSound(name);
     if (i < 0) return;
@@ -98,40 +98,40 @@ void SoundManage::PlayMusic(const std::string& name, float volume) {
     }
 }
 
-void SoundManage::StopMusic() {
+void SoundManager::StopMusic() {
     if (musicChannel) {
         musicChannel->stop();
         musicChannel = 0;
     }
 }
 
-void SoundManage::PauseMusic(bool pause) {
+void SoundManager::PauseMusic(bool pause) {
     if (musicChannel) musicChannel->setPaused(pause);
 }
 
-void SoundManage::SetMasterVolume(float volume) {
+void SoundManager::SetMasterVolume(float volume) {
     masterVolume = ClampVolume(volume);
     if (musicChannel) musicChannel->setVolume(masterVolume * musicVolume);
 }
 
-void SoundManage::SetSFXVolume(float volume) {
+void SoundManager::SetSFXVolume(float volume) {
     sfxVolume = ClampVolume(volume);   // Applies to the next SFX played
 }
 
-void SoundManage::SetMusicVolume(float volume) {
+void SoundManager::SetMusicVolume(float volume) {
     musicVolume = ClampVolume(volume);
     if (musicChannel) musicChannel->setVolume(masterVolume * musicVolume);
 }
 
-void SoundManage::ToggleMute() {
+void SoundManager::ToggleMute() {
     SetMute(!muted);
 }
 
-void SoundManage::SetMute(bool mute) {
+void SoundManager::SetMute(bool mute) {
     muted = mute;
     if (musicChannel) musicChannel->setPaused(muted);   // SFX are gated in PlaySfx()
 }
 
-void SoundManage::Update() {
+void SoundManager::Update() {
     if (system) system->update();   // FMOD needs this once per frame
 }

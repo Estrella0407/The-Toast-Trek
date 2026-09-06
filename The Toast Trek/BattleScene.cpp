@@ -5,7 +5,7 @@
 #include "Cheats.h"
 #include "Pochi.h"
 #include "Enemy.h"
-#include "SoundManage.h"
+#include "SoundManager.h"
 #include <dinput.h>
 
 namespace {

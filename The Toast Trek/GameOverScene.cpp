@@ -2,7 +2,7 @@
 #include "MainMenuScene.h"
 #include "GameStateManager.h"
 #include "OverworldScene.h"   // CreateForestScene
-#include "SoundManage.h"
+#include "SoundManager.h"
 #include <dinput.h>
 #include <cmath>
 
@@ -15,7 +15,7 @@ namespace {
     }
 }
 
-GameOverScene::GameOverScene(SoundManage* soundMgr)
+GameOverScene::GameOverScene(SoundManager* soundMgr)
     : titleFont(nullptr)
     , statsFont(nullptr)
     , promptFont(nullptr)
@@ -83,6 +83,6 @@ D3DCOLOR GameOverScene::ClearColor() const {
     return D3DCOLOR_XRGB(35, 10, 10);
 }
 
-std::unique_ptr<GameScene> CreateGameOverScene(SoundManage* sound) {
+std::unique_ptr<GameScene> CreateGameOverScene(SoundManager* sound) {
     return std::make_unique<GameOverScene>(sound);
 }

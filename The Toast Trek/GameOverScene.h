@@ -1,7 +1,7 @@
 #pragma once
 #include "GameStateManager.h"
 #include "Font.h"
-#include "SoundManage.h"
+#include "SoundManager.h"
 #include <memory>
 
 class GameOverScene : public GameScene {
@@ -13,12 +13,12 @@ private:
     bool retryWasDown;
     bool menuWasDown;
 
-    SoundManage* soundManage;
+    SoundManager* soundManage;
 
     float flashTimer;   // Drives the title colour flash
 
 public:
-    explicit GameOverScene(SoundManage* soundMgr);
+    explicit GameOverScene(SoundManager* soundMgr);
     ~GameOverScene();
 
     void Initialize(GameContext& context) override;
@@ -29,4 +29,4 @@ public:
 };
 
 // Pushed by BattleScene when Pochi loses a fight
-std::unique_ptr<GameScene> CreateGameOverScene(SoundManage* sound);
+std::unique_ptr<GameScene> CreateGameOverScene(SoundManager* sound);

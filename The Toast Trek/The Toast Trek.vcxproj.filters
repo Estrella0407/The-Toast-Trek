@@ -18,7 +18,7 @@
     <ClCompile Include="TileMap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Physics.cpp">
+    <ClCompile Include="PhysicsManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Main.cpp">
@@ -84,7 +84,7 @@
 	<ClCompile Include="Inventory.cpp">
 	  <Filter>Source Files</Filter>
 	</ClCompile>
-    <ClCompile Include="SoundManage.cpp">
+    <ClCompile Include="SoundManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SaveGame.cpp">
@@ -125,7 +125,7 @@
     <ClInclude Include="TileMap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Physics.h">
+    <ClInclude Include="PhysicsManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Sprite.h">
@@ -191,7 +191,7 @@
 	<ClInclude Include="Inventory.h">
 	  <Filter>Header Files</Filter>
 	</ClInclude>
-    <ClInclude Include="SoundManage.h">
+    <ClInclude Include="SoundManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SaveGame.h">

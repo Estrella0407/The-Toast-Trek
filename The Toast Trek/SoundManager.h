@@ -11,7 +11,7 @@ namespace FMOD {
 
 // Thin wrapper over FMOD. Every call is safe even if FMOD failed to start
 // or a sound file is missing - it just does nothing
-class SoundManage {
+class SoundManager {
 private:
     static const int kMaxSounds = 16;
 
@@ -31,8 +31,8 @@ private:
     int FindSound(const std::string& name) const;   // Slot index, or -1
 
 public:
-    SoundManage();
-    ~SoundManage();
+    SoundManager();
+    ~SoundManager();
 
     bool Initialize();
     void Shutdown();
