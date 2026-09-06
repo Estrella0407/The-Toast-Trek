@@ -7,9 +7,10 @@
 #include "Direct3D.h"
 #include "InputManager.h"
 #include "FrameTimer.h"
+#include "MapLibrary.h"
+#include "CheatOverlay.h"
 
 class SoundManager;
-class Font;
 
 // The lecture-notes "GameStateStackManager": owns the engine subsystems
 // (window, device, input, sound) AND the scene stack, and drives the frame.
@@ -21,28 +22,26 @@ class Font;
 //                    delegated to the subsystems below.
 class GameStateManager {
 private:
-    // --- Engine subsystems -------------------------------------------------
+    // --- Engine subsystems ---------------------------------------------
     Window window;
     Direct3D d3d;
     InputManager input;
     FrameTimer timer;
     SoundManager* sound;
 
-    // Global "CHEAT MODE" overlay, drawn over every scene
-    Font* cheatFont;
-    IDirect3DTexture9* cheatPlateTex;
+    MapLibrary maps;             // owns the overworld tilemaps
+    CheatOverlay cheatOverlay;   // red "CHEAT MODE" plate over every scene
 
-    // --- Game data owned for the whole run -------------------------------
+    // --- Game data owned for the whole run ---------------------------
     GameContext context;
 
-    // --- Scene stack -----------------------------------------------------
+    // --- Scene stack -------------------------------------------------
     std::vector<std::unique_ptr<GameScene>> stateStack;
     std::vector<std::unique_ptr<GameScene>> pendingPushes;
     size_t pendingPopCount;
     bool clearRequested;
 
-    void LoadAssets();       // maps, player sprite, sounds, cheat overlay
-    void DrawCheatOverlay();
+    void LoadAssets();
 
 public:
     GameStateManager();
@@ -54,7 +53,7 @@ public:
     void ClearAndPush(std::unique_ptr<GameScene> scene);
     void ApplyPendingChanges();
 
-    // --- Frame facade, called by WinMain --------------------------------
+    // --- Frame facade, called by WinMain --------------------------
     void Init();                 // engine bring-up + top scene Initialize()
     bool WindowIsRunning();       // -> Window::IsRunning()
     void GetInput();              // engine: input devices + cursor + sound tick

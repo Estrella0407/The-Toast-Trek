@@ -1,6 +1,27 @@
 #include "SoundManager.h"
+#include "SaveGame.h"
 #include <fmod.hpp>
 #include <Windows.h>   // OutputDebugStringA
+
+// Every sound the game uses, plus the saved volume settings and the
+// looping background track. Loading a missing file is a safe no-op.
+void SoundManager::LoadGameSounds() {
+    LoadSound("click", "Assets/Sounds/click.wav");
+    LoadSound("gameover", "Assets/Sounds/gameover.wav");
+    LoadSound("levelcomplete", "Assets/Sounds/levelcomplete.wav");
+    LoadSound("background", "Assets/Sounds/background.wav", true);
+    LoadSound("battle", "Assets/Sounds/battle.wav", true);
+    LoadSound("attack", "Assets/Sounds/attack.wav");   // Pochi's FIGHT swing
+    LoadSound("hurt", "Assets/Sounds/hurt.ogg");       // Pochi takes damage
+
+    save::Settings st = save::LoadSettings();
+    SetMasterVolume(st.master);
+    SetMusicVolume(st.music);
+    SetSFXVolume(st.sfx);
+    SetMute(st.muted);
+
+    PlayMusic("background", 0.6f);
+}
 
 // Keep a volume in the 0..1 range
 static float ClampVolume(float v) {

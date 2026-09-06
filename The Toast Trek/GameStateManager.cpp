@@ -1,20 +1,15 @@
 #include "GameStateManager.h"
 #include "SoundManager.h"
-#include "Font.h"
 #include "Sprite.h"
-#include "TileMap.h"
 #include "Inventory.h"
 #include "Pochi.h"
 #include "Cheats.h"
-#include "UiFill.h"
-#include "SaveGame.h"
 
 static const int kScreenWidth = 1280;
 static const int kScreenHeight = 720;
 
 GameStateManager::GameStateManager()
-    : sound(nullptr), cheatFont(nullptr), cheatPlateTex(nullptr),
-      context{}, pendingPopCount(0), clearRequested(false)
+    : sound(nullptr), context{}, pendingPopCount(0), clearRequested(false)
 {
 }
 
@@ -84,7 +79,7 @@ void GameStateManager::Render()
 
     if (!stateStack.empty()) stateStack.back()->Render(context);
 
-    DrawCheatOverlay();
+    cheatOverlay.Draw(d3d.GetSpriteBrush());
 
     d3d.EndFrame();
 }
@@ -96,16 +91,11 @@ void GameStateManager::Shutdown()
 
     if (context.inventory) { delete context.inventory; context.inventory = nullptr; }
     if (context.playerStats) { delete context.playerStats; context.playerStats = nullptr; }
+    if (context.pochi) { delete context.pochi; context.pochi = nullptr; }
 
-    delete context.forestMap;         context.forestMap = nullptr;
-    delete context.mazeMap;           context.mazeMap = nullptr;
-    delete context.ruinsExteriorMap;  context.ruinsExteriorMap = nullptr;
-    delete context.ruinsInteriorMap;  context.ruinsInteriorMap = nullptr;
-    delete context.tarumtMap;         context.tarumtMap = nullptr;
-    delete context.pochi;             context.pochi = nullptr;
-
-    if (cheatFont) { delete cheatFont; cheatFont = nullptr; }
-    if (cheatPlateTex) { cheatPlateTex->Release(); cheatPlateTex = nullptr; }
+    // Tilemaps are owned by `maps`; the cheat overlay owns its own font/tex.
+    context.forestMap = context.mazeMap = nullptr;
+    context.ruinsExteriorMap = context.ruinsInteriorMap = context.tarumtMap = nullptr;
 
     if (sound) {
         sound->Shutdown();
@@ -119,32 +109,21 @@ void GameStateManager::Shutdown()
 }
 
 // ---------------------------------------------------------------------------
-// Assets (temporary home - Stage 3 moves these into MapLibrary / Player / etc.)
+// Assets (the player sprite still lives here until the GameObject retrofit)
 // ---------------------------------------------------------------------------
 
 void GameStateManager::LoadAssets()
 {
     IDirect3DDevice9* device = d3d.GetDevice();
 
-    // Wide rect so the banner still renders when drawn far to the right
-    cheatFont = new Font(device, 0.0f, 0.0f, 1600, 30, 18, "Arial");
-    cheatPlateTex = ui::MakeWhiteTexture(device);
+    cheatOverlay.Load(device);
 
-    context.forestMap = new TileMap(device, "Assets/TileMap/Forest.tmx", "Assets/TileMap/");
-    context.forestMap->SetSolidLayers({ "Tree", "Rock" });
-
-    context.mazeMap = new TileMap(device, "Assets/TileMap/Maze.tmx", "Assets/TileMap/");
-    context.mazeMap->SetSolidLayers({ "Maze" });
-
-    context.ruinsExteriorMap = new TileMap(device, "Assets/TileMap/Ruined_Temple_Exterior.tmx", "Assets/TileMap/");
-    context.ruinsExteriorMap->SetSolidLayers({ "Tree", "House", "Bricks", "Statues", "Columns" });
-    context.ruinsExteriorMap->SetWalkableLayers({ "Ground", "Grass", "Spots", "Grass_details", "Site", "House_platform" });
-
-    context.ruinsInteriorMap = new TileMap(device, "Assets/TileMap/Ruined_Temple_Interior.tmx", "Assets/TileMap/");
-    context.ruinsInteriorMap->SetSolidLayers({ "Walls_back", "Walls_top", "Statue" });
-
-    context.tarumtMap = new TileMap(device, "Assets/TileMap/Tarumt.tmx", "Assets/TileMap/");
-    context.tarumtMap->SetSolidLayers({ "Tree", "Structure1", "Structure2", "Building" });
+    maps.Load(device);
+    context.forestMap = maps.Forest();
+    context.mazeMap = maps.Maze();
+    context.ruinsExteriorMap = maps.RuinsExterior();
+    context.ruinsInteriorMap = maps.RuinsInterior();
+    context.tarumtMap = maps.Tarumt();
 
     context.pochi = new Sprite(device, "Assets/Characters/Pochi.png", 250, 60, 5, 2, 10, 100.0f, 380.0f);
     if (context.pochi != nullptr) {
@@ -155,44 +134,10 @@ void GameStateManager::LoadAssets()
     context.inventory = new Inventory();
     context.playerStats = new Pochi(1);
 
-    // Sound - Initialize() and every call are safe even with no audio files
     sound = new SoundManager();
     sound->Initialize();
-    sound->LoadSound("click", "Assets/Sounds/click.wav");
-    sound->LoadSound("gameover", "Assets/Sounds/gameover.wav");
-    sound->LoadSound("levelcomplete", "Assets/Sounds/levelcomplete.wav");
-    sound->LoadSound("background", "Assets/Sounds/background.wav", true);
-    sound->LoadSound("battle", "Assets/Sounds/battle.wav", true);
-    sound->LoadSound("attack", "Assets/Sounds/attack.wav");
-    sound->LoadSound("hurt", "Assets/Sounds/hurt.ogg");
-
-    {
-        save::Settings st = save::LoadSettings();
-        sound->SetMasterVolume(st.master);
-        sound->SetMusicVolume(st.music);
-        sound->SetSFXVolume(st.sfx);
-        sound->SetMute(st.muted);
-    }
-
-    sound->PlayMusic("background", 0.6f);
-
+    sound->LoadGameSounds();
     context.sound = sound;
-}
-
-void GameStateManager::DrawCheatOverlay()
-{
-    if (!Cheats::enabled || cheatFont == nullptr) return;
-
-    LPD3DXSPRITE brush = d3d.GetSpriteBrush();
-    const char* txt = "CHEAT MODE";
-    const float pw = 118.0f, ph = 24.0f;
-    const float px = 1280.0f - pw - 12.0f, py = 12.0f;
-    if (cheatPlateTex != nullptr) {
-        ui::FillRect(brush, cheatPlateTex, px - 1.0f, py - 1.0f, pw + 2.0f, ph + 2.0f, ui::kPlateEdge);
-        ui::FillRect(brush, cheatPlateTex, px, py, pw, ph, ui::kPlate);
-    }
-    cheatFont->Draw(txt, px + 15.0f, py + 4.0f, ui::kShadow, brush);
-    cheatFont->Draw(txt, px + 14.0f, py + 3.0f, D3DCOLOR_XRGB(255, 120, 120), brush);
 }
 
 // ---------------------------------------------------------------------------

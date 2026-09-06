@@ -25,6 +25,7 @@
     <ClCompile Include="BattleStatusBars.cpp" />
     <ClCompile Include="BattleUI.cpp" />
     <ClCompile Include="Cheats.cpp" />
+    <ClCompile Include="CheatOverlay.cpp" />
     <ClCompile Include="Direct3D.cpp" />
     <ClCompile Include="DirectInput.cpp" />
     <ClCompile Include="EndingScene.cpp" />
@@ -42,6 +43,7 @@
     <ClCompile Include="Line.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="MainMenu.cpp" />
+    <ClCompile Include="MapLibrary.cpp" />
     <ClCompile Include="MainMenuScene.cpp" />
     <ClCompile Include="MenuSelectScene.cpp" />
     <ClCompile Include="InputManager.cpp" />
@@ -68,6 +70,7 @@
     <ClInclude Include="BattleStatusBars.h" />
     <ClInclude Include="BattleUI.h" />
     <ClInclude Include="Cheats.h" />
+    <ClInclude Include="CheatOverlay.h" />
     <ClInclude Include="Direct3D.h" />
     <ClInclude Include="DirectInput.h" />
     <ClInclude Include="EndingScene.h" />
@@ -87,6 +90,7 @@
     <ClInclude Include="InputManager.h" />
     <ClInclude Include="Line.h" />
     <ClInclude Include="MainMenu.h" />
+    <ClInclude Include="MapLibrary.h" />
     <ClInclude Include="MenuSelectScene.h" />
     <ClInclude Include="OverworldScene.h" />
     <ClInclude Include="PhysicsManager.h" />

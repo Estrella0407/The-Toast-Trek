@@ -40,6 +40,10 @@ public:
     // Load a sound file under a name. false if FMOD is down / the file is missing
     bool LoadSound(const std::string& name, const std::string& filePath, bool isLooping = false);
 
+    // Load every sound this game uses, apply the saved volume settings and
+    // start the background music. Call once after Initialize().
+    void LoadGameSounds();
+
     // Named PlaySfx (not PlaySound) so it can't clash with the PlaySound macro from <Windows.h>
     void PlaySfx(const std::string& name, float volume = 1.0f);
     void PlayMusic(const std::string& name, float volume = 1.0f);
