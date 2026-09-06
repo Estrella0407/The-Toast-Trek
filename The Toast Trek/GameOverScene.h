@@ -1,10 +1,10 @@
 #pragma once
-#include "GameState.h"
+#include "GameStateManager.h"
 #include "Font.h"
 #include "SoundManage.h"
 #include <memory>
 
-class GameOverState : public GameState {
+class GameOverScene : public GameScene {
 private:
     Font* titleFont;
     Font* statsFont;
@@ -18,8 +18,8 @@ private:
     float flashTimer;   // Drives the title colour flash
 
 public:
-    explicit GameOverState(SoundManage* soundMgr);
-    ~GameOverState();
+    explicit GameOverScene(SoundManage* soundMgr);
+    ~GameOverScene();
 
     void Initialize(GameContext& context) override;
     void HandleInput(GameContext& context, GameStateManager& manager) override;
@@ -27,3 +27,6 @@ public:
     void Render(GameContext& context) override;
     D3DCOLOR ClearColor() const override;
 };
+
+// Pushed by BattleScene when Pochi loses a fight
+std::unique_ptr<GameScene> CreateGameOverScene(SoundManage* sound);

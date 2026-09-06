@@ -2,7 +2,7 @@
 #include "Line.h"
 #include "Font.h"
 #include "BattleButton.h"
-#include "GameState.h"
+#include "GameStateManager.h"
 #include <string>
 #include <iostream>
 

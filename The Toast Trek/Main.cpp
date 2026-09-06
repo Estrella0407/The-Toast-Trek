@@ -15,7 +15,8 @@
 #include "FrameTimer.h"
 #include "Physics.h"
 #include "TileMap.h"
-#include "GameState.h"
+#include "GameStateManager.h"
+#include "MainMenuScene.h"
 #include "Battlefield.h"
 #include "Heart.h"
 #include "SoundManage.h"
@@ -480,7 +481,7 @@ int main(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nSho
 	gameContext.keys = diKeys;
 	gameContext.moveSpeed = spriteVelocity;
 	gameStates = new GameStateManager(gameContext);
-	gameStates->Push(CreateMainMenuState());
+	gameStates->Push(CreateMainMenuScene());
 	gameStates->ApplyPendingChanges();
 
 	gameTimer->Init(10);

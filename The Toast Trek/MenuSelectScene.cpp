@@ -1,8 +1,9 @@
-#include "MenuSelectState.h"
-#include "GameState.h"
-#include "OverworldState.h"
-#include "TutorialPopupState.h"
-#include "SettingsState.h"
+#include "MenuSelectScene.h"
+#include "GameStateManager.h"
+#include "MainMenuScene.h"
+#include "OverworldScene.h"
+#include "TutorialPopupScene.h"
+#include "SettingsScene.h"
 #include "SaveGame.h"
 #include "Cheats.h"
 #include "Font.h"
@@ -45,7 +46,7 @@ namespace {
     const D3DCOLOR kTextDim = D3DCOLOR_XRGB(170, 162, 150);
     const D3DCOLOR kTextOff = D3DCOLOR_XRGB(96, 92, 86);
 
-    class MenuSelectState : public GameState {
+    class MenuSelectScene : public GameScene {
     private:
         int sel;
         bool hasSave;
@@ -69,7 +70,7 @@ namespace {
             switch (option) {
             case OPT_NEW:      StartNewRun(context, manager); break;
             case OPT_CONTINUE: ContinueRun(context, manager); break;
-            case OPT_SETTINGS: manager.Push(CreateSettingsState(this)); break;
+            case OPT_SETTINGS: manager.Push(CreateSettingsScene(this)); break;
             case OPT_QUIT:     PostQuitMessage(0); break;
             }
         }
@@ -77,7 +78,7 @@ namespace {
         void StartNewRun(GameContext& context, GameStateManager& manager) {
             save::ClearProgress();
             ResetRunProgress(context);
-            manager.ClearAndPush(CreateForestState());
+            manager.ClearAndPush(CreateForestScene());
             if (!s_forestIntroShown && !Cheats::enabled) {
                 manager.Push(CreateForestIntroPopup());
                 s_forestIntroShown = true;
@@ -108,17 +109,17 @@ namespace {
                 context.hasPendingSpawn = true;
             }
 
-            manager.ClearAndPush(CreateOverworldStateForMap((MapId)p.mapId));
+            manager.ClearAndPush(CreateOverworldSceneForMap((MapId)p.mapId));
         }
 
     public:
-        MenuSelectState()
+        MenuSelectScene()
             : sel(0), hasSave(false), whiteTex(NULL),
               titleFont(NULL), rowFont(NULL),
               enterWasDown(true), escWasDown(true), upWasDown(false), downWasDown(false),
               mouseWasDown(true) {}
 
-        ~MenuSelectState() override {
+        ~MenuSelectScene() override {
             if (whiteTex != NULL) whiteTex->Release();
             delete titleFont;
             delete rowFont;
@@ -143,7 +144,7 @@ namespace {
             BYTE* k = context.keys;
 
             if (JustPressed(k, DIK_ESCAPE, escWasDown)) {
-                manager.ClearAndPush(CreateMainMenuState());
+                manager.ClearAndPush(CreateMainMenuScene());
                 return;
             }
 
@@ -199,6 +200,6 @@ namespace {
 
 } // Namespace
 
-std::unique_ptr<GameState> CreateMenuSelectState() {
-    return std::make_unique<MenuSelectState>();
+std::unique_ptr<GameScene> CreateMenuSelectScene() {
+    return std::make_unique<MenuSelectScene>();
 }

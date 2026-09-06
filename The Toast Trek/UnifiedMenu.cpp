@@ -1,4 +1,6 @@
 #include "UnifiedMenu.h"
+#include "GameStateManager.h"
+#include "MainMenuScene.h"
 #include "UiFill.h"
 #include "Font.h"
 #include "Inventory.h"
@@ -72,9 +74,9 @@ namespace {
     float RowTop(int i) { return kBodyY + i * kRowH - 8.0f; }
     float RowBottom(int i) { return RowTop(i) + kRowH - 4.0f; }
 
-    class UnifiedMenuState : public GameState {
+    class UnifiedMenuScene : public GameScene {
     private:
-        GameState* backdrop;
+        GameScene* backdrop;
         int tab;
         int sel;
 
@@ -102,7 +104,7 @@ namespace {
         void ExitToMainMenu(GameContext& context, GameStateManager& manager) {
             PersistSettings(context);
             SaveCurrentRun(context);   // so "Continue" resumes right here
-            manager.ClearAndPush(CreateMainMenuState());
+            manager.ClearAndPush(CreateMainMenuScene());
         }
 
         int RowCount() const {
@@ -275,14 +277,14 @@ namespace {
         }
 
     public:
-        explicit UnifiedMenuState(GameState* under)
+        explicit UnifiedMenuScene(GameScene* under)
             : backdrop(under), tab(0), sel(0), whiteTex(NULL),
               titleFont(NULL), tabFont(NULL), headFont(NULL), bodyFont(NULL), hintFont(NULL),
               eWasDown(true), escWasDown(false), aWasDown(false), dWasDown(false), qWasDown(false),
               leftWasDown(false), rightWasDown(false), upWasDown(false), downWasDown(false),
               enterWasDown(false), mouseWasDown(true), prevMouseX(-1.0f), prevMouseY(-1.0f) {}
 
-        ~UnifiedMenuState() override {
+        ~UnifiedMenuScene() override {
             if (whiteTex != NULL) whiteTex->Release();
             delete titleFont;
             delete tabFont;
@@ -399,6 +401,6 @@ namespace {
 
 } // Namespace
 
-std::unique_ptr<GameState> CreateUnifiedMenuState(GameState* backdrop) {
-    return std::make_unique<UnifiedMenuState>(backdrop);
+std::unique_ptr<GameScene> CreateUnifiedMenuScene(GameScene* backdrop) {
+    return std::make_unique<UnifiedMenuScene>(backdrop);
 }

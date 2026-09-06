@@ -1,13 +1,13 @@
 #pragma once
 
-#include "GameState.h"
+#include "GameStateManager.h"
 #include "BattleUI.h"
 #include "Battlefield.h"
 #include "Pochi.h"
 #include "Enemy.h"
 #include <memory>
 
-class BattleState : public GameState {
+class BattleScene : public GameScene {
 private:
 	std::unique_ptr<Battlefield> battlefield;
 	std::unique_ptr<BattleUI> battleUI;
@@ -37,13 +37,13 @@ private:
 	int lastPochiHealth;	// Prev-frame heart + armour total -> a drop triggers the "hurt" sfx
 
 public:
-	explicit BattleState(BossId bossId) : bossId(bossId), battlefield(nullptr), battleUI(nullptr), phase(ENCOUNTER), 
+	explicit BattleScene(BossId bossId) : bossId(bossId), battlefield(nullptr), battleUI(nullptr), phase(ENCOUNTER), 
 	showEncounterMessage(true), enemyFlashTimer(0.0f), enemyHitFrames(0),
 		actionKeyWasDown{ false, false, false, false }, actChoiceWasDown{ false, false, false },
 		itemChoiceWasDown{ false, false, false }, actChoiceUsed{ false, false, false},
 		cheatWinWasDown(false), lastPochiHealth(0) {}
 
-	~BattleState();
+	~BattleScene();
 	BattlePhase phase;
 
 	void Initialize(GameContext& context) override;
@@ -52,3 +52,6 @@ public:
 	void Render(GameContext& context) override;
 	D3DCOLOR ClearColor() const override;
 };
+
+// Built by the maze / overworld when Pochi walks into a boss
+std::unique_ptr<GameScene> CreateBattleScene(BossId bossId);

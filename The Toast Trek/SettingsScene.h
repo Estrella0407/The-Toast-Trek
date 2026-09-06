@@ -1,5 +1,5 @@
 #pragma once
-#include "GameState.h"
+#include "GameStateManager.h"
 #include <memory>
 
 // The sound settings screen: Master / Music / SFX volume + Mute
@@ -7,4 +7,4 @@
 //   Up / Down     move the selection
 //   Left / Right   adjust the value (Enter toggles Mute)
 //   Esc / E        close
-std::unique_ptr<GameState> CreateSettingsState(GameState* backdrop = nullptr);
+std::unique_ptr<GameScene> CreateSettingsScene(GameScene* backdrop = nullptr);

@@ -1,12 +1,12 @@
 #pragma once
-#include "GameState.h"
+#include "GameStateManager.h"
 #include "Inventory.h" // ItemType
 #include <functional>
 #include <string>
 #include <vector>
 
-// Which loaded map an OverworldState draws / collides against
-enum class MapId : int {   // fixed underlying type: forward-declared in GameState.h
+// Which loaded map an OverworldScene draws / collides against
+enum class MapId : int {   // fixed underlying type: forward-declared in GameScene.h
     Forest,
     Maze,
     RuinsExterior,
@@ -45,11 +45,11 @@ struct OverworldConfig {
     std::function<D3DXVECTOR2(const D3DXVECTOR2& currentPosition)> ComputeSpawnPosition;
 
     // Pochi reaches the right edge -> next state to push (null = no exit)
-    std::function<std::unique_ptr<GameState>()> OnReachRightEdge;
+    std::function<std::unique_ptr<GameScene>()> OnReachRightEdge;
 
     // Left edge -> backtrack to the previous map, allowed even while bosses
     // are uncleared (null = no exit)
-    std::function<std::unique_ptr<GameState>()> OnReachLeftEdge;
+    std::function<std::unique_ptr<GameScene>()> OnReachLeftEdge;
 
     // Forced spawn in the DESTINATION map per exit, so Pochi lands on the seam
     // kNoSpawn = let the destination decide; kCarryY = keep current y
@@ -60,7 +60,7 @@ struct OverworldConfig {
     D3DXVECTOR2 doorwaySpawn   = D3DXVECTOR2(kNoSpawn, kNoSpawn);
 
     // Fired once, the frame every boss is cleared (roll the ending)
-    std::function<std::unique_ptr<GameState>()> OnAllCleared;
+    std::function<std::unique_ptr<GameScene>()> OnAllCleared;
 
     // requireBossesCleared: seal the forward exit until every boss is beaten.
     // bossesInOrder: boss i can't be fought until 0..i-1 are down
@@ -82,7 +82,7 @@ struct OverworldConfig {
     // OnEnterDoorway. Ignored unless OnEnterDoorway is set
     D3DXVECTOR2 doorwayPosition = D3DXVECTOR2(0.0f, 0.0f);
     float doorwayRadius = 40.0f;
-    std::function<std::unique_ptr<GameState>()> OnEnterDoorway;
+    std::function<std::unique_ptr<GameScene>()> OnEnterDoorway;
 
     // Invisible fence: Pochi's feet kept between these Y values, on top of
     // tile collision. fenceBottom <= fenceTop disables it
@@ -90,10 +90,10 @@ struct OverworldConfig {
     float fenceBottom = 0.0f;
 };
 
-std::unique_ptr<GameState> CreateOverworldState(OverworldConfig config);
+std::unique_ptr<GameScene> CreateOverworldScene(OverworldConfig config);
 
 // The first overworld screen, reached from the main menu
-std::unique_ptr<GameState> CreateForestState();
+std::unique_ptr<GameScene> CreateForestScene();
 
 // Rebuilds the overworld state for `id` - used by "Continue"
-std::unique_ptr<GameState> CreateOverworldStateForMap(MapId id);
+std::unique_ptr<GameScene> CreateOverworldSceneForMap(MapId id);

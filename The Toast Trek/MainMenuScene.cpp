@@ -1,6 +1,8 @@
-#include "GameState.h"
+#include "GameStateManager.h"
 #include "MainMenu.h"
-#include "MenuSelectState.h"
+#include "MenuSelectScene.h"
+#include "MainMenuScene.h"
+#include "EndingScene.h"
 #include <dinput.h>
 
 namespace {
@@ -13,14 +15,14 @@ namespace {
 
     // The title screen: "THE TOAST TREK" + Pochi + "PRESS ENTER TO CONTINUE"
     // Enter opens the New Game / Continue / Settings / Quit choice screen
-    class MainMenuState : public GameState {
+    class MainMenuScene : public GameScene {
     private:
         MainMenu* menu;
         bool enterWasDown, endingWasDown, mouseWasDown;
 
     public:
-        MainMenuState() : menu(NULL), enterWasDown(false), endingWasDown(false), mouseWasDown(true) {}
-        ~MainMenuState() { delete menu; }
+        MainMenuScene() : menu(NULL), enterWasDown(false), endingWasDown(false), mouseWasDown(true) {}
+        ~MainMenuScene() { delete menu; }
 
         void Initialize(GameContext& context) override {
             menu = new MainMenu(context.device, context.pochi);
@@ -34,7 +36,7 @@ namespace {
         void HandleInput(GameContext& context, GameStateManager& manager) override {
             // Dev shortcut: jump straight to the ending screen
             if (JustPressed(context.keys, DIK_F10, endingWasDown)) {
-                manager.Push(CreateEndingState());
+                manager.Push(CreateEndingScene());
                 return;
             }
 
@@ -42,7 +44,7 @@ namespace {
             mouseWasDown = context.mouseLeftDown;
 
             if (JustPressed(context.keys, DIK_RETURN, enterWasDown) || click) {
-                manager.ClearAndPush(CreateMenuSelectState());
+                manager.ClearAndPush(CreateMenuSelectScene());
             }
         }
 
@@ -59,6 +61,6 @@ namespace {
     };
 }
 
-std::unique_ptr<GameState> CreateMainMenuState() {
-    return std::make_unique<MainMenuState>();
+std::unique_ptr<GameScene> CreateMainMenuScene() {
+    return std::make_unique<MainMenuScene>();
 }

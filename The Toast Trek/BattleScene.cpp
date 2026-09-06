@@ -1,4 +1,5 @@
-#include "BattleState.h"
+#include "BattleScene.h"
+#include "GameOverScene.h"
 #include "Battlefield.h"
 #include "BattleUI.h"
 #include "Cheats.h"
@@ -28,9 +29,9 @@ const char* BossDisplayName(BossId id) {
 
 // Defined here (not =default in the header) so Battlefield / BattleUI are
 // complete types when the unique_ptr members are destroyed
-BattleState::~BattleState() = default;
+BattleScene::~BattleScene() = default;
 
-void BattleState::Initialize(GameContext& context) {
+void BattleScene::Initialize(GameContext& context) {
 	pochi = context.playerStats;
 	lastPochiHealth = (pochi != nullptr) ? (pochi->GetHealth() + pochi->GetArmor()) : 0;
     battleUI = std::make_unique<BattleUI>(context.device);
@@ -46,7 +47,7 @@ namespace {
     }
 }
 
-void BattleState::HandleInput(GameContext& context, GameStateManager&) {
+void BattleScene::HandleInput(GameContext& context, GameStateManager&) {
     if (phase == ENCOUNTER) {
         phase = PLAYER_TURN;
         return;
@@ -187,7 +188,7 @@ void BattleState::HandleInput(GameContext& context, GameStateManager&) {
     }
 }
 
-void BattleState::Update(GameContext& context, GameStateManager& manager) {
+void BattleScene::Update(GameContext& context, GameStateManager& manager) {
     // --- Developer cheats (F5) -----------
     if (Cheats::enabled) {
         // K: win the fight immediately
@@ -236,7 +237,7 @@ void BattleState::Update(GameContext& context, GameStateManager& manager) {
         context.lastBattleBoss = bossId;
         // Pochi is out of health -> game over screen
         // (replaces the whole stack, the ruins/forest run doesn't continue)
-        manager.ClearAndPush(CreateGameOverState(context.sound));
+        manager.ClearAndPush(CreateGameOverScene(context.sound));
     }
     else if (phase != ENEMY_HIT && battlefield->IsEnemyDefeated()) {
         context.lastBattleOutcome = BattleOutcome::Victory;
@@ -250,15 +251,15 @@ void BattleState::Update(GameContext& context, GameStateManager& manager) {
     }
 }
 
-void BattleState::Render(GameContext& context) {
+void BattleScene::Render(GameContext& context) {
     battlefield->Render(context.spriteBrush);
     battleUI->Render(context.spriteBrush);
 }
 
-D3DCOLOR BattleState::ClearColor() const {
+D3DCOLOR BattleScene::ClearColor() const {
 	return D3DCOLOR_XRGB(255, 255, 255);
 }
 
-std::unique_ptr<GameState> CreateBattleState(BossId bossId) {
-	return std::make_unique<BattleState>(bossId);
+std::unique_ptr<GameScene> CreateBattleScene(BossId bossId) {
+	return std::make_unique<BattleScene>(bossId);
 }

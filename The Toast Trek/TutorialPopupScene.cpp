@@ -1,4 +1,4 @@
-#include "TutorialPopupState.h"
+#include "TutorialPopupScene.h"
 #include "Font.h"
 #include "Sprite.h"
 #include "TileMap.h"
@@ -87,7 +87,7 @@ namespace {
         };
     }
 
-    class TutorialPopupState : public GameState {
+    class TutorialPopupScene : public GameScene {
     private:
         std::vector<TutorialPage> pages;
         int pageIndex;
@@ -124,11 +124,11 @@ namespace {
         }
 
     public:
-        TutorialPopupState()
+        TutorialPopupScene()
             : pageIndex(0), whiteTex(NULL), headingFont(NULL), bodyFont(NULL), footerFont(NULL),
               prevWasDown(false), nextWasDown(false), advanceWasDown(true) {}
 
-        ~TutorialPopupState() override {
+        ~TutorialPopupScene() override {
             if (whiteTex != NULL) whiteTex->Release();
             delete headingFont;
             delete bodyFont;
@@ -237,6 +237,6 @@ namespace {
 
 } // Namespace
 
-std::unique_ptr<GameState> CreateForestIntroPopup() {
-    return std::make_unique<TutorialPopupState>();
+std::unique_ptr<GameScene> CreateForestIntroPopup() {
+    return std::make_unique<TutorialPopupScene>();
 }

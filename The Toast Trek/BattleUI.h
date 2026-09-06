@@ -5,7 +5,7 @@
 #include "Line.h"
 #include "Font.h"
 #include "BattleButton.h"
-#include "GameState.h"
+#include "GameScene.h"
 #include "Inventory.h"
 
 class BattleUI {
@@ -45,7 +45,7 @@ private:
 	int fightDamage;
 	int itemHealAmount;
 
-	// "You have encountered <enemyName>!" - set per fight by BattleState
+	// "You have encountered <enemyName>!" - set per fight by BattleScene
 	std::string enemyName = "the enemy";
 	bool showEncounterMessage;
 	std::string encounterMessage;

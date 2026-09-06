@@ -1,4 +1,6 @@
-#include "OverworldState.h"
+#include "OverworldScene.h"
+#include "BattleScene.h"
+#include "EndingScene.h"
 #include "Cheats.h"
 #include "Enemy.h"
 #include "Font.h"
@@ -76,12 +78,12 @@ namespace {
     }
 
 
-    std::unique_ptr<GameState> CreateMazeState();
-    std::unique_ptr<GameState> CreateRuinsExteriorState();
-    std::unique_ptr<GameState> CreateTarumtState();
-    std::unique_ptr<GameState> CreateRuinsInteriorState();
+    std::unique_ptr<GameScene> CreateMazeScene();
+    std::unique_ptr<GameScene> CreateRuinsExteriorScene();
+    std::unique_ptr<GameScene> CreateTarumtScene();
+    std::unique_ptr<GameScene> CreateRuinsInteriorScene();
 
-    class OverworldState : public GameState {
+    class OverworldScene : public GameScene {
     private:
         OverworldConfig config;
         TileMap* map;
@@ -157,7 +159,7 @@ namespace {
         }
 
     public:
-        explicit OverworldState(OverworldConfig cfg)
+        explicit OverworldScene(OverworldConfig cfg)
             : config(std::move(cfg)), map(NULL), interactWasDown(false), menuWasDown(false),
               cheatClearWasDown(false), cheatWarpWasDown(false),
               allClearedFired(false), exitsArmed(false), interactPrompt(NULL),
@@ -166,7 +168,7 @@ namespace {
               boostedStats(NULL),
               gateSprite(NULL), whiteTex(NULL) {}
 
-        ~OverworldState() {
+        ~OverworldScene() {
             // Safety net if this state is torn down (ClearAndPush on defeat)
             // without going through a normal exit: never leave Pochi boosted
             if (boostedStats != NULL && boostedStats->IsSpecialMode()) {
@@ -285,7 +287,7 @@ namespace {
 
             // E opens the tab menu (Inventory / Status / Settings)
             if (JustPressed(context.keys, DIK_E, menuWasDown)) {
-                manager.Push(CreateUnifiedMenuState(this));
+                manager.Push(CreateUnifiedMenuScene(this));
                 return;
             }
 
@@ -312,7 +314,7 @@ namespace {
                 // L: jump straight to this map's exit
                 if (JustPressed(context.keys, DIK_L, cheatWarpWasDown)) {
                     LeaveBoostedMap(context);
-                    std::unique_ptr<GameState> next;
+                    std::unique_ptr<GameScene> next;
                     if (config.OnReachRightEdge) { next = config.OnReachRightEdge(); StashSpawn(context, config.rightEdgeSpawn); }
                     else if (config.OnEnterDoorway) { next = config.OnEnterDoorway(); StashSpawn(context, config.doorwaySpawn); }
                     if (next != NULL) manager.Push(std::move(next));
@@ -343,7 +345,7 @@ namespace {
                 // (god mode ignores the order)
                 if (!Cheats::enabled && config.bossesInOrder && i > 0 && !bossCleared[i - 1]) continue;
                 if (IsNear(pochiPos, bossEnemies[i]->GetSprite()->GetPosition(), kInteractRadius)) {
-                    manager.Push(CreateBattleState(config.bosses[i].id));
+                    manager.Push(CreateBattleScene(config.bosses[i].id));
                     return;
                 }
             }
@@ -368,7 +370,7 @@ namespace {
             if (map == NULL) { manager.Pop(); return; }
 
             // Pick up the result of whichever battle we just returned from
-            // BattleState sets this right before popping itself
+            // BattleScene sets this right before popping itself
             if (context.lastBattleOutcome == BattleOutcome::Victory) {
                 for (size_t i = 0; i < config.bosses.size(); ++i) {
                     if (config.bosses[i].id == context.lastBattleBoss) {
@@ -409,7 +411,7 @@ namespace {
                     // Land Pochi on the same seam a normal right-edge exit
                     // (Tarumt -> forest's top-left path)
                     StashSpawn(context, config.rightEdgeSpawn);
-                    std::unique_ptr<GameState> next = config.OnAllCleared();
+                    std::unique_ptr<GameScene> next = config.OnAllCleared();
                     if (next != NULL) { manager.Push(std::move(next)); return; }
                 }
             }
@@ -492,7 +494,7 @@ namespace {
             if (atRight && !exitLocked) {
                 LeaveBoostedMap(context);
                 StashSpawn(context, config.rightEdgeSpawn);
-                std::unique_ptr<GameState> next = config.OnReachRightEdge();
+                std::unique_ptr<GameScene> next = config.OnReachRightEdge();
                 if (next != NULL) manager.Push(std::move(next));
                 return;
             }
@@ -500,7 +502,7 @@ namespace {
             if (atDoor && !exitLocked) {
                 LeaveBoostedMap(context);
                 StashSpawn(context, config.doorwaySpawn);
-                std::unique_ptr<GameState> next = config.OnEnterDoorway();
+                std::unique_ptr<GameScene> next = config.OnEnterDoorway();
                 if (next != NULL) manager.Push(std::move(next));
                 return;
             }
@@ -509,7 +511,7 @@ namespace {
             if (atLeft) {
                 LeaveBoostedMap(context);
                 StashSpawn(context, config.leftEdgeSpawn);
-                std::unique_ptr<GameState> next = config.OnReachLeftEdge();
+                std::unique_ptr<GameScene> next = config.OnReachLeftEdge();
                 if (next != NULL) manager.Push(std::move(next));
                 return;
             }
@@ -639,7 +641,7 @@ namespace {
             return D3DXVECTOR2(40.0f, current.y);
         };
         // Walk back into the left edge to return to the forest
-        config.OnReachLeftEdge = [] { return CreateForestState(); };
+        config.OnReachLeftEdge = [] { return CreateForestScene(); };
         config.leftEdgeSpawn = D3DXVECTOR2(1160.0f, OverworldConfig::kCarryY);
         // Fence Pochi's feet inside so he can't skip the whole maze
         config.fenceTop = 40.0f;
@@ -653,7 +655,7 @@ namespace {
         config.gateY = 40.0f;
         config.gateWidth = 34.0f;
         config.gateHeight = 640.0f;
-        config.OnReachRightEdge = [] { return CreateRuinsExteriorState(); };
+        config.OnReachRightEdge = [] { return CreateRuinsExteriorScene(); };
 
         config.items = {
             { ItemType::HealthPotion, "Assets/Item/heathPotion.png", 18, 20, 380.0f, 392.0f, 2.0f },
@@ -664,8 +666,8 @@ namespace {
         return config;
     }
 
-    std::unique_ptr<GameState> CreateMazeState() {
-        return CreateOverworldState(MakeMazeConfig());
+    std::unique_ptr<GameScene> CreateMazeScene() {
+        return CreateOverworldScene(MakeMazeConfig());
     }
 
     OverworldConfig MakeForestConfig() {
@@ -681,12 +683,12 @@ namespace {
             { ItemType::Bone,         "Assets/Item/bone.png",        32, 32, 680.0f, 360.0f, 1.5f },
             { ItemType::Toast,        "Assets/Item/toast.png",       16, 16, 380.0f, 75.0f, 2.0f },
         };
-        config.OnReachRightEdge = [] { return CreateMazeState(); };
+        config.OnReachRightEdge = [] { return CreateMazeScene(); };
 
         // The path leading off the forest's TOP-LEFT corner goes to the secret Tarumt area where Mr Andrew is
         config.doorwayPosition = D3DXVECTOR2(110.0f, 30.0f);
         config.doorwayRadius = 90.0f;
-        config.OnEnterDoorway = [] { return CreateTarumtState(); };
+        config.OnEnterDoorway = [] { return CreateTarumtScene(); };
         return config;
     }
 
@@ -699,14 +701,14 @@ namespace {
         config.ComputeSpawnPosition = [](const D3DXVECTOR2&) {
             return D3DXVECTOR2(1120.0f, 600.0f);
         };
-        config.OnReachRightEdge = [] { return CreateForestState(); };
-        config.OnAllCleared     = [] { return CreateForestState(); };
+        config.OnReachRightEdge = [] { return CreateForestScene(); };
+        config.OnAllCleared     = [] { return CreateForestScene(); };
         config.rightEdgeSpawn   = D3DXVECTOR2(110.0f, 150.0f);
         return config;
     }
 
-    std::unique_ptr<GameState> CreateTarumtState() {
-        return CreateOverworldState(MakeTarumtConfig());
+    std::unique_ptr<GameScene> CreateTarumtScene() {
+        return CreateOverworldScene(MakeTarumtConfig());
     }
 
     OverworldConfig MakeRuinsExteriorConfig() {
@@ -718,8 +720,8 @@ namespace {
         };
         config.doorwayPosition = D3DXVECTOR2(780.0f, 190.0f);
         config.doorwayRadius = 60.0f;
-        config.OnEnterDoorway = [] { return CreateRuinsInteriorState(); };
-        config.OnReachLeftEdge = [] { return CreateMazeState(); };
+        config.OnEnterDoorway = [] { return CreateRuinsInteriorScene(); };
+        config.OnReachLeftEdge = [] { return CreateMazeScene(); };
         config.leftEdgeSpawn = D3DXVECTOR2(1160.0f, OverworldConfig::kCarryY);
 
         config.items = {
@@ -729,8 +731,8 @@ namespace {
         return config;
     }
 
-    std::unique_ptr<GameState> CreateRuinsExteriorState() {
-        return CreateOverworldState(MakeRuinsExteriorConfig());
+    std::unique_ptr<GameScene> CreateRuinsExteriorScene() {
+        return CreateOverworldScene(MakeRuinsExteriorConfig());
     }
 
     // Maki (final boss)
@@ -740,35 +742,35 @@ namespace {
         config.bosses = {
             { BossId::Maki, 610.0f, 200.0f }
         };
-        config.OnAllCleared = [] { return CreateEndingState(); };
+        config.OnAllCleared = [] { return CreateEndingScene(); };
         config.ComputeSpawnPosition = [](const D3DXVECTOR2&) {
             return D3DXVECTOR2(614.0f, 540.0f);
         };
         return config;
     }
 
-    std::unique_ptr<GameState> CreateRuinsInteriorState() {
-        return CreateOverworldState(MakeRuinsInteriorConfig());
+    std::unique_ptr<GameScene> CreateRuinsInteriorScene() {
+        return CreateOverworldScene(MakeRuinsInteriorConfig());
     }
 }
 
-std::unique_ptr<GameState> CreateOverworldState(OverworldConfig config) {
-    return std::make_unique<OverworldState>(std::move(config));
+std::unique_ptr<GameScene> CreateOverworldScene(OverworldConfig config) {
+    return std::make_unique<OverworldScene>(std::move(config));
 }
 
-std::unique_ptr<GameState> CreateForestState() {
-    return CreateOverworldState(MakeForestConfig());
+std::unique_ptr<GameScene> CreateForestScene() {
+    return CreateOverworldScene(MakeForestConfig());
 }
 
 // Rebuilds the overworld state for a given map - used by "Continue" to drop
 // the player back on the map their save was taken in
-std::unique_ptr<GameState> CreateOverworldStateForMap(MapId id) {
+std::unique_ptr<GameScene> CreateOverworldSceneForMap(MapId id) {
     switch (id) {
-    case MapId::Maze:          return CreateOverworldState(MakeMazeConfig());
-    case MapId::RuinsExterior: return CreateOverworldState(MakeRuinsExteriorConfig());
-    case MapId::RuinsInterior: return CreateOverworldState(MakeRuinsInteriorConfig());
-    case MapId::Tarumt:        return CreateOverworldState(MakeTarumtConfig());
+    case MapId::Maze:          return CreateOverworldScene(MakeMazeConfig());
+    case MapId::RuinsExterior: return CreateOverworldScene(MakeRuinsExteriorConfig());
+    case MapId::RuinsInterior: return CreateOverworldScene(MakeRuinsInteriorConfig());
+    case MapId::Tarumt:        return CreateOverworldScene(MakeTarumtConfig());
     case MapId::Forest:
-    default:                   return CreateOverworldState(MakeForestConfig());
+    default:                   return CreateOverworldScene(MakeForestConfig());
     }
 }

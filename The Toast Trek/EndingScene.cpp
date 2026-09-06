@@ -1,4 +1,5 @@
-#include "EndingState.h"
+#include "EndingScene.h"
+#include "MainMenuScene.h"
 #include "FrameTimer.h"
 #include "Font.h"
 #include "Sprite.h"
@@ -88,7 +89,7 @@ namespace {
 
     inline float Len(float x, float y) { return std::sqrt(x * x + y * y); }
 
-    class EndingState : public GameState {
+    class EndingScene : public GameScene {
     private:
         Font* creditsFont;
         Font* hintFont;
@@ -204,7 +205,7 @@ namespace {
         }
 
     public:
-        EndingState()
+        EndingScene()
             : creditsFont(NULL), hintFont(NULL), nameFont(NULL), dialogFont(NULL),
               whiteTex(NULL), denjiTex(NULL), ballTex(NULL),
               ballPos(0.0f, 0.0f), ballVel(0.0f, 0.0f), ballAngle(0.0f), ballSpin(0.0f),
@@ -213,7 +214,7 @@ namespace {
               creditsScroll(0.0f), bounceSfxCooldown(0.0f) {
         }
 
-        ~EndingState() override {
+        ~EndingScene() override {
             delete creditsFont;
             delete hintFont;
             delete nameFont;
@@ -280,7 +281,7 @@ namespace {
 
             // Phase::Credits - just the ball; Enter / Esc leaves
             if (JustPressed(k, DIK_RETURN, enterWasDown) || JustPressed(k, DIK_ESCAPE, escWasDown)) {
-                manager.ClearAndPush(CreateMainMenuState());
+                manager.ClearAndPush(CreateMainMenuScene());
             }
         }
 
@@ -365,6 +366,6 @@ namespace {
 
 } // Namespace
 
-std::unique_ptr<GameState> CreateEndingState() {
-    return std::make_unique<EndingState>();
+std::unique_ptr<GameScene> CreateEndingScene() {
+    return std::make_unique<EndingScene>();
 }

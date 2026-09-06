@@ -1,4 +1,4 @@
-#include "SettingsState.h"
+#include "SettingsScene.h"
 #include "SaveGame.h"
 #include "SoundManage.h"
 #include "UiFill.h"
@@ -37,9 +37,9 @@ namespace {
     const D3DCOLOR kTextDim = D3DCOLOR_XRGB(160, 150, 138);
     const D3DCOLOR kHeading = D3DCOLOR_XRGB(245, 226, 184);
 
-    class SettingsState : public GameState {
+    class SettingsScene : public GameScene {
     private:
-        GameState* backdrop;
+        GameScene* backdrop;
         int sel;   // 0 Master, 1 Music, 2 SFX, 3 Mute
 
         IDirect3DTexture9* whiteTex;
@@ -82,13 +82,13 @@ namespace {
         }
 
     public:
-        explicit SettingsState(GameState* under)
+        explicit SettingsScene(GameScene* under)
             : backdrop(under), sel(0), whiteTex(NULL),
               titleFont(NULL), rowFont(NULL),
               escWasDown(true), eWasDown(true), upWasDown(false), downWasDown(false),
               leftWasDown(false), rightWasDown(false), enterWasDown(false), mouseWasDown(true) {}
 
-        ~SettingsState() override {
+        ~SettingsScene() override {
             if (whiteTex != NULL) whiteTex->Release();
             delete titleFont;
             delete rowFont;
@@ -196,6 +196,6 @@ namespace {
 
 } // namespace
 
-std::unique_ptr<GameState> CreateSettingsState(GameState* backdrop) {
-    return std::make_unique<SettingsState>(backdrop);
+std::unique_ptr<GameScene> CreateSettingsScene(GameScene* backdrop) {
+    return std::make_unique<SettingsScene>(backdrop);
 }

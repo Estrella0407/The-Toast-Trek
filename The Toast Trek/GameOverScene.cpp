@@ -1,6 +1,7 @@
-#include "GameOverState.h"
-#include "GameState.h"
-#include "OverworldState.h"   // CreateForestState
+#include "GameOverScene.h"
+#include "MainMenuScene.h"
+#include "GameStateManager.h"
+#include "OverworldScene.h"   // CreateForestScene
 #include "SoundManage.h"
 #include <dinput.h>
 #include <cmath>
@@ -14,7 +15,7 @@ namespace {
     }
 }
 
-GameOverState::GameOverState(SoundManage* soundMgr)
+GameOverScene::GameOverScene(SoundManage* soundMgr)
     : titleFont(nullptr)
     , statsFont(nullptr)
     , promptFont(nullptr)
@@ -24,13 +25,13 @@ GameOverState::GameOverState(SoundManage* soundMgr)
     , flashTimer(0.0f) {
 }
 
-GameOverState::~GameOverState() {
+GameOverScene::~GameOverScene() {
     delete titleFont;
     delete statsFont;
     delete promptFont;
 }
 
-void GameOverState::Initialize(GameContext& context) {
+void GameOverScene::Initialize(GameContext& context) {
     titleFont = new Font(context.device, 0.0f, 180.0f, 1280, 80, 56, "Arial");
     statsFont = new Font(context.device, 0.0f, 300.0f, 1280, 50, 26, "Arial");
     promptFont = new Font(context.device, 0.0f, 500.0f, 1280, 60, 22, "Arial");
@@ -40,19 +41,19 @@ void GameOverState::Initialize(GameContext& context) {
     }
 }
 
-void GameOverState::HandleInput(GameContext& context, GameStateManager& manager) {
+void GameOverScene::HandleInput(GameContext& context, GameStateManager& manager) {
     // The game-over screen is the only state on the stack
     // Both choices rebuild it with ClearAndPush
     if (JustPressed(context.keys, DIK_R, retryWasDown)) {
         ResetRunProgress(context);   // Fresh Pochi, empty pack, every map locked again
-        manager.ClearAndPush(CreateForestState());
+        manager.ClearAndPush(CreateForestScene());
     }
     if (JustPressed(context.keys, DIK_M, menuWasDown)) {
-        manager.ClearAndPush(CreateMainMenuState());
+        manager.ClearAndPush(CreateMainMenuScene());
     }
 }
 
-void GameOverState::Update(GameContext& context, GameStateManager& manager) {
+void GameOverScene::Update(GameContext& context, GameStateManager& manager) {
     flashTimer += 0.016f;   // ~60 fps
 
     if (soundManage) {
@@ -60,7 +61,7 @@ void GameOverState::Update(GameContext& context, GameStateManager& manager) {
     }
 }
 
-void GameOverState::Render(GameContext& context) {
+void GameOverScene::Render(GameContext& context) {
     LPD3DXSPRITE brush = context.spriteBrush;
 
     if (titleFont) {
@@ -77,11 +78,11 @@ void GameOverState::Render(GameContext& context) {
     }
 }
 
-D3DCOLOR GameOverState::ClearColor() const {
+D3DCOLOR GameOverScene::ClearColor() const {
     // Fade to dark red
     return D3DCOLOR_XRGB(35, 10, 10);
 }
 
-std::unique_ptr<GameState> CreateGameOverState(SoundManage* sound) {
-    return std::make_unique<GameOverState>(sound);
+std::unique_ptr<GameScene> CreateGameOverScene(SoundManage* sound) {
+    return std::make_unique<GameOverScene>(sound);
 }

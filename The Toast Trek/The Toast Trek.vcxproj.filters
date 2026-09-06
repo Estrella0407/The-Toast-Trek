@@ -36,19 +36,25 @@
     <ClCompile Include="FrameTimer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GameState.cpp">
+    <ClCompile Include="GameStateManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GameScene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GameContext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="MainMenu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MainMenuState.cpp">
+    <ClCompile Include="MainMenuScene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MenuSelectState.cpp">
+    <ClCompile Include="MenuSelectScene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="OverworldState.cpp">
+    <ClCompile Include="OverworldScene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Battlefield.cpp">
@@ -57,7 +63,7 @@
     <ClCompile Include="Heart.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="BattleState.cpp">
+    <ClCompile Include="BattleScene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Projectile.cpp">
@@ -84,16 +90,16 @@
     <ClCompile Include="SaveGame.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SettingsState.cpp">
+    <ClCompile Include="SettingsScene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GameOverState.cpp">
+    <ClCompile Include="GameOverScene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="UnifiedMenu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TutorialPopupState.cpp">
+    <ClCompile Include="TutorialPopupScene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="UiFill.cpp">
@@ -105,7 +111,7 @@
     <ClCompile Include="BattleStatusBars.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="EndingState.cpp">
+    <ClCompile Include="EndingScene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="FrameBar.cpp">
@@ -134,16 +140,28 @@
     <ClInclude Include="FrameTimer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GameState.h">
+    <ClInclude Include="GameScene.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GameContext.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GameStateManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MainMenuScene.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AABB.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MainMenu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MenuSelectState.h">
+    <ClInclude Include="MenuSelectScene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="OverworldState.h">
+    <ClInclude Include="OverworldScene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Battlefield.h">
@@ -152,7 +170,7 @@
     <ClInclude Include="Heart.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="BattleState.h">
+    <ClInclude Include="BattleScene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Projectile.h">
@@ -179,16 +197,16 @@
     <ClInclude Include="SaveGame.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SettingsState.h">
+    <ClInclude Include="SettingsScene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GameOverState.h">
+    <ClInclude Include="GameOverScene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UnifiedMenu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="TutorialPopupState.h">
+    <ClInclude Include="TutorialPopupScene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UiFill.h">
@@ -200,7 +218,7 @@
     <ClInclude Include="BattleStatusBars.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="EndingState.h">
+    <ClInclude Include="EndingScene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FrameBar.h">

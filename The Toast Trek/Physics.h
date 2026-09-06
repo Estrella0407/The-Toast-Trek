@@ -3,10 +3,7 @@
 #include <d3dx9.h>
 #include "Sprite.h"
 #include "TileMap.h"
-
-struct AABB {
-    float left, top, right, bottom;
-};
+#include "AABB.h"
 
 class Physics {
 public:

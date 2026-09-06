@@ -1,5 +1,5 @@
 #pragma once
-#include "GameState.h"
+#include "GameStateManager.h"
 #include <memory>
 
 // The Stardew-style choice screen shown after "Press Enter" on the title:
@@ -8,4 +8,4 @@
 //   Settings   - open the sound settings screen
 //   Quit       - close the game
 // Up / Down move, Enter selects, Esc goes back to the title.
-std::unique_ptr<GameState> CreateMenuSelectState();
+std::unique_ptr<GameScene> CreateMenuSelectScene();
