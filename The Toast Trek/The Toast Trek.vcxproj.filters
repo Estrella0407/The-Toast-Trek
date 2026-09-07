@@ -194,6 +194,9 @@
     <ClInclude Include="GameScene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Keys.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="GameContext.h">
       <Filter>Header Files</Filter>
     </ClInclude>

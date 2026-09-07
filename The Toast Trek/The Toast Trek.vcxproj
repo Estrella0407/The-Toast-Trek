@@ -90,6 +90,7 @@
     <ClInclude Include="FrameTimer.h" />
     <ClInclude Include="GameOverScene.h" />
     <ClInclude Include="GameScene.h" />
+    <ClInclude Include="Keys.h" />
     <ClInclude Include="GameContext.h" />
     <ClInclude Include="GameStateManager.h" />
     <ClInclude Include="MainMenuScene.h" />
