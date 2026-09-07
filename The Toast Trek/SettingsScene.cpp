@@ -35,6 +35,8 @@ namespace {
     private:
         GameScene* backdrop;
         int sel;   // 0 Master, 1 Music, 2 SFX, 3 Mute
+
+        IDirect3DTexture9* whiteTex;
         Font* titleFont;
         Font* rowFont;
 
@@ -42,7 +44,7 @@ namespace {
         bool mouseWasDown;
 
         void Fill(LPD3DXSPRITE b, float x, float y, float w, float h, D3DCOLOR c) {
-            ui::FillRect(b, x, y, w, h, c);
+            ui::FillRect(b, whiteTex, x, y, w, h, c);
         }
 
         void SetVolume(GameContext& context, int which, float value) {
@@ -75,11 +77,13 @@ namespace {
 
     public:
         explicit SettingsScene(GameScene* under)
-            : backdrop(under), sel(0), titleFont(NULL), rowFont(NULL),
+            : backdrop(under), sel(0), whiteTex(NULL),
+              titleFont(NULL), rowFont(NULL),
               escWasDown(true), eWasDown(true), upWasDown(false), downWasDown(false),
               leftWasDown(false), rightWasDown(false), enterWasDown(false), mouseWasDown(true) {}
 
-        ~SettingsScene() override {
+        ~SettingsScene() override {
+            if (whiteTex != NULL) whiteTex->Release();
             delete titleFont;
             delete rowFont;
         }
@@ -89,7 +93,9 @@ namespace {
             escWasDown = context.keys != NULL && (context.keys[DIK_ESCAPE] & 0x80) != 0;
             eWasDown = context.keys != NULL && (context.keys[DIK_E] & 0x80) != 0;
             enterWasDown = context.keys != NULL && (context.keys[DIK_RETURN] & 0x80) != 0;
-            mouseWasDown = context.mouseLeftDown;
+            mouseWasDown = context.mouseLeftDown;
+
+            whiteTex = ui::MakeWhiteTexture(context.device);
             titleFont = new Font(context.device, 0.0f, 0.0f, 400, 40, 26, "Arial");
             rowFont = new Font(context.device, 0.0f, 0.0f, 400, 30, 20, "Arial");
         }

@@ -1,51 +1,40 @@
 #include "UiFill.h"
+#include <cmath>
 
 namespace ui {
 
-    // One shared line, created once at start-up (Init) and freed at shutdown.
-    static LPD3DXLINE g_line = NULL;
+    IDirect3DTexture9* MakeWhiteTexture(IDirect3DDevice9* device) {
+        // A 1x1 white image
+        // FillRect() stretches it to any size
+        return LoadTexture(device, "Assets/UI/white.png", 1, 1);
+    }
 
-    void Init(IDirect3DDevice9* device) {
-        if (g_line == NULL && device != NULL) {
-            D3DXCreateLine(device, &g_line);
+    IDirect3DTexture9* MakeCircleTexture(IDirect3DDevice9* device, UINT size) {
+        if (device == NULL || size == 0) return NULL;
+        IDirect3DTexture9* tex = NULL;
+        if (FAILED(device->CreateTexture(size, size, 1, 0, D3DFMT_A8R8G8B8,
+                D3DPOOL_MANAGED, &tex, NULL))) {
+            return NULL;
         }
-    }
-
-    void Shutdown() {
-        if (g_line != NULL) {
-            g_line->Release();
-            g_line = NULL;
+        D3DLOCKED_RECT lr;
+        if (SUCCEEDED(tex->LockRect(0, &lr, NULL, 0))) {
+            const float c = (size - 1) * 0.5f;
+            const float radius = c;
+            unsigned char* rows = static_cast<unsigned char*>(lr.pBits);
+            for (UINT y = 0; y < size; ++y) {
+                DWORD* px = reinterpret_cast<DWORD*>(rows + y * lr.Pitch);
+                for (UINT x = 0; x < size; ++x) {
+                    const float dx = x - c, dy = y - c;
+                    float a = radius - std::sqrt(dx * dx + dy * dy);   // >1 inside, 0..1 at the rim
+                    if (a > 1.0f) a = 1.0f;
+                    if (a < 0.0f) a = 0.0f;
+                    const DWORD alpha = static_cast<DWORD>(a * 255.0f + 0.5f);
+                    px[x] = (alpha << 24) | 0x00FFFFFF;
+                }
+            }
+            tex->UnlockRect(0);
         }
-    }
-
-    void FillLine(LPD3DXSPRITE brush, float ax, float ay, float bx, float by,
-                  float thickness, D3DCOLOR color) {
-        if (g_line == NULL || thickness <= 0.0f) return;
-
-        // Drawing lines while an ID3DXSprite batch is open corrupts it, so
-        // pause the batch, draw, then resume it.
-        const bool inBatch = (brush != NULL);
-        if (inBatch) brush->End();
-
-        D3DXVECTOR2 seg[2] = { D3DXVECTOR2(ax, ay), D3DXVECTOR2(bx, by) };
-        g_line->SetWidth(thickness);
-        g_line->SetAntialias(FALSE);
-        g_line->Begin();
-        g_line->Draw(seg, 2, color);
-        g_line->End();
-
-        if (inBatch) brush->Begin(D3DXSPRITE_ALPHABLEND);
-    }
-
-    void FillRect(LPD3DXSPRITE brush, float x, float y, float w, float h, D3DCOLOR color) {
-        if (w <= 0.0f || h <= 0.0f) return;
-
-        // One wide line down the longer axis, so the line width never has to
-        // exceed the shorter side.
-        if (w >= h)
-            FillLine(brush, x, y + h * 0.5f, x + w, y + h * 0.5f, h, color);
-        else
-            FillLine(brush, x + w * 0.5f, y, x + w * 0.5f, y + h, w, color);
+        return tex;
     }
 
     IDirect3DTexture9* LoadTexture(IDirect3DDevice9* device, const char* path,
@@ -56,6 +45,24 @@ namespace ui {
             D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT, 0,
             NULL, NULL, &tex);
         return tex;
+    }
+
+    void FillRect(LPD3DXSPRITE brush, IDirect3DTexture9* whiteTex,
+                  float x, float y, float w, float h, D3DCOLOR color) {
+        if (brush == NULL || whiteTex == NULL || w <= 0.0f || h <= 0.0f) return;
+
+        D3DXVECTOR2 scale(w, h);
+        D3DXVECTOR2 translate(x, y);
+        D3DXMATRIX transform;
+        D3DXMatrixTransformation2D(&transform, NULL, 0.0f, &scale, NULL, 0.0f, &translate);
+        brush->SetTransform(&transform);
+
+        RECT src = { 0, 0, 1, 1 };
+        brush->Draw(whiteTex, &src, NULL, NULL, color);
+
+        D3DXMATRIX identity;
+        D3DXMatrixIdentity(&identity);
+        brush->SetTransform(&identity);
     }
 
     void DrawTextureRegion(LPD3DXSPRITE brush, IDirect3DTexture9* tex,
@@ -89,8 +96,8 @@ namespace ui {
                             D3DCOLOR tint) {
         if (brush == NULL || tex == NULL || srcW == 0 || srcH == 0) return;
 
-        // Scale srcW x srcH down to drawW x drawH, rotate about the scaled
-        // quad's centre, translate so that centre lands on (centreX, centreY).
+        // Scale the srcW x srcH texture down to drawW x drawH (about the origin)
+        // rotate about the scaled quad's centre, then translate so that centre lands on (centreX, centreY)
         D3DXVECTOR2 scale(drawW / (float)srcW, drawH / (float)srcH);
         D3DXVECTOR2 rotCentre(drawW * 0.5f, drawH * 0.5f);
         D3DXVECTOR2 translate(centreX - drawW * 0.5f, centreY - drawH * 0.5f);

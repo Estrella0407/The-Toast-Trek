@@ -158,6 +158,7 @@ private:
     Pochi* boostedStats;    // Tarumt map: Pochi's stats force-boosted, restored on the way out
 
     Sprite* gateSprite;            // Exit gate art, if config.gateTexture is set
+    IDirect3DTexture9* whiteTex;
 };
 
 // "Continue" - rebuild the scene for the map a save was taken in

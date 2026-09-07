@@ -17,4 +17,5 @@ public:
 private:
     IDirect3DTexture9* badgeTex;   // Assets/UI/pochiStateFull.png
     Font* valueFont;
+    IDirect3DTexture9* whiteTex;   // Wash quad + backing plate behind the value text
 };

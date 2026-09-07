@@ -3,7 +3,6 @@
 #include "Inventory.h"
 #include "Pochi.h"
 #include "Cheats.h"
-#include "UiFill.h"
 
 static const int kScreenWidth = 1280;
 static const int kScreenHeight = 720;
@@ -32,8 +31,6 @@ void GameStateManager::Init()
     context.spriteBrush = d3d.GetSpriteBrush();
     context.keys = const_cast<BYTE*>(input.Keys());
     context.moveSpeed = 5;
-
-    ui::Init(d3d.GetDevice());   // shared line for UI rectangles
 
     LoadAssets();
 
@@ -97,8 +94,6 @@ void GameStateManager::Shutdown()
         delete sound;
         sound = nullptr;
     }
-
-    ui::Shutdown();
 
     d3d.Cleanup();
     input.Cleanup();
