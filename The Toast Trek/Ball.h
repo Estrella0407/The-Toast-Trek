@@ -2,14 +2,16 @@
 #include <d3d9.h>
 #include <d3dx9.h>
 #include "GameObject.h"
+#include "RigidBody.h"
 
-// A circular rigid body for the physics demo. Position, velocity, mass and
-// the force -> acceleration -> velocity chain all live in the inherited
-// RigidBody (GameObject::Body()). Each frame the scene applies a thrust
+// A circular rigid body for the physics demo. It IS-A GameObject (owned
+// sprite + position) and HAS-A RigidBody: the force -> acceleration ->
+// velocity chain lives in Body(). Each frame the scene applies a thrust
 // force, then Step() integrates it and moves the ball. A spinning football
 // texture (shared, not owned) is drawn on top - the spin is cosmetic.
 class Ball : public GameObject {
 private:
+    RigidBody body;   // velocity, acceleration, mass
     float radius;
     float maxSpeed;   // velocity magnitude is capped here after integration
     float drag;       // per-step velocity damping (Lecture 6/9 friction)
@@ -21,6 +23,7 @@ public:
     Ball(IDirect3DTexture9* sharedTex, float x, float y,
          float radius, float mass, float maxSpeed, float drag);
 
+    RigidBody& Body() { return body; }
     float Radius() const { return radius; }
     float Mass() const { return body.mass; }
 
@@ -33,5 +36,4 @@ public:
     void Step(float dt);
 
     void Render(LPD3DXSPRITE brush, D3DCOLOR tint = D3DCOLOR_XRGB(255, 255, 255)) override;
-    AABB GetBounds() const override;
 };

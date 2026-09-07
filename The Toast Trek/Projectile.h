@@ -2,6 +2,7 @@
 #include <d3d9.h>
 #include <d3dx9.h>
 #include "GameObject.h"
+#include "AABB.h"
 
 enum class ProjectileType {
 	fire,
@@ -30,7 +31,7 @@ private:
 public:
 	Projectile(IDirect3DDevice9* d3dDevice, float startX, float startY, float velocityX, float velocityY, ProjectileType type);
 	~Projectile();
-	void Update() override;
+	void Update();
 	void Render(LPD3DXSPRITE sharedBrush, D3DCOLOR tint = D3DCOLOR_XRGB(255, 255, 255)) override;
 
 	D3DXVECTOR2 GetVelocity() const;

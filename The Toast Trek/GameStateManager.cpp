@@ -23,7 +23,7 @@ GameStateManager::~GameStateManager()
 
 void GameStateManager::Init()
 {
-    window.Create("Let's Gooooo", kScreenWidth, kScreenHeight);
+    window.Create("The Toast Trek", kScreenWidth, kScreenHeight);
     d3d.CreateDevice(window.GetHandle(), kScreenWidth, kScreenHeight);
     input.Create(window.GetHandle());
 
@@ -101,8 +101,7 @@ void GameStateManager::Shutdown()
 }
 
 // ---------------------------------------------------------------------------
-// Assets - each class loads its own; GameStateManager just wires them into
-// the shared GameContext.
+// Assets
 // ---------------------------------------------------------------------------
 
 void GameStateManager::LoadAssets()

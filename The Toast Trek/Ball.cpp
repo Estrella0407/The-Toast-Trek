@@ -46,9 +46,3 @@ void Ball::Render(LPD3DXSPRITE brush, D3DCOLOR tint)
     ui::DrawTextureRotated(brush, tex, kTexW, kTexH,
                            position.x, position.y, d, d, angle, tint);
 }
-
-AABB Ball::GetBounds() const
-{
-    return AABB{ position.x - radius, position.y - radius,
-                position.x + radius, position.y + radius };
-}

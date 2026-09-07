@@ -1,7 +1,7 @@
 #include "RigidBody.h"
 
 RigidBody::RigidBody()
-    : velocity(0.0f, 0.0f), acceleration(0.0f, 0.0f), mass(1.0f), bounds{ 0, 0, 0, 0 }
+    : velocity(0.0f, 0.0f), acceleration(0.0f, 0.0f), mass(1.0f)
 {
 }
 
