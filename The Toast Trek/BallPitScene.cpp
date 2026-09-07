@@ -1,6 +1,7 @@
 #include "BallPitScene.h"
 #include "GameStateManager.h"
 #include "Ball.h"
+#include "Button.h"
 #include "PhysicsManager.h"
 #include "Font.h"
 #include "UiFill.h"
@@ -76,13 +77,21 @@ public:
         bumperCentre = D3DXVECTOR2((kL + kR) * 0.5f, (kT + kB) * 0.5f);
         bumperAngle  = 0.35f;
 
+        backButton = std::make_unique<Button>(context.device, "Back", 1078, 90, 132, 36, 18);
+        backButton->SetColours(D3DCOLOR_XRGB(40, 44, 56), D3DCOLOR_XRGB(72, 84, 108),
+                               D3DCOLOR_XRGB(150, 160, 190), D3DCOLOR_XRGB(232, 234, 240));
+
         // Whatever opened this screen may still be held
         escWasDown = GameScene::IsKeyDown(context.keys, DIK_ESCAPE);
         eWasDown   = GameScene::IsKeyDown(context.keys, DIK_E);
     }
 
     void HandleInput(GameContext& context, GameStateManager& manager) override {
-        if (JustPressed(context.keys, DIK_ESCAPE, escWasDown) ||
+        const bool clickedBack =
+            backButton && backButton->Update(context.mouseX, context.mouseY, context.mouseLeftDown);
+
+        if (clickedBack ||
+            JustPressed(context.keys, DIK_ESCAPE, escWasDown) ||
             JustPressed(context.keys, DIK_E, eWasDown)) {
             manager.Pop();               // back to the menu
         }
@@ -148,6 +157,8 @@ public:
         hudFont->Draw("WASD: heavy ball      Arrow keys: light ball      Esc / E: back to menu",
                       80.0f, 70.0f, D3DCOLOR_XRGB(170, 175, 185), brush);
 
+        if (backButton) backButton->Draw(context.device, brush);
+
         char buf[96];
         sprintf_s(buf, "heavy  mass %.0f   speed %.1f", a->Mass(), Length(a->Body().velocity));
         hudFont->Draw(buf, 80.0f, 104.0f, kTintA, brush);
@@ -199,6 +210,7 @@ private:
 
     std::unique_ptr<Ball> a;   // WASD, heavy
     std::unique_ptr<Ball> b;   // arrows, light
+    std::unique_ptr<Button> backButton;
     D3DXVECTOR2 bumperCentre { 0.0f, 0.0f };
     float bumperAngle = 0.0f;
     IDirect3DTexture9* ballTex = nullptr;

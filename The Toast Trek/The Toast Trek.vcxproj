@@ -22,6 +22,7 @@
     <ClCompile Include="Ball.cpp" />
     <ClCompile Include="BallPitScene.cpp" />
     <ClCompile Include="BattleButton.cpp" />
+    <ClCompile Include="Button.cpp" />
     <ClCompile Include="Battlefield.cpp" />
     <ClCompile Include="BattleScene.cpp" />
     <ClCompile Include="BattleStatusBars.cpp" />
@@ -75,6 +76,7 @@
     <ClInclude Include="Ball.h" />
     <ClInclude Include="BallPitScene.h" />
     <ClInclude Include="BattleButton.h" />
+    <ClInclude Include="Button.h" />
     <ClInclude Include="Battlefield.h" />
     <ClInclude Include="BattleScene.h" />
     <ClInclude Include="BattleStatusBars.h" />
