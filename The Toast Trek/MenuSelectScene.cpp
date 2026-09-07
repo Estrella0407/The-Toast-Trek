@@ -5,6 +5,7 @@
 #include "ForestScene.h"
 #include "TutorialPopupScene.h"
 #include "SettingsScene.h"
+#include "BallPitScene.h"
 #include "SaveGame.h"
 #include "Cheats.h"
 #include "Font.h"
@@ -26,14 +27,14 @@ namespace {
     // The forest intro plays only the first time a run starts
     bool s_forestIntroShown = false;
 
-    enum { OPT_NEW = 0, OPT_CONTINUE, OPT_SETTINGS, OPT_QUIT, OPT_COUNT };
-    const char* kOptions[OPT_COUNT] = { "New Game", "Continue", "Settings", "Quit" };
+    enum { OPT_NEW = 0, OPT_CONTINUE, OPT_PHYSICS, OPT_SETTINGS, OPT_QUIT, OPT_COUNT };
+    const char* kOptions[OPT_COUNT] = { "New Game", "Continue", "Physics Demo", "Settings", "Quit" };
 
     constexpr float kPanelL = 470.0f, kPanelR = 810.0f;
     constexpr float kPanelT = 300.0f;
     constexpr float kFirstRowY = kPanelT + 40.0f;
     constexpr float kRowH = 50.0f;
-    constexpr float kPanelB = kFirstRowY + 4 * kRowH + 8.0f;
+    constexpr float kPanelB = kFirstRowY + static_cast<int>(OPT_COUNT) * kRowH + 8.0f;
 
     const D3DCOLOR kPanel = D3DCOLOR_ARGB(250, 30, 26, 22);
     const D3DCOLOR kGold = D3DCOLOR_ARGB(255, 216, 184, 128);
@@ -65,6 +66,7 @@ namespace {
             switch (option) {
             case OPT_NEW:      StartNewRun(context, manager); break;
             case OPT_CONTINUE: ContinueRun(context, manager); break;
+            case OPT_PHYSICS:  manager.Push(CreateBallPitScene()); break;
             case OPT_SETTINGS: manager.Push(CreateSettingsScene(this)); break;
             case OPT_QUIT:     PostQuitMessage(0); break;
             }

@@ -193,3 +193,51 @@ bool PhysicsManager::ResolveCollisionShapes(Sprite* sprite, const TileMap* map,
 
     return collided;
 }
+// --- Circular-body physics -------------------------------------------------
+
+bool PhysicsManager::CirclesOverlap(const D3DXVECTOR2& centreA, float radiusA,
+                                    const D3DXVECTOR2& centreB, float radiusB) {
+    const float dx = centreB.x - centreA.x;
+    const float dy = centreB.y - centreA.y;
+    const float distSq = dx * dx + dy * dy;
+    const float r = radiusA + radiusB;
+    return distSq < r * r;
+}
+
+void PhysicsManager::ResolveCircleCollision(D3DXVECTOR2& posA, D3DXVECTOR2& velA, float massA, float radiusA,
+                                            D3DXVECTOR2& posB, D3DXVECTOR2& velB, float massB, float radiusB,
+                                            float restitution) {
+    // Vector from A to B, and the distance between the centres
+    D3DXVECTOR2 delta = posB - posA;
+    float dist = sqrtf(delta.x * delta.x + delta.y * delta.y);
+
+    // Exactly overlapping centres - shove them apart on an arbitrary axis
+    if (dist <= 1e-4f) {
+        delta = D3DXVECTOR2(1.0f, 0.0f);
+        dist = 1.0f;
+    }
+
+    const float overlap = (radiusA + radiusB) - dist;
+    if (overlap <= 0.0f) return;                 // not actually touching
+
+    const D3DXVECTOR2 n = delta / dist;          // collision normal, A -> B
+
+    const float invA = massA > 0.0f ? 1.0f / massA : 0.0f;
+    const float invB = massB > 0.0f ? 1.0f / massB : 0.0f;
+    const float invSum = invA + invB;
+    if (invSum <= 0.0f) return;                  // both immovable
+
+    // 1. Positional correction - separate the overlap, split by inverse mass
+    posA -= n * (overlap * (invA / invSum));
+    posB += n * (overlap * (invB / invSum));
+
+    // 2. Impulse along the normal
+    const D3DXVECTOR2 relVel = velB - velA;
+    const float velAlongN = relVel.x * n.x + relVel.y * n.y;
+    if (velAlongN > 0.0f) return;                // already separating
+
+    const float j = -(1.0f + restitution) * velAlongN / invSum;
+    const D3DXVECTOR2 impulse = n * j;
+    velA -= impulse * invA;
+    velB += impulse * invB;
+}
