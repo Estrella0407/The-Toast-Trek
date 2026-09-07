@@ -1,14 +1,21 @@
 #pragma once
+#include <windows.h>   // BYTE
 #include <dinput.h>
 
 // Friendly names for the DirectInput scancodes the game uses, so you can
-// write RETURN_KEY instead of remembering DIK_RETURN. These are just the
-// DIK_* values under nicer names - use them exactly as before:
+// write RETURN_KEY instead of remembering DIK_RETURN.
 //
-//     if (context.keys[RETURN_KEY] & 0x80) ...            // key held
-//     if (JustPressed(context.keys, RETURN_KEY, wasDown)) // key just pressed
+//     if (KeyDown(context.keys, RETURN_KEY)) ...          // key held  (folds in & 0x80)
+//     if (JustPressed(context.keys, RETURN_KEY, wasDown)) // key just pressed (edge)
 //
 // Add a line here whenever you need another key.
+
+// Is `key` held down this frame? Wraps the raw "buffer[scancode] & 0x80"
+// test (with a null guard) so call sites don't repeat it. Same thing as
+// GameScene::IsKeyDown, usable without the GameScene:: prefix.
+inline bool KeyDown(const BYTE* keys, int key) {
+    return keys != nullptr && (keys[key] & 0x80) != 0;
+}
 
 constexpr int RETURN_KEY = DIK_RETURN;
 constexpr int ENTER_KEY  = DIK_RETURN;   // same key, alternative name
