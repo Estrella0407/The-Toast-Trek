@@ -1,304 +1,315 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Engine"><UniqueIdentifier>{a1000000-0000-0000-0000-000000000001}</UniqueIdentifier></Filter>
-    <Filter Include="Scenes"><UniqueIdentifier>{a1000000-0000-0000-0000-000000000002}</UniqueIdentifier></Filter>
-    <Filter Include="Gameplay"><UniqueIdentifier>{a1000000-0000-0000-0000-000000000003}</UniqueIdentifier></Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Main.cpp" />
-    <ClCompile Include="Gameplay\BattleButton.cpp">
-      <Filter>Gameplay</Filter>
+    <ClCompile Include="TileMap.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Scenes\BattleScene.cpp">
-      <Filter>Scenes</Filter>
+    <ClCompile Include="PhysicsManager.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Gameplay\BattleStatusBars.cpp">
-      <Filter>Gameplay</Filter>
+    <ClCompile Include="Main.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Gameplay\BattleUI.cpp">
-      <Filter>Gameplay</Filter>
+    <ClCompile Include="Sprite.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Gameplay\Battlefield.cpp">
-      <Filter>Gameplay</Filter>
+    <ClCompile Include="Font.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Gameplay\CheatOverlay.cpp">
-      <Filter>Gameplay</Filter>
+    <ClCompile Include="Line.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Gameplay\Cheats.cpp">
-      <Filter>Gameplay</Filter>
+    <ClCompile Include="FrameTimer.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Direct3D.cpp">
-      <Filter>Engine</Filter>
+    <ClCompile Include="GameStateManager.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\DirectInput.cpp">
-      <Filter>Engine</Filter>
+    <ClCompile Include="GameContext.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Scenes\EndingScene.cpp">
-      <Filter>Scenes</Filter>
+    <ClCompile Include="MainMenu.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Gameplay\Enemy.cpp">
-      <Filter>Gameplay</Filter>
+    <ClCompile Include="MainMenuScene.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Font.cpp">
-      <Filter>Engine</Filter>
+    <ClCompile Include="MenuSelectScene.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Scenes\ForestScene.cpp">
-      <Filter>Scenes</Filter>
+    <ClCompile Include="OverworldScene.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Gameplay\FrameBar.cpp">
-      <Filter>Gameplay</Filter>
+    <ClCompile Include="ForestScene.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\FrameTimer.cpp">
-      <Filter>Engine</Filter>
+    <ClCompile Include="MazeScene.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Gameplay\GameContext.cpp">
-      <Filter>Gameplay</Filter>
+    <ClCompile Include="RuinsExteriorScene.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\GameObject.cpp">
-      <Filter>Engine</Filter>
+    <ClCompile Include="RuinsInteriorScene.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Scenes\GameOverScene.cpp">
-      <Filter>Scenes</Filter>
+    <ClCompile Include="TarumtScene.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\GameScene.cpp">
-      <Filter>Engine</Filter>
+    <ClCompile Include="Battlefield.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\GameStateManager.cpp">
-      <Filter>Engine</Filter>
+    <ClCompile Include="Heart.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Gameplay\Heart.cpp">
-      <Filter>Gameplay</Filter>
+    <ClCompile Include="BattleScene.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\InputManager.cpp">
-      <Filter>Engine</Filter>
+    <ClCompile Include="Projectile.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Gameplay\Inventory.cpp">
-      <Filter>Gameplay</Filter>
+    <ClCompile Include="Enemy.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Gameplay\Item.cpp">
-      <Filter>Gameplay</Filter>
+    <ClCompile Include="BattleButton.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Line.cpp">
-      <Filter>Engine</Filter>
+    <ClCompile Include="BattleUI.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Gameplay\MainMenu.cpp">
-      <Filter>Gameplay</Filter>
+    <ClCompile Include="Pochi.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Scenes\MainMenuScene.cpp">
-      <Filter>Scenes</Filter>
+	<ClCompile Include="Inventory.cpp">
+	  <Filter>Source Files</Filter>
+	</ClCompile>
+    <ClCompile Include="SoundManager.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Gameplay\MapLibrary.cpp">
-      <Filter>Gameplay</Filter>
+    <ClCompile Include="SaveGame.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Scenes\MazeScene.cpp">
-      <Filter>Scenes</Filter>
+    <ClCompile Include="SettingsScene.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Scenes\MenuSelectScene.cpp">
-      <Filter>Scenes</Filter>
+    <ClCompile Include="GameOverScene.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Scenes\OverworldScene.cpp">
-      <Filter>Scenes</Filter>
+    <ClCompile Include="UnifiedMenu.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\PhysicsManager.cpp">
-      <Filter>Engine</Filter>
+    <ClCompile Include="TutorialPopupScene.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Gameplay\Pochi.cpp">
-      <Filter>Gameplay</Filter>
+    <ClCompile Include="UiFill.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Gameplay\PochiBadge.cpp">
-      <Filter>Gameplay</Filter>
+    <ClCompile Include="PochiBadge.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Gameplay\Projectile.cpp">
-      <Filter>Gameplay</Filter>
+    <ClCompile Include="BattleStatusBars.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\RigidBody.cpp">
-      <Filter>Engine</Filter>
+    <ClCompile Include="EndingScene.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Scenes\RuinsExteriorScene.cpp">
-      <Filter>Scenes</Filter>
+    <ClCompile Include="FrameBar.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Scenes\RuinsInteriorScene.cpp">
-      <Filter>Scenes</Filter>
+    <ClCompile Include="Cheats.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Gameplay\SaveGame.cpp">
-      <Filter>Gameplay</Filter>
+    <ClCompile Include="Window.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Scenes\SettingsScene.cpp">
-      <Filter>Scenes</Filter>
+    <ClCompile Include="MapLibrary.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\SoundManager.cpp">
-      <Filter>Engine</Filter>
+    <ClCompile Include="CheatOverlay.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Sprite.cpp">
-      <Filter>Engine</Filter>
+    <ClCompile Include="Item.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Scenes\TarumtScene.cpp">
-      <Filter>Scenes</Filter>
+    <ClCompile Include="Direct3D.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Gameplay\TileMap.cpp">
-      <Filter>Gameplay</Filter>
+    <ClCompile Include="DirectInput.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Scenes\TutorialPopupScene.cpp">
-      <Filter>Scenes</Filter>
+    <ClCompile Include="InputManager.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Gameplay\UiFill.cpp">
-      <Filter>Gameplay</Filter>
+    <ClCompile Include="RigidBody.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Scenes\UnifiedMenu.cpp">
-      <Filter>Scenes</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Window.cpp">
-      <Filter>Engine</Filter>
+    <ClCompile Include="GameObject.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Engine\AABB.h">
-      <Filter>Engine</Filter>
+    <ClInclude Include="TileMap.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Gameplay\BattleButton.h">
-      <Filter>Gameplay</Filter>
+    <ClInclude Include="PhysicsManager.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Scenes\BattleScene.h">
-      <Filter>Scenes</Filter>
+    <ClInclude Include="Sprite.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Gameplay\BattleStatusBars.h">
-      <Filter>Gameplay</Filter>
+    <ClInclude Include="Font.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Gameplay\BattleUI.h">
-      <Filter>Gameplay</Filter>
+    <ClInclude Include="Line.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Gameplay\Battlefield.h">
-      <Filter>Gameplay</Filter>
+    <ClInclude Include="FrameTimer.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Gameplay\CheatOverlay.h">
-      <Filter>Gameplay</Filter>
+    <ClCompile Include="GameScene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClInclude Include="GameScene.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Gameplay\Cheats.h">
-      <Filter>Gameplay</Filter>
+    <ClInclude Include="GameContext.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Direct3D.h">
-      <Filter>Engine</Filter>
+    <ClInclude Include="GameStateManager.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\DirectInput.h">
-      <Filter>Engine</Filter>
+    <ClInclude Include="MainMenuScene.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Scenes\EndingScene.h">
-      <Filter>Scenes</Filter>
+    <ClInclude Include="AABB.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Gameplay\Enemy.h">
-      <Filter>Gameplay</Filter>
+    <ClInclude Include="MainMenu.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Font.h">
-      <Filter>Engine</Filter>
+    <ClInclude Include="MenuSelectScene.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Scenes\ForestScene.h">
-      <Filter>Scenes</Filter>
+    <ClInclude Include="OverworldScene.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Gameplay\FrameBar.h">
-      <Filter>Gameplay</Filter>
+    <ClInclude Include="ForestScene.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\FrameTimer.h">
-      <Filter>Engine</Filter>
+    <ClInclude Include="MazeScene.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Gameplay\GameContext.h">
-      <Filter>Gameplay</Filter>
+    <ClInclude Include="RuinsExteriorScene.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\GameObject.h">
-      <Filter>Engine</Filter>
+    <ClInclude Include="RuinsInteriorScene.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Scenes\GameOverScene.h">
-      <Filter>Scenes</Filter>
+    <ClInclude Include="TarumtScene.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\GameScene.h">
-      <Filter>Engine</Filter>
+    <ClInclude Include="Battlefield.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\GameStateManager.h">
-      <Filter>Engine</Filter>
+    <ClInclude Include="Heart.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Gameplay\Heart.h">
-      <Filter>Gameplay</Filter>
+    <ClInclude Include="BattleScene.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\InputManager.h">
-      <Filter>Engine</Filter>
+    <ClInclude Include="Projectile.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Gameplay\Inventory.h">
-      <Filter>Gameplay</Filter>
+    <ClInclude Include="Enemy.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Gameplay\Item.h">
-      <Filter>Gameplay</Filter>
+    <ClInclude Include="BattleButton.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Line.h">
-      <Filter>Engine</Filter>
+    <ClInclude Include="BattleUI.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Gameplay\MainMenu.h">
-      <Filter>Gameplay</Filter>
+    <ClInclude Include="Pochi.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Scenes\MainMenuScene.h">
-      <Filter>Scenes</Filter>
+	<ClInclude Include="Inventory.h">
+	  <Filter>Header Files</Filter>
+	</ClInclude>
+    <ClInclude Include="SoundManager.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Gameplay\MapLibrary.h">
-      <Filter>Gameplay</Filter>
+    <ClInclude Include="SaveGame.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Scenes\MazeScene.h">
-      <Filter>Scenes</Filter>
+    <ClInclude Include="SettingsScene.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Scenes\MenuSelectScene.h">
-      <Filter>Scenes</Filter>
+    <ClInclude Include="GameOverScene.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Scenes\OverworldScene.h">
-      <Filter>Scenes</Filter>
+    <ClInclude Include="UnifiedMenu.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\PhysicsManager.h">
-      <Filter>Engine</Filter>
+    <ClInclude Include="TutorialPopupScene.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Gameplay\Pochi.h">
-      <Filter>Gameplay</Filter>
+    <ClInclude Include="UiFill.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Gameplay\PochiBadge.h">
-      <Filter>Gameplay</Filter>
+    <ClInclude Include="PochiBadge.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Gameplay\Projectile.h">
-      <Filter>Gameplay</Filter>
+    <ClInclude Include="BattleStatusBars.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\RigidBody.h">
-      <Filter>Engine</Filter>
+    <ClInclude Include="EndingScene.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Scenes\RuinsExteriorScene.h">
-      <Filter>Scenes</Filter>
+    <ClInclude Include="FrameBar.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Scenes\RuinsInteriorScene.h">
-      <Filter>Scenes</Filter>
+    <ClInclude Include="Cheats.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Gameplay\SaveGame.h">
-      <Filter>Gameplay</Filter>
+    <ClInclude Include="Window.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Scenes\SettingsScene.h">
-      <Filter>Scenes</Filter>
+    <ClInclude Include="MapLibrary.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\SoundManager.h">
-      <Filter>Engine</Filter>
+    <ClInclude Include="CheatOverlay.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Sprite.h">
-      <Filter>Engine</Filter>
+    <ClInclude Include="Item.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Scenes\TarumtScene.h">
-      <Filter>Scenes</Filter>
+    <ClInclude Include="Direct3D.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Gameplay\TileMap.h">
-      <Filter>Gameplay</Filter>
+    <ClInclude Include="DirectInput.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Scenes\TutorialPopupScene.h">
-      <Filter>Scenes</Filter>
+    <ClInclude Include="InputManager.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Gameplay\UiFill.h">
-      <Filter>Gameplay</Filter>
+    <ClInclude Include="RigidBody.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Scenes\UnifiedMenu.h">
-      <Filter>Scenes</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Window.h">
-      <Filter>Engine</Filter>
+    <ClInclude Include="GameObject.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
