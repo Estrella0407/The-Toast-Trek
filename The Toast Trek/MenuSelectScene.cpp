@@ -9,20 +9,15 @@
 #include "SaveGame.h"
 #include "Cheats.h"
 #include "Font.h"
+#include "Button.h"
 #include "Sprite.h"
 #include "Pochi.h"
 #include "Inventory.h"
 #include "SoundManager.h"
-#include "UiFill.h"
 #include <Windows.h>
 #include <dinput.h>
 
 namespace {
-
-
-    bool InRect(float x, float y, float l, float t, float r, float b) {
-        return x >= l && x <= r && y >= t && y <= b;
-    }
 
     // The forest intro plays only the first time a run starts
     bool s_forestIntroShown = false;
@@ -30,34 +25,29 @@ namespace {
     enum { OPT_NEW = 0, OPT_CONTINUE, OPT_PHYSICS, OPT_SETTINGS, OPT_QUIT, OPT_COUNT };
     const char* kOptions[OPT_COUNT] = { "New Game", "Continue", "Physics Demo", "Settings", "Quit" };
 
-    constexpr float kPanelL = 470.0f, kPanelR = 810.0f;
-    constexpr float kPanelT = 300.0f;
-    constexpr float kFirstRowY = kPanelT + 40.0f;
-    constexpr float kRowH = 50.0f;
-    constexpr float kPanelB = kFirstRowY + static_cast<int>(OPT_COUNT) * kRowH + 8.0f;
-
-    const D3DCOLOR kPanel = D3DCOLOR_ARGB(250, 30, 26, 22);
-    const D3DCOLOR kGold = D3DCOLOR_ARGB(255, 216, 184, 128);
-    const D3DCOLOR kSelBar = D3DCOLOR_ARGB(255, 74, 60, 42);
-    const D3DCOLOR kTextDim = D3DCOLOR_XRGB(170, 162, 150);
-    const D3DCOLOR kTextOff = D3DCOLOR_XRGB(96, 92, 86);
+    // A column of buttons, centred under the title
+    constexpr int kBtnX = 470;
+    constexpr int kBtnW = 340;
+    constexpr int kBtnH = 44;
+    constexpr int kFirstRowY = 340;
+    constexpr int kRowStep = 52;
 
     class MenuSelectScene : public GameScene {
     private:
         int sel;
         bool hasSave;
 
-        IDirect3DTexture9* whiteTex;
         Font* titleFont;
-        Font* rowFont;
+        Button* buttons[OPT_COUNT];
 
-        bool enterWasDown, escWasDown, upWasDown, downWasDown, mouseWasDown;
+        bool enterWasDown, escWasDown, upWasDown, downWasDown;
 
-        // Clickable bounds of option row i
-        static void RowBounds(int i, float& t, float& b) {
-            const float y = kFirstRowY + i * kRowH;
-            t = y - 12.0f;
-            b = y + kRowH - 20.0f;
+        // Step the keyboard cursor, skipping a disabled row
+        void MoveSel(int dir) {
+            for (int n = 0; n < OPT_COUNT; ++n) {
+                sel = (sel + dir + OPT_COUNT) % OPT_COUNT;
+                if (!(sel == OPT_CONTINUE && !hasSave)) return;
+            }
         }
 
         void Activate(int option, GameContext& context, GameStateManager& manager) {
@@ -111,15 +101,14 @@ namespace {
 
     public:
         MenuSelectScene()
-            : sel(0), hasSave(false), whiteTex(NULL),
-              titleFont(NULL), rowFont(NULL),
-              enterWasDown(true), escWasDown(true), upWasDown(false), downWasDown(false),
-              mouseWasDown(true) {}
+            : sel(0), hasSave(false), titleFont(NULL),
+              enterWasDown(true), escWasDown(true), upWasDown(false), downWasDown(false) {
+            for (int i = 0; i < OPT_COUNT; ++i) buttons[i] = NULL;
+        }
 
         ~MenuSelectScene() override {
-            if (whiteTex != NULL) whiteTex->Release();
             delete titleFont;
-            delete rowFont;
+            for (int i = 0; i < OPT_COUNT; ++i) delete buttons[i];
         }
 
         void Initialize(GameContext& context) override {
@@ -129,12 +118,21 @@ namespace {
             // Whatever opened this screen (Enter or a click) may still be held
             enterWasDown = context.keys != NULL && (context.keys[DIK_RETURN] & 0x80) != 0;
             escWasDown = context.keys != NULL && (context.keys[DIK_ESCAPE] & 0x80) != 0;
-            mouseWasDown = context.mouseLeftDown;
 
-            whiteTex = ui::MakeWhiteTexture(context.device);
             // Same placement as the title screen (MainMenu.cpp)
             titleFont = new Font(context.device, 0.0f, 180.0f, 1280, 80, 48, "Arial");
-            rowFont = new Font(context.device, 0.0f, 0.0f, 320, 40, 24, "Arial");
+
+            for (int i = 0; i < OPT_COUNT; ++i) {
+                buttons[i] = new Button(context.device, kOptions[i],
+                                        kBtnX, kFirstRowY + i * kRowStep, kBtnW, kBtnH, 22);
+            }
+            buttons[OPT_CONTINUE]->SetEnabled(hasSave);
+
+            // Prime each button's click edge with the current mouse state so a
+            // click still held from the previous screen doesn't fall through
+            for (int i = 0; i < OPT_COUNT; ++i) {
+                buttons[i]->Update(context.mouseX, context.mouseY, context.mouseLeftDown);
+            }
         }
 
         void HandleInput(GameContext& context, GameStateManager& manager) override {
@@ -145,48 +143,37 @@ namespace {
                 return;
             }
 
-            if (JustPressed(k, DIK_UP, upWasDown))   sel = (sel + OPT_COUNT - 1) % OPT_COUNT;
-            if (JustPressed(k, DIK_DOWN, downWasDown)) sel = (sel + 1) % OPT_COUNT;
+            if (JustPressed(k, DIK_UP, upWasDown))   MoveSel(-1);
+            if (JustPressed(k, DIK_DOWN, downWasDown)) MoveSel(+1);
 
-            // Mouse: hover highlights a row, click activates it
-            const float mx = context.mouseX, my = context.mouseY;
-            const bool click = context.mouseLeftDown && !mouseWasDown;
-            mouseWasDown = context.mouseLeftDown;
+            // Mouse: hovering a button moves the cursor onto it, a click fires it
             for (int i = 0; i < OPT_COUNT; ++i) {
-                if (i == OPT_CONTINUE && !hasSave) continue;
-                float rt, rb;
-                RowBounds(i, rt, rb);
-                if (!InRect(mx, my, kPanelL + 6.0f, rt, kPanelR - 6.0f, rb)) continue;
-                sel = i;
-                if (click) { Activate(i, context, manager); return; }
+                const bool clicked =
+                    buttons[i]->Update(context.mouseX, context.mouseY, context.mouseLeftDown);
+                if (buttons[i]->IsHovered()) sel = i;
+                if (clicked) { Activate(i, context, manager); return; }
             }
 
             if (JustPressed(k, DIK_RETURN, enterWasDown)) Activate(sel, context, manager);
         }
 
-        void Update(GameContext&, GameStateManager&) override {}
+        void Update(GameContext&, GameStateManager&) override {
+            for (int i = 0; i < OPT_COUNT; ++i) buttons[i]->SetSelected(i == sel);
+        }
 
         void Render(GameContext& context) override {
             LPD3DXSPRITE b = context.spriteBrush;
 
-            if (context.pochi != NULL) context.pochi->GetSprite()->Draw(b);
-
-            // Choice panel
-            ui::FillRect(b, whiteTex, kPanelL, kPanelT, kPanelR - kPanelL, kPanelB - kPanelT, kPanel);
-            const float bw = 3.0f;
-            ui::FillRect(b, whiteTex, kPanelL, kPanelT, kPanelR - kPanelL, bw, kGold);
-            ui::FillRect(b, whiteTex, kPanelL, kPanelB - bw, kPanelR - kPanelL, bw, kGold);
-            ui::FillRect(b, whiteTex, kPanelL, kPanelT, bw, kPanelB - kPanelT, kGold);
-            ui::FillRect(b, whiteTex, kPanelR - bw, kPanelT, bw, kPanelB - kPanelT, kGold);
-
-            for (int i = 0; i < OPT_COUNT; ++i) {
-                const float y = kFirstRowY + i * kRowH;
-                if (i == sel) ui::FillRect(b, whiteTex, kPanelL + 14.0f, y - 8.0f,
-                                           kPanelR - kPanelL - 28.0f, kRowH - 10.0f, kSelBar);
-                D3DCOLOR c = (i == sel) ? kGold : kTextDim;
-                if (i == OPT_CONTINUE && !hasSave) c = kTextOff;
-                rowFont->Draw(kOptions[i], kPanelL + 44.0f, y, c, b);
+            if (context.pochi != NULL) {
+                context.pochi->GetSprite()->Draw(b);
+                // Sprite::Draw leaves a scale/translate matrix on the brush -
+                // reset it or the buttons' text/lines inherit it and vanish.
+                D3DXMATRIX identity;
+                D3DXMatrixIdentity(&identity);
+                b->SetTransform(&identity);
             }
+
+            for (int i = 0; i < OPT_COUNT; ++i) buttons[i]->Render(b);
 
             // Title through the shared brush, drawn last
             titleFont->Draw("THE TOAST TREK", D3DCOLOR_XRGB(35, 35, 35), b);
