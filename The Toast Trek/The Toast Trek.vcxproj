@@ -44,7 +44,6 @@
 	<ClCompile Include="Inventory.cpp" />
     <ClCompile Include="Line.cpp" />
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="MainMenu.cpp" />
     <ClCompile Include="MapLibrary.cpp" />
     <ClCompile Include="MainMenuScene.cpp" />
     <ClCompile Include="MenuSelectScene.cpp" />
@@ -98,7 +97,6 @@
 	<ClInclude Include="Inventory.h" />
     <ClInclude Include="InputManager.h" />
     <ClInclude Include="Line.h" />
-    <ClInclude Include="MainMenu.h" />
     <ClInclude Include="MapLibrary.h" />
     <ClInclude Include="MenuSelectScene.h" />
     <ClInclude Include="OverworldScene.h" />

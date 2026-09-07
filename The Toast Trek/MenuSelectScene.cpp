@@ -119,7 +119,7 @@ namespace {
             enterWasDown = context.keys != NULL && (context.keys[DIK_RETURN] & 0x80) != 0;
             escWasDown = context.keys != NULL && (context.keys[DIK_ESCAPE] & 0x80) != 0;
 
-            // Same placement as the title screen (MainMenu.cpp)
+            // Same placement as the title screen (MainMenuScene.cpp)
             titleFont = new Font(context.device, 0.0f, 180.0f, 1280, 80, 48, "Arial");
 
             for (int i = 0; i < OPT_COUNT; ++i) {
