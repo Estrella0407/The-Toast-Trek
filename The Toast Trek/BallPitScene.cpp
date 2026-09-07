@@ -15,12 +15,18 @@ namespace {
 // Arena rectangle (leaves a strip at the top for the HUD text)
 constexpr float kL = 70.0f, kT = 150.0f, kR = 1210.0f, kB = 690.0f;
 
-// Per fixed 1/60 s step
-constexpr float kAccel        = 0.55f;   // push per frame while a key is held
-constexpr float kMaxSpeed     = 12.0f;
-constexpr float kFriction      = 0.990f;  // gentle drag so bounces carry
-constexpr float kWallBounce    = 0.92f;   // restitution against the walls
-constexpr float kBallBounce    = 0.98f;   // restitution ball-to-ball
+// One fixed simulation tick (the game loop is frame-locked ~60 fps, so
+// speeds/forces here are "per tick", not per second)
+constexpr float kDt          = 1.0f;
+
+constexpr float kThrust      = 0.85f;   // steering force while a key is held (a = F / mass)
+constexpr float kMaxSpeed    = 12.0f;   // velocity cap, px per tick
+constexpr float kDrag        = 0.990f;  // per-tick velocity damping (friction)
+constexpr float kWallBounce  = 0.92f;   // restitution against the walls
+constexpr float kBallBounce  = 0.98f;   // restitution ball-to-ball
+
+constexpr float kMassHeavy   = 3.0f;
+constexpr float kMassLight   = 1.0f;
 
 const D3DCOLOR kTintA = D3DCOLOR_XRGB(150, 200, 255);   // heavy ball (WASD)
 const D3DCOLOR kTintB = D3DCOLOR_XRGB(255, 190, 120);   // light ball (arrows)
@@ -53,9 +59,10 @@ public:
         whiteTex = ui::MakeWhiteTexture(context.device);
         hudFont  = new Font(context.device, 0.0f, 0.0f, 1280, 40, 20, "Arial");
 
-        // Heavy + big vs light + small, so the mass term is visible
-        a = std::make_unique<Ball>(ballTex, 360.0f, 420.0f, 54.0f, 4.0f);
-        b = std::make_unique<Ball>(ballTex, 900.0f, 420.0f, 32.0f, 1.0f);
+        // Heavy + big vs light + small, so the mass term shows in both the
+        // steering (F = m a) and the collision response
+        a = std::make_unique<Ball>(ballTex, 360.0f, 420.0f, 54.0f, kMassHeavy, kMaxSpeed, kDrag);
+        b = std::make_unique<Ball>(ballTex, 900.0f, 420.0f, 32.0f, kMassLight, kMaxSpeed, kDrag);
 
         // Whatever opened this screen may still be held
         escWasDown = GameScene::IsKeyDown(context.keys, DIK_ESCAPE);
@@ -72,11 +79,12 @@ public:
     void Update(GameContext& context, GameStateManager&) override {
         const BYTE* k = context.keys;
 
-        a->Drive(ReadDir(k, DIK_W, DIK_S, DIK_A, DIK_D),           kAccel, kMaxSpeed);
-        b->Drive(ReadDir(k, DIK_UP, DIK_DOWN, DIK_LEFT, DIK_RIGHT), kAccel, kMaxSpeed);
+        // Input -> force, then integrate the rigid body one tick
+        a->ApplyThrust(ReadDir(k, DIK_W, DIK_S, DIK_A, DIK_D),            kThrust);
+        b->ApplyThrust(ReadDir(k, DIK_UP, DIK_DOWN, DIK_LEFT, DIK_RIGHT), kThrust);
 
-        a->Step(kFriction);
-        b->Step(kFriction);
+        a->Step(kDt);
+        b->Step(kDt);
 
         BounceWalls(*a);
         BounceWalls(*b);
