@@ -2,7 +2,7 @@
 #include <d3d9.h>
 #include <d3dx9.h>
 #include "GameObject.h"
-#include "AABB.h"
+#include "PhysicsManager.h"
 
 enum class ProjectileType {
 	fire,

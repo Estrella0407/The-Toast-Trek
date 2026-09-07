@@ -1,7 +1,7 @@
 #include "BattleUI.h"
 #include "Line.h"
 #include "Font.h"
-#include "BattleButton.h"
+#include "Button.h"
 #include "GameStateManager.h"
 #include <string>
 #include <iostream>
@@ -45,10 +45,10 @@ BattleUI::BattleUI(IDirect3DDevice9* d3dDevice) : d3dDevice(d3dDevice), selected
 	leftLine = new Line(d3dDevice, posX, posY, posX, posY + height);
 	rightLine = new Line(d3dDevice, posX + width, posY, posX + width, posY + height);
 
-	fightButton = new BattleButton(d3dDevice, "FIGHT", 275, 600, 150, 50);
-	actButton = new BattleButton(d3dDevice, "ACT", 475, 600, 150, 50);
-	itemButton = new BattleButton(d3dDevice, "ITEM", 675, 600, 150, 50);
-	mercyButton = new BattleButton(d3dDevice, "MERCY", 875, 600, 150, 50);
+	fightButton = new Button(d3dDevice, "FIGHT", 275, 600, 150, 50);
+	actButton = new Button(d3dDevice, "ACT", 475, 600, 150, 50);
+	itemButton = new Button(d3dDevice, "ITEM", 675, 600, 150, 50);
+	mercyButton = new Button(d3dDevice, "MERCY", 875, 600, 150, 50);
 
 	encounterFont = new Font(d3dDevice, 350, 350, 600, 100, 30, "Arial");
 	mouseWasDown = false;

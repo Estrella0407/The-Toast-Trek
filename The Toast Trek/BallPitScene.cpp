@@ -157,7 +157,7 @@ public:
         hudFont->Draw("WASD: heavy ball      Arrow keys: light ball      Esc / E: back to menu",
                       80.0f, 70.0f, D3DCOLOR_XRGB(170, 175, 185), brush);
 
-        if (backButton) backButton->Draw(context.device, brush);
+        if (backButton) backButton->Render(brush);
 
         char buf[96];
         sprintf_s(buf, "heavy  mass %.0f   speed %.1f", a->Mass(), Length(a->Body().velocity));

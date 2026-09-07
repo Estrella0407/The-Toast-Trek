@@ -5,41 +5,45 @@
 #include "Font.h"
 #include "Line.h"
 
-// A reusable rectangular button. Any scene can create one, position it, give
-// it a label and colours, then each frame call Update() with the mouse state
-// and Draw() to paint it. Built from the taught primitives: device->Clear
-// for the fill, Line for the border, Font for the centred label.
+// A reusable rectangular button. Any scene creates one, positions it, gives
+// it a label (and optionally colours / enabled state), then each frame sets
+// its hover or selected state and calls Render(). Built from the taught
+// primitives: device->Clear for the fill, Line for the border, Font for the
+// centred label - the same recipe the battle menu buttons use.
 class Button {
 public:
-    Button(IDirect3DDevice9* device, const std::string& label,
-           int x, int y, int width, int height, int fontSize = 22);
+    Button(IDirect3DDevice9* device, const char* label,
+           int x, int y, int width, int height, int fontSize = 25);
     ~Button();
 
     Button(const Button&) = delete;             // owns Font* / Line*
     Button& operator=(const Button&) = delete;
 
     // --- setup ---
-    void SetLabel(const std::string& text) { label = text; }
+    void SetLabel(const char* text) { label = text; }
     void SetEnabled(bool on) { enabled = on; }
-    void SetColours(D3DCOLOR fill, D3DCOLOR fillHover, D3DCOLOR border, D3DCOLOR text);
+    void SetColours(D3DCOLOR fill, D3DCOLOR fillActive, D3DCOLOR border, D3DCOLOR text);
 
-    // --- per frame ---
-    // Refresh the hover state from the cursor and report a fresh click
-    // (mouse pressed this frame while over an enabled button).
+    // --- per-frame state ---
+    // Pure hit-test, no state change.
+    bool IsHovered(float mouseX, float mouseY) const;
+    void SetHovered(bool value) { hovered = value; }   // mouse
+    void SetSelected(bool value) { selected = value; } // keyboard cursor
+
+    // Convenience: refresh hover from the cursor and report a fresh click
+    // (mouse pressed this frame over an enabled button).
     bool Update(float mouseX, float mouseY, bool mouseDown);
 
-    // For keyboard-driven menus: light the button up without a cursor.
-    void SetHovered(bool on) { hovered = on; }
-
-    void Draw(IDirect3DDevice9* device, LPD3DXSPRITE brush);
+    void Render(LPD3DXSPRITE brush = NULL);
 
     // --- queries ---
-    bool Contains(float mouseX, float mouseY) const;
     bool IsHovered() const { return hovered; }
+    bool IsSelected() const { return selected; }
     bool IsEnabled() const { return enabled; }
     RECT GetRect() const { return rect; }
 
 private:
+    IDirect3DDevice9* device;
     RECT rect;
     std::string label;
 
@@ -50,13 +54,14 @@ private:
     Line* borderRight;
 
     D3DCOLOR colFill;
-    D3DCOLOR colFillHover;
+    D3DCOLOR colFillActive;         // hovered or selected
     D3DCOLOR colFillDisabled;
     D3DCOLOR colBorder;
     D3DCOLOR colText;
     D3DCOLOR colTextDisabled;
 
     bool hovered;
+    bool selected;
     bool enabled;
     bool prevMouseDown;
 };

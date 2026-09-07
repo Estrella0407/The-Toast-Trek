@@ -4,7 +4,7 @@
 #include <string>
 #include "Line.h"
 #include "Font.h"
-#include "BattleButton.h"
+#include "Button.h"
 #include "GameScene.h"
 #include "Inventory.h"
 
@@ -22,10 +22,10 @@ private:
 	Line* leftLine;
 	Line* rightLine;
 
-	BattleButton* fightButton;
-	BattleButton* actButton;
-	BattleButton* itemButton;
-	BattleButton* mercyButton;
+	Button* fightButton;
+	Button* actButton;
+	Button* itemButton;
+	Button* mercyButton;
 
 	// When button select
 	int selectedButton;
