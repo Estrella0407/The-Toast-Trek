@@ -1,10 +1,11 @@
 #include "Ball.h"
-#include "UiFill.h"
 #include <cmath>
 
-// football.png source pixel size
-static const UINT kTexW = 1330;
-static const UINT kTexH = 1183;
+// football.png is 1330 x 1183 with a wide transparent margin; the ball itself
+// only occupies this sub-rectangle. Drawing the whole image at 2*radius made
+// the visible ball far smaller than its collision circle, so contacts fired
+// with a big gap. Draw ONLY this region, scaled so its diameter == 2*radius.
+static const RECT kBallSrc = { 303, 198, 1024, 931 };   // opaque bbox (721 x 733)
 
 Ball::Ball(IDirect3DTexture9* sharedTex, float x, float y,
            float radius, float mass, float maxSpeed, float drag)
@@ -42,7 +43,25 @@ void Ball::Step(float dt)
 
 void Ball::Render(LPD3DXSPRITE brush, D3DCOLOR tint)
 {
-    const float d = radius * 2.0f;
-    ui::DrawTextureRotated(brush, tex, kTexW, kTexH,
-                           position.x, position.y, d, d, angle, tint);
+    if (brush == NULL || tex == NULL) return;
+
+    const float srcW = float(kBallSrc.right - kBallSrc.left);
+    const float srcH = float(kBallSrc.bottom - kBallSrc.top);
+    const float d = radius * 2.0f;                 // on-screen diameter = collision diameter
+
+    // Scale the ball sub-rect to d x d, rotate about that quad's centre,
+    // translate so the centre lands on `position`.
+    D3DXVECTOR2 scale(d / srcW, d / srcH);
+    D3DXVECTOR2 rotCentre(d * 0.5f, d * 0.5f);
+    D3DXVECTOR2 translate(position.x - d * 0.5f, position.y - d * 0.5f);
+    D3DXMATRIX transform;
+    D3DXMatrixTransformation2D(&transform, NULL, 0.0f, &scale,
+                               &rotCentre, angle, &translate);
+    brush->SetTransform(&transform);
+
+    brush->Draw(tex, &kBallSrc, NULL, NULL, tint);
+
+    D3DXMATRIX identity;
+    D3DXMatrixIdentity(&identity);
+    brush->SetTransform(&identity);
 }
