@@ -28,6 +28,15 @@ constexpr float kBallBounce  = 0.98f;   // restitution ball-to-ball
 constexpr float kMassHeavy   = 3.0f;
 constexpr float kMassLight   = 1.0f;
 
+// A slowly-rotating rectangular bumper in the arena centre. Both balls test
+// against it with the Separating Axis Theorem, so they bounce off its tilted
+// faces at the surface angle - not along the screen axes.
+constexpr float kBumperHalfW  = 135.0f;
+constexpr float kBumperHalfH  = 15.0f;
+constexpr float kBumperSpin   = 0.0075f;  // radians per tick
+constexpr float kBumperBounce = 0.85f;
+const D3DCOLOR  kBumperColour = D3DCOLOR_ARGB(255, 200, 90, 90);
+
 const D3DCOLOR kTintA = D3DCOLOR_XRGB(150, 200, 255);   // heavy ball (WASD)
 const D3DCOLOR kTintB = D3DCOLOR_XRGB(255, 190, 120);   // light ball (arrows)
 const D3DCOLOR kArenaFill = D3DCOLOR_ARGB(255, 18, 20, 28);
@@ -64,6 +73,9 @@ public:
         a = std::make_unique<Ball>(ballTex, 360.0f, 420.0f, 54.0f, kMassHeavy, kMaxSpeed, kDrag);
         b = std::make_unique<Ball>(ballTex, 900.0f, 420.0f, 32.0f, kMassLight, kMaxSpeed, kDrag);
 
+        bumperCentre = D3DXVECTOR2((kL + kR) * 0.5f, (kT + kB) * 0.5f);
+        bumperAngle  = 0.35f;
+
         // Whatever opened this screen may still be held
         escWasDown = GameScene::IsKeyDown(context.keys, DIK_ESCAPE);
         eWasDown   = GameScene::IsKeyDown(context.keys, DIK_E);
@@ -88,6 +100,11 @@ public:
 
         BounceWalls(*a);
         BounceWalls(*b);
+
+        // Rotating bumper: SAT (circle vs oriented box) for each ball
+        bumperAngle += kBumperSpin;
+        BounceBumper(*a);
+        BounceBumper(*b);
 
         // Ball-to-ball: non-axis-aligned elastic resolution
         const bool overlapping = PhysicsManager::CirclesOverlap(
@@ -117,10 +134,16 @@ public:
         ui::FillRect(brush, whiteTex, kL, kT, bw, kB - kT, kArenaEdge);
         ui::FillRect(brush, whiteTex, kR - bw, kT, bw, kB - kT, kArenaEdge);
 
+        // Rotating bumper (behind the balls)
+        ui::DrawTextureRotated(brush, whiteTex, 1, 1,
+                               bumperCentre.x, bumperCentre.y,
+                               kBumperHalfW * 2.0f, kBumperHalfH * 2.0f,
+                               bumperAngle, kBumperColour);
+
         a->Render(brush, kTintA);
         b->Render(brush, kTintB);
 
-        hudFont->Draw("PHYSICS DEMO - elastic collision resolved along the contact normal",
+        hudFont->Draw("PHYSICS DEMO - ball/ball uses impulse along the contact normal; ball/bumper uses SAT",
                       80.0f, 34.0f, D3DCOLOR_XRGB(230, 230, 235), brush);
         hudFont->Draw("WASD: heavy ball      Arrow keys: light ball      Esc / E: back to menu",
                       80.0f, 70.0f, D3DCOLOR_XRGB(170, 175, 185), brush);
@@ -147,8 +170,37 @@ private:
         ball.Body().velocity = v;
     }
 
+    // SAT vs the oriented bumper: detect, push out along the minimum
+    // translation vector, then reflect the velocity about that same normal.
+    void BounceBumper(Ball& ball) {
+        D3DXVECTOR2 corners[4];
+        PhysicsManager::BoxCorners(bumperCentre, kBumperHalfW, kBumperHalfH,
+                                   bumperAngle, corners);
+
+        const D3DXVECTOR2 c = ball.GetPosition();
+        D3DXVECTOR2 axis;
+        float depth = 0.0f;
+        if (!PhysicsManager::SatCircleVsPolygon(c, ball.Radius(), corners, 4, &axis, &depth))
+            return;
+
+        // Point the MTV axis from the bumper toward the ball
+        const D3DXVECTOR2 away = c - bumperCentre;
+        if (away.x * axis.x + away.y * axis.y < 0.0f) axis = -axis;
+
+        ball.SetPosition(c.x + axis.x * depth, c.y + axis.y * depth);
+
+        D3DXVECTOR2 v = ball.Body().velocity;
+        const float vn = v.x * axis.x + v.y * axis.y;
+        if (vn < 0.0f) {                       // moving into the bumper
+            v -= axis * ((1.0f + kBumperBounce) * vn);
+            ball.Body().velocity = v;
+        }
+    }
+
     std::unique_ptr<Ball> a;   // WASD, heavy
     std::unique_ptr<Ball> b;   // arrows, light
+    D3DXVECTOR2 bumperCentre { 0.0f, 0.0f };
+    float bumperAngle = 0.0f;
     IDirect3DTexture9* ballTex = nullptr;
     IDirect3DTexture9* whiteTex = nullptr;
     Font* hudFont = nullptr;

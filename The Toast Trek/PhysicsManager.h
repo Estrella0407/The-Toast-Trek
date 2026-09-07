@@ -49,4 +49,31 @@ public:
     static void ResolveCircleCollision(D3DXVECTOR2& posA, D3DXVECTOR2& velA, float massA, float radiusA,
                                        D3DXVECTOR2& posB, D3DXVECTOR2& velB, float massB, float radiusB,
                                        float restitution = 1.0f);
+
+    // --- Separating Axis Theorem (convex shapes, any orientation) ---
+    //
+    // Project both shapes onto every candidate axis (the edge normals of each
+    // polygon). If ANY axis shows a gap between the projections, the shapes are
+    // apart - one passing test is enough to rule out a collision. If every axis
+    // overlaps, they collide, and the axis with the SMALLEST overlap gives the
+    // minimum translation vector: `outAxis` (unit, pointing B -> A is not
+    // guaranteed - the caller orients it) and `outDepth` (how far to push).
+    // Convex only; a concave shape must be split into convex pieces first.
+
+    // Build the four world-space corners of an oriented box. `angleRad` = 0 is
+    // an axis-aligned box; corners come out in winding order.
+    static void BoxCorners(const D3DXVECTOR2& centre, float halfWidth, float halfHeight,
+                           float angleRad, D3DXVECTOR2 outCorners[4]);
+
+    // SAT between two convex polygons (>= 3 vertices each, any winding).
+    static bool SatOverlap(const D3DXVECTOR2* polyA, int countA,
+                           const D3DXVECTOR2* polyB, int countB,
+                           D3DXVECTOR2* outAxis = nullptr, float* outDepth = nullptr);
+
+    // SAT between a circle and a convex polygon. Adds one extra candidate axis:
+    // the polygon's closest vertex -> circle centre (the case SAT misses when a
+    // circle sits just off a polygon corner).
+    static bool SatCircleVsPolygon(const D3DXVECTOR2& centre, float radius,
+                                   const D3DXVECTOR2* poly, int count,
+                                   D3DXVECTOR2* outAxis = nullptr, float* outDepth = nullptr);
 };

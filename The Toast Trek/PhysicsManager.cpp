@@ -241,3 +241,120 @@ void PhysicsManager::ResolveCircleCollision(D3DXVECTOR2& posA, D3DXVECTOR2& velA
     velA -= impulse * invA;
     velB += impulse * invB;
 }
+
+// --- Separating Axis Theorem ---------------------------------------------------
+
+namespace {
+    // [min, max] of a polygon projected onto a (unit) axis - the dot products
+    void ProjectPolygon(const D3DXVECTOR2* v, int n, const D3DXVECTOR2& axis,
+                        float& outMin, float& outMax) {
+        outMin = outMax = v[0].x * axis.x + v[0].y * axis.y;
+        for (int i = 1; i < n; ++i) {
+            const float p = v[i].x * axis.x + v[i].y * axis.y;
+            if (p < outMin) outMin = p;
+            if (p > outMax) outMax = p;
+        }
+    }
+
+    // Overlap of [aMin,aMax] and [bMin,bMax]; <= 0 means a separating gap
+    float IntervalOverlap(float aMin, float aMax, float bMin, float bMax) {
+        const float hi = aMax < bMax ? aMax : bMax;
+        const float lo = aMin > bMin ? aMin : bMin;
+        return hi - lo;
+    }
+}
+
+void PhysicsManager::BoxCorners(const D3DXVECTOR2& centre, float halfWidth, float halfHeight,
+                                float angleRad, D3DXVECTOR2 outCorners[4]) {
+    const float c = cosf(angleRad), s = sinf(angleRad);
+    const D3DXVECTOR2 local[4] = {
+        D3DXVECTOR2(-halfWidth, -halfHeight),
+        D3DXVECTOR2( halfWidth, -halfHeight),
+        D3DXVECTOR2( halfWidth,  halfHeight),
+        D3DXVECTOR2(-halfWidth,  halfHeight)
+    };
+    for (int i = 0; i < 4; ++i) {
+        outCorners[i] = D3DXVECTOR2(
+            centre.x + local[i].x * c - local[i].y * s,
+            centre.y + local[i].x * s + local[i].y * c);
+    }
+}
+
+bool PhysicsManager::SatOverlap(const D3DXVECTOR2* polyA, int countA,
+                                const D3DXVECTOR2* polyB, int countB,
+                                D3DXVECTOR2* outAxis, float* outDepth) {
+    if (countA < 3 || countB < 3) return false;
+
+    float bestDepth = 1e30f;
+    D3DXVECTOR2 bestAxis(0.0f, 0.0f);
+
+    // Test the edge normals of both polygons
+    for (int poly = 0; poly < 2; ++poly) {
+        const D3DXVECTOR2* v = poly == 0 ? polyA : polyB;
+        const int n = poly == 0 ? countA : countB;
+
+        for (int i = 0; i < n; ++i) {
+            const D3DXVECTOR2 edge = v[(i + 1) % n] - v[i];
+            D3DXVECTOR2 axis(-edge.y, edge.x);          // perpendicular = the face normal
+            const float len = sqrtf(axis.x * axis.x + axis.y * axis.y);
+            if (len < 1e-6f) continue;                  // degenerate edge
+            axis /= len;
+
+            float aMin, aMax, bMin, bMax;
+            ProjectPolygon(polyA, countA, axis, aMin, aMax);
+            ProjectPolygon(polyB, countB, axis, bMin, bMax);
+
+            const float overlap = IntervalOverlap(aMin, aMax, bMin, bMax);
+            if (overlap <= 0.0f) return false;          // separating axis -> no collision
+            if (overlap < bestDepth) { bestDepth = overlap; bestAxis = axis; }
+        }
+    }
+
+    if (outAxis)  *outAxis = bestAxis;
+    if (outDepth) *outDepth = bestDepth;
+    return true;
+}
+
+bool PhysicsManager::SatCircleVsPolygon(const D3DXVECTOR2& centre, float radius,
+                                        const D3DXVECTOR2* poly, int count,
+                                        D3DXVECTOR2* outAxis, float* outDepth) {
+    if (count < 3) return false;
+
+    float bestDepth = 1e30f;
+    D3DXVECTOR2 bestAxis(0.0f, 0.0f);
+
+    // Helper: test one candidate axis, updating the best (MTV) so far
+    auto testAxis = [&](D3DXVECTOR2 axis) -> bool {
+        const float len = sqrtf(axis.x * axis.x + axis.y * axis.y);
+        if (len < 1e-6f) return true;                   // skip, not separating
+        axis /= len;
+
+        float pMin, pMax;
+        ProjectPolygon(poly, count, axis, pMin, pMax);
+        const float c = centre.x * axis.x + centre.y * axis.y;
+        const float overlap = IntervalOverlap(pMin, pMax, c - radius, c + radius);
+        if (overlap <= 0.0f) return false;              // separating axis found
+        if (overlap < bestDepth) { bestDepth = overlap; bestAxis = axis; }
+        return true;
+    };
+
+    // 1. polygon edge normals
+    for (int i = 0; i < count; ++i) {
+        const D3DXVECTOR2 edge = poly[(i + 1) % count] - poly[i];
+        if (!testAxis(D3DXVECTOR2(-edge.y, edge.x))) return false;
+    }
+
+    // 2. closest polygon vertex -> circle centre (the axis SAT alone misses)
+    int closest = 0;
+    float bestD2 = 1e30f;
+    for (int i = 0; i < count; ++i) {
+        const float dx = poly[i].x - centre.x, dy = poly[i].y - centre.y;
+        const float d2 = dx * dx + dy * dy;
+        if (d2 < bestD2) { bestD2 = d2; closest = i; }
+    }
+    if (!testAxis(poly[closest] - centre)) return false;
+
+    if (outAxis)  *outAxis = bestAxis;
+    if (outDepth) *outDepth = bestDepth;
+    return true;
+}
