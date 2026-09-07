@@ -95,11 +95,6 @@ namespace {
         std::vector<TutorialPage> pages;
         int pageIndex;
 
-        // Drawn stretched through the shared sprite brush for every solid rectangle
-        // using ID3DXLine instead corrupts the active ID3DXSprite batch
-        // every font drawn after it - render invisibly
-        IDirect3DTexture9* whiteTex;
-
         Font* headingFont;
         Font* bodyFont;
         Font* footerFont;
@@ -116,23 +111,15 @@ namespace {
         static constexpr float kTextMargin = 44.0f;
 
         void FillRect(LPD3DXSPRITE brush, float x, float y, float w, float h, D3DCOLOR color) {
-            if (brush == NULL || whiteTex == NULL) return;
-            D3DXVECTOR2 scale(w, h);
-            D3DXVECTOR2 translate(x, y);
-            D3DXMATRIX transform;
-            D3DXMatrixTransformation2D(&transform, NULL, 0.0f, &scale, NULL, 0.0f, &translate);
-            brush->SetTransform(&transform);
-            RECT src = { 0, 0, 1, 1 };
-            brush->Draw(whiteTex, &src, NULL, NULL, color);
+            ui::FillRect(brush, x, y, w, h, color);
         }
 
     public:
         TutorialPopupScene()
-            : pageIndex(0), whiteTex(NULL), headingFont(NULL), bodyFont(NULL), footerFont(NULL),
+            : pageIndex(0), headingFont(NULL), bodyFont(NULL), footerFont(NULL),
               prevWasDown(false), nextWasDown(false), advanceWasDown(true) {}
 
         ~TutorialPopupScene() override {
-            if (whiteTex != NULL) whiteTex->Release();
             delete headingFont;
             delete bodyFont;
             delete footerFont;
@@ -147,8 +134,6 @@ namespace {
             prevWasDown = false;
             nextWasDown = false;
             advanceWasDown = true;
-
-            whiteTex = ui::MakeWhiteTexture(context.device);
 
             const int innerWidth = (int)(kPanelR - kPanelL - 2.0f * kTextMargin);
             headingFont = new Font(context.device, kPanelL + kTextMargin, kPanelT + 34.0f,

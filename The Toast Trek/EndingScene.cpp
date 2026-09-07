@@ -80,7 +80,6 @@ namespace {
         Font* hintFont;
         Font* nameFont;
         Font* dialogFont;
-        IDirect3DTexture9* whiteTex;    // 1x1, for the dim band + dialogue panel
         IDirect3DTexture9* denjiTex;    // Assets/Characters/denji.png
 
         FrameTimer timer;              // Keeps the sim speed constant on any PC
@@ -124,7 +123,7 @@ namespace {
     public:
         EndingScene()
             : creditsFont(NULL), hintFont(NULL), nameFont(NULL), dialogFont(NULL),
-              whiteTex(NULL), denjiTex(NULL),
+              denjiTex(NULL),
               fWasDown(true), enterWasDown(true), escWasDown(true), pochiAnimAccum(0),
               phase(Phase::WalkIn), dialogIndex(0), walkInAccum(0), denjiY(kDenjiInY),
               creditsScroll(0.0f) {
@@ -134,8 +133,7 @@ namespace {
             delete creditsFont;
             delete hintFont;
             delete nameFont;
-            delete dialogFont;
-            if (whiteTex != NULL) whiteTex->Release();
+            delete dialogFont;
             if (denjiTex != NULL) denjiTex->Release();
         }
 
@@ -143,8 +141,7 @@ namespace {
             save::ClearProgress();   // game finished - no "Continue" from here
 
             denjiTex = ui::LoadTexture(context.device, "Assets/Characters/denji.png",
-                                       kDenjiTexW, kDenjiTexH);
-            whiteTex = ui::MakeWhiteTexture(context.device);
+                                       kDenjiTexW, kDenjiTexH);
 
             creditsFont = new Font(context.device, 0.0f, 0.0f, 1200, 40, 24, "Arial");
             hintFont = new Font(context.device, 0.0f, 0.0f, 800, 30, 18, "Arial");
@@ -206,7 +203,7 @@ namespace {
             LPD3DXSPRITE b = context.spriteBrush;
 
             if (context.maps->RuinsInterior() != NULL) context.maps->RuinsInterior()->Draw(b);
-            else ui::FillRect(b, whiteTex, 0.0f, 0.0f, 1280.0f, 720.0f, D3DCOLOR_XRGB(14, 12, 18));
+            else ui::FillRect(b, 0.0f, 0.0f, 1280.0f, 720.0f, D3DCOLOR_XRGB(14, 12, 18));
 
             if (context.pochi != NULL) context.pochi->GetSprite()->Draw(b);
             if (denjiTex != NULL) {
@@ -217,13 +214,13 @@ namespace {
 
             if (phase != Phase::Dialogue) return;
 
-            ui::FillRect(b, whiteTex, kBoxL, kBoxT, kBoxW, kBoxH, D3DCOLOR_ARGB(238, 20, 16, 24));
+            ui::FillRect(b, kBoxL, kBoxT, kBoxW, kBoxH, D3DCOLOR_ARGB(238, 20, 16, 24));
             const D3DCOLOR gold = D3DCOLOR_ARGB(255, 216, 184, 128);
             const float bw = 3.0f;
-            ui::FillRect(b, whiteTex, kBoxL, kBoxT, kBoxW, bw, gold);
-            ui::FillRect(b, whiteTex, kBoxL, kBoxT + kBoxH - bw, kBoxW, bw, gold);
-            ui::FillRect(b, whiteTex, kBoxL, kBoxT, bw, kBoxH, gold);
-            ui::FillRect(b, whiteTex, kBoxL + kBoxW - bw, kBoxT, bw, kBoxH, gold);
+            ui::FillRect(b, kBoxL, kBoxT, kBoxW, bw, gold);
+            ui::FillRect(b, kBoxL, kBoxT + kBoxH - bw, kBoxW, bw, gold);
+            ui::FillRect(b, kBoxL, kBoxT, bw, kBoxH, gold);
+            ui::FillRect(b, kBoxL + kBoxW - bw, kBoxT, bw, kBoxH, gold);
 
             if (nameFont != NULL)
                 nameFont->Draw("Denji", kBoxL + 34.0f, kBoxT + 20.0f, gold, b);
@@ -239,7 +236,7 @@ namespace {
         void RenderCredits(GameContext& context) {
             LPD3DXSPRITE b = context.spriteBrush;
 
-            ui::FillRect(b, whiteTex, 0.0f, 0.0f, 1280.0f, 720.0f, D3DCOLOR_XRGB(0, 0, 0));
+            ui::FillRect(b, 0.0f, 0.0f, 1280.0f, 720.0f, D3DCOLOR_XRGB(0, 0, 0));
 
             // Auto-scrolling credit roll up the middle
             if (creditsFont != NULL) {

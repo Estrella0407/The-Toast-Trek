@@ -5,11 +5,10 @@
 class Font;
 
 // The red "CHEAT MODE" plate drawn upper-right over every scene while the
-// developer cheat switch (F5) is on. Owns its own font + plate texture.
+// developer cheat switch (F5) is on. Owns its own font.
 class CheatOverlay {
 private:
     Font* font;
-    IDirect3DTexture9* plateTex;
 
 public:
     CheatOverlay();

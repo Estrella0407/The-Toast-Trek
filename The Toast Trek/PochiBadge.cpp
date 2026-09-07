@@ -43,16 +43,14 @@ namespace {
 }
 
 PochiBadge::PochiBadge(IDirect3DDevice9* device)
-    : badgeTex(NULL), valueFont(NULL), whiteTex(NULL) {
+    : badgeTex(NULL), valueFont(NULL) {
     badgeTex = ui::LoadTexture(device, "Assets/UI/pochiStateFull.png", kArtW, kArtH);
-    valueFont = new Font(device, 0.0f, 0.0f, 120, 20, 16, "Arial");
-    whiteTex = ui::MakeWhiteTexture(device);
+    valueFont = new Font(device, 0.0f, 0.0f, 120, 20, 16, "Arial");
 }
 
 PochiBadge::~PochiBadge() {
     if (badgeTex != NULL) badgeTex->Release();
-    delete valueFont;
-    if (whiteTex != NULL) whiteTex->Release();
+    delete valueFont;
 }
 
 void PochiBadge::Draw(LPD3DXSPRITE brush, const Pochi& stats) {
@@ -76,12 +74,11 @@ void PochiBadge::Draw(LPD3DXSPRITE brush, const Pochi& stats) {
 
     // Darken each bar from its fill point to its end
     // so only the filled part shows colour
-    auto Drain = [&](const Stripe& s, float ratio) {
-        if (whiteTex == NULL) return;
+    auto Drain = [&](const Stripe& s, float ratio) {
         ratio = std::clamp(ratio, 0.0f, 1.0f);
         const float xFill = kFillL + ratio * (float)(s.fillR - kFillL);
         if (xFill >= (float)s.fillR) return;
-        ui::FillRect(brush, whiteTex,
+        ui::FillRect(brush,
             kBadgeX + xFill * S, kBadgeY + s.y0 * S,
             ((float)s.fillR - xFill) * S, (float)(s.y1 - s.y0) * S, kEmptyWash);
     };
@@ -91,8 +88,8 @@ void PochiBadge::Draw(LPD3DXSPRITE brush, const Pochi& stats) {
 
     if (valueFont != NULL) {
         // Dark plate + gold edge behind the readout
-        ui::FillRect(brush, whiteTex, kPlateX - 1.0f, kPlateY - 1.0f, kPlateW + 2.0f, kPlateH + 2.0f, ui::kPlateEdge);
-        ui::FillRect(brush, whiteTex, kPlateX, kPlateY, kPlateW, kPlateH, ui::kPlate);
+        ui::FillRect(brush, kPlateX - 1.0f, kPlateY - 1.0f, kPlateW + 2.0f, kPlateH + 2.0f, ui::kPlateEdge);
+        ui::FillRect(brush, kPlateX, kPlateY, kPlateW, kPlateH, ui::kPlate);
 
         const std::string hpText = "HP  " + std::to_string(hp) + " / " + std::to_string(hpMax);
         const std::string defText = "DEF " + std::to_string(def) + " / " + std::to_string(defMax);

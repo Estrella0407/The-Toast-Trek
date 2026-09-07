@@ -59,13 +59,11 @@ class BallPitScene : public GameScene {
 public:
     ~BallPitScene() override {
         if (ballTex)  ballTex->Release();
-        if (whiteTex) whiteTex->Release();
         delete hudFont;
     }
 
     void Initialize(GameContext& context) override {
         ballTex  = ui::LoadTexture(context.device, "Assets/Characters/football.png", 1330, 1183);
-        whiteTex = ui::MakeWhiteTexture(context.device);
         hudFont  = new Font(context.device, 0.0f, 0.0f, 1280, 40, 20, "Arial");
 
         // Heavy + big vs light + small, so the mass term shows in both the
@@ -127,18 +125,19 @@ public:
         LPD3DXSPRITE brush = context.spriteBrush;
 
         // Arena
-        ui::FillRect(brush, whiteTex, kL, kT, kR - kL, kB - kT, kArenaFill);
+        ui::FillRect(brush, kL, kT, kR - kL, kB - kT, kArenaFill);
         const float bw = 3.0f;
-        ui::FillRect(brush, whiteTex, kL, kT, kR - kL, bw, kArenaEdge);
-        ui::FillRect(brush, whiteTex, kL, kB - bw, kR - kL, bw, kArenaEdge);
-        ui::FillRect(brush, whiteTex, kL, kT, bw, kB - kT, kArenaEdge);
-        ui::FillRect(brush, whiteTex, kR - bw, kT, bw, kB - kT, kArenaEdge);
+        ui::FillRect(brush, kL, kT, kR - kL, bw, kArenaEdge);
+        ui::FillRect(brush, kL, kB - bw, kR - kL, bw, kArenaEdge);
+        ui::FillRect(brush, kL, kT, bw, kB - kT, kArenaEdge);
+        ui::FillRect(brush, kR - bw, kT, bw, kB - kT, kArenaEdge);
 
-        // Rotating bumper (behind the balls)
-        ui::DrawTextureRotated(brush, whiteTex, 1, 1,
-                               bumperCentre.x, bumperCentre.y,
-                               kBumperHalfW * 2.0f, kBumperHalfH * 2.0f,
-                               bumperAngle, kBumperColour);
+        // Rotating bumper (behind the balls) - a thick line along its long axis
+        const float ca = cosf(bumperAngle), sa = sinf(bumperAngle);
+        ui::FillLine(brush,
+                     bumperCentre.x - ca * kBumperHalfW, bumperCentre.y - sa * kBumperHalfW,
+                     bumperCentre.x + ca * kBumperHalfW, bumperCentre.y + sa * kBumperHalfW,
+                     kBumperHalfH * 2.0f, kBumperColour);
 
         a->Render(brush, kTintA);
         b->Render(brush, kTintB);
@@ -202,7 +201,6 @@ private:
     D3DXVECTOR2 bumperCentre { 0.0f, 0.0f };
     float bumperAngle = 0.0f;
     IDirect3DTexture9* ballTex = nullptr;
-    IDirect3DTexture9* whiteTex = nullptr;
     Font* hudFont = nullptr;
     bool escWasDown = false;
     bool eWasDown = false;

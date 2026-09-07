@@ -46,8 +46,6 @@ namespace {
     private:
         int sel;
         bool hasSave;
-
-        IDirect3DTexture9* whiteTex;
         Font* titleFont;
         Font* rowFont;
 
@@ -111,13 +109,11 @@ namespace {
 
     public:
         MenuSelectScene()
-            : sel(0), hasSave(false), whiteTex(NULL),
-              titleFont(NULL), rowFont(NULL),
+            : sel(0), hasSave(false), titleFont(NULL), rowFont(NULL),
               enterWasDown(true), escWasDown(true), upWasDown(false), downWasDown(false),
               mouseWasDown(true) {}
 
-        ~MenuSelectScene() override {
-            if (whiteTex != NULL) whiteTex->Release();
+        ~MenuSelectScene() override {
             delete titleFont;
             delete rowFont;
         }
@@ -129,9 +125,7 @@ namespace {
             // Whatever opened this screen (Enter or a click) may still be held
             enterWasDown = context.keys != NULL && (context.keys[DIK_RETURN] & 0x80) != 0;
             escWasDown = context.keys != NULL && (context.keys[DIK_ESCAPE] & 0x80) != 0;
-            mouseWasDown = context.mouseLeftDown;
-
-            whiteTex = ui::MakeWhiteTexture(context.device);
+            mouseWasDown = context.mouseLeftDown;
             // Same placement as the title screen (MainMenu.cpp)
             titleFont = new Font(context.device, 0.0f, 180.0f, 1280, 80, 48, "Arial");
             rowFont = new Font(context.device, 0.0f, 0.0f, 320, 40, 24, "Arial");
@@ -172,16 +166,16 @@ namespace {
             if (context.pochi != NULL) context.pochi->GetSprite()->Draw(b);
 
             // Choice panel
-            ui::FillRect(b, whiteTex, kPanelL, kPanelT, kPanelR - kPanelL, kPanelB - kPanelT, kPanel);
+            ui::FillRect(b, kPanelL, kPanelT, kPanelR - kPanelL, kPanelB - kPanelT, kPanel);
             const float bw = 3.0f;
-            ui::FillRect(b, whiteTex, kPanelL, kPanelT, kPanelR - kPanelL, bw, kGold);
-            ui::FillRect(b, whiteTex, kPanelL, kPanelB - bw, kPanelR - kPanelL, bw, kGold);
-            ui::FillRect(b, whiteTex, kPanelL, kPanelT, bw, kPanelB - kPanelT, kGold);
-            ui::FillRect(b, whiteTex, kPanelR - bw, kPanelT, bw, kPanelB - kPanelT, kGold);
+            ui::FillRect(b, kPanelL, kPanelT, kPanelR - kPanelL, bw, kGold);
+            ui::FillRect(b, kPanelL, kPanelB - bw, kPanelR - kPanelL, bw, kGold);
+            ui::FillRect(b, kPanelL, kPanelT, bw, kPanelB - kPanelT, kGold);
+            ui::FillRect(b, kPanelR - bw, kPanelT, bw, kPanelB - kPanelT, kGold);
 
             for (int i = 0; i < OPT_COUNT; ++i) {
                 const float y = kFirstRowY + i * kRowH;
-                if (i == sel) ui::FillRect(b, whiteTex, kPanelL + 14.0f, y - 8.0f,
+                if (i == sel) ui::FillRect(b, kPanelL + 14.0f, y - 8.0f,
                                            kPanelR - kPanelL - 28.0f, kRowH - 10.0f, kSelBar);
                 D3DCOLOR c = (i == sel) ? kGold : kTextDim;
                 if (i == OPT_CONTINUE && !hasSave) c = kTextOff;

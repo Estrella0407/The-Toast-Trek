@@ -73,8 +73,6 @@ namespace {
         GameScene* backdrop;
         int tab;
         int sel;
-
-        IDirect3DTexture9* whiteTex;
         Font* titleFont;
         Font* tabFont;
         Font* headFont;
@@ -110,7 +108,7 @@ namespace {
         }
 
         void Fill(LPD3DXSPRITE b, float x, float y, float w, float h, D3DCOLOR c) {
-            ui::FillRect(b, whiteTex, x, y, w, h, c);
+            ui::FillRect(b, x, y, w, h, c);
         }
         void Border(LPD3DXSPRITE b, float l, float t, float r, float bot, float px, D3DCOLOR c) {
             Fill(b, l, t, r - l, px, c);
@@ -272,14 +270,12 @@ namespace {
 
     public:
         explicit UnifiedMenuScene(GameScene* under)
-            : backdrop(under), tab(0), sel(0), whiteTex(NULL),
-              titleFont(NULL), tabFont(NULL), headFont(NULL), bodyFont(NULL), hintFont(NULL),
+            : backdrop(under), tab(0), sel(0), titleFont(NULL), tabFont(NULL), headFont(NULL), bodyFont(NULL), hintFont(NULL),
               eWasDown(true), escWasDown(false), aWasDown(false), dWasDown(false), qWasDown(false),
               leftWasDown(false), rightWasDown(false), upWasDown(false), downWasDown(false),
               enterWasDown(false), mouseWasDown(true), prevMouseX(-1.0f), prevMouseY(-1.0f) {}
 
-        ~UnifiedMenuScene() override {
-            if (whiteTex != NULL) whiteTex->Release();
+        ~UnifiedMenuScene() override {
             delete titleFont;
             delete tabFont;
             delete headFont;
@@ -293,9 +289,7 @@ namespace {
             mouseWasDown = true;        // and the mouse button might be too
             escWasDown = aWasDown = dWasDown = qWasDown = false;
             leftWasDown = rightWasDown = upWasDown = downWasDown = enterWasDown = false;
-            prevMouseX = context.mouseX; prevMouseY = context.mouseY;
-
-            whiteTex = ui::MakeWhiteTexture(context.device);
+            prevMouseX = context.mouseX; prevMouseY = context.mouseY;
             titleFont = new Font(context.device, 0.0f, 0.0f, 400, 40, 30, "Arial");
             tabFont = new Font(context.device, 0.0f, 0.0f, 300, 30, 20, "Arial");
             headFont = new Font(context.device, 0.0f, 0.0f, 600, 30, 22, "Arial");

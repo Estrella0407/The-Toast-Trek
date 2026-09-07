@@ -82,7 +82,7 @@ OverworldScene::OverworldScene(OverworldConfig cfg)
       exclaimTex(NULL), hud(NULL),
       levelUpFont(NULL), levelUpFrames(0), floatText("Leveled Up!"),
       boostedStats(NULL),
-      gateSprite(NULL), whiteTex(NULL) {}
+      gateSprite(NULL) {}
 
 OverworldScene::~OverworldScene() {
     // Safety net if this scene is torn down (ClearAndPush on defeat)
@@ -96,8 +96,7 @@ OverworldScene::~OverworldScene() {
     if (exclaimTex != NULL) exclaimTex->Release();
     delete hud;
     delete levelUpFont;
-    delete gateSprite;
-    if (whiteTex != NULL) whiteTex->Release();
+    delete gateSprite;
 }
 
 void OverworldScene::LeaveBoostedMap(GameContext& context) {
@@ -134,8 +133,7 @@ bool OverworldScene::HasGate() const {
 
 // The locked exit gate (block Pochi from leaving before defeating all enemies)
 void OverworldScene::DrawGate(GameContext& context) {
-    if (gateSprite != NULL) { gateSprite->Draw(context.spriteBrush); return; }
-    if (whiteTex == NULL) return;
+    if (gateSprite != NULL) { gateSprite->Draw(context.spriteBrush); return; }
 
     LPD3DXSPRITE b = context.spriteBrush;
     const float x = config.gateX, y = config.gateY;
@@ -143,21 +141,19 @@ void OverworldScene::DrawGate(GameContext& context) {
     const D3DCOLOR iron     = D3DCOLOR_ARGB(255, 84, 88, 100);
     const D3DCOLOR ironDark = D3DCOLOR_ARGB(255, 44, 46, 56);
 
-    ui::FillRect(b, whiteTex, x + 5.0f, y + 6.0f, w, h, D3DCOLOR_ARGB(90, 0, 0, 0)); // Drop shadow
-    ui::FillRect(b, whiteTex, x, y, w, 12.0f, iron);              // top rail
-    ui::FillRect(b, whiteTex, x, y + h - 12.0f, w, 12.0f, iron);  // bottom rail
+    ui::FillRect(b, x + 5.0f, y + 6.0f, w, h, D3DCOLOR_ARGB(90, 0, 0, 0)); // Drop shadow
+    ui::FillRect(b, x, y, w, 12.0f, iron);              // top rail
+    ui::FillRect(b, x, y + h - 12.0f, w, 12.0f, iron);  // bottom rail
 
     const int bars = 5;
     for (int i = 0; i < bars; ++i) {
         const float bx = x + (w - 6.0f) * (i / (float)(bars - 1));
-        ui::FillRect(b, whiteTex, bx, y, 6.0f, h, (i % 2) ? ironDark : iron);
+        ui::FillRect(b, bx, y, 6.0f, h, (i % 2) ? ironDark : iron);
     }
 }
 
 void OverworldScene::Initialize(GameContext& context) {
-    map = ResolveMap(context, config.mapId);
-
-    if (whiteTex == NULL) whiteTex = ui::MakeWhiteTexture(context.device);
+    map = ResolveMap(context, config.mapId);
 
     // Reset Pochi's pose
     // A pending spawn from the map she just left
