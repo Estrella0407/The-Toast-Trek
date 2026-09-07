@@ -1,11 +1,8 @@
 #include "GameScene.h"
+#include "Keys.h"
 
-bool GameScene::IsKeyDown(const BYTE* keys, int dikCode) {
-    return keys != nullptr && (keys[dikCode] & 0x80) != 0;
-}
-
-bool GameScene::JustPressed(const BYTE* keys, int dikCode, bool& wasDown) {
-    const bool down = IsKeyDown(keys, dikCode);
+bool GameScene::JustPressed(const BYTE* keys, int key, bool& wasDown) {
+    const bool down = KeyDown(keys, key);
     const bool pressed = down && !wasDown;
     wasDown = down;
     return pressed;

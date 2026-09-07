@@ -21,7 +21,7 @@
 #include "UnifiedMenu.h"
 #include <algorithm>
 #include <cstring>
-#include <dinput.h>
+#include "Keys.h"
 
 namespace {
 
@@ -33,10 +33,10 @@ namespace {
 
     MoveInput ReadMoveInput(BYTE* keys) {
         MoveInput input;
-        input.left = GameScene::IsKeyDown(keys, DIK_LEFT) || GameScene::IsKeyDown(keys, DIK_A);
-        input.right = GameScene::IsKeyDown(keys, DIK_RIGHT) || GameScene::IsKeyDown(keys, DIK_D);
-        input.up = GameScene::IsKeyDown(keys, DIK_UP) || GameScene::IsKeyDown(keys, DIK_W);
-        input.down = GameScene::IsKeyDown(keys, DIK_DOWN) || GameScene::IsKeyDown(keys, DIK_S);
+        input.left = KeyDown(keys, LEFT_KEY) || KeyDown(keys, A_KEY);
+        input.right = KeyDown(keys, RIGHT_KEY) || KeyDown(keys, D_KEY);
+        input.up = KeyDown(keys, UP_KEY) || KeyDown(keys, W_KEY);
+        input.down = KeyDown(keys, DOWN_KEY) || KeyDown(keys, S_KEY);
         return input;
     }
 
@@ -255,7 +255,7 @@ void OverworldScene::HandleInput(GameContext& context, GameStateManager& manager
     if (context.pochi == NULL) return;
 
     // E opens the tab menu (Inventory / Status / Settings)
-    if (JustPressed(context.keys, DIK_E, menuWasDown)) {
+    if (JustPressed(context.keys, E_KEY, menuWasDown)) {
         manager.Push(CreateUnifiedMenuScene(this));
         return;
     }
@@ -263,7 +263,7 @@ void OverworldScene::HandleInput(GameContext& context, GameStateManager& manager
     // --- Developer cheats (F5) -----------
     if (Cheats::enabled) {
         // K: clear the nearest un-cleared boss without fighting
-        if (JustPressed(context.keys, DIK_K, cheatClearWasDown)) {
+        if (JustPressed(context.keys, K_KEY, cheatClearWasDown)) {
             D3DXVECTOR2 pochiPos = context.pochi->GetPosition();
             int best = -1;
             float bestDistSq = 0.0f;
@@ -281,7 +281,7 @@ void OverworldScene::HandleInput(GameContext& context, GameStateManager& manager
             return;
         }
         // L: jump straight to this map's exit
-        if (JustPressed(context.keys, DIK_L, cheatWarpWasDown)) {
+        if (JustPressed(context.keys, L_KEY, cheatWarpWasDown)) {
             LeaveBoostedMap(context);
             std::unique_ptr<GameScene> next;
             if (config.OnReachRightEdge) { next = config.OnReachRightEdge(); StashSpawn(context, config.rightEdgeSpawn); }
@@ -291,7 +291,7 @@ void OverworldScene::HandleInput(GameContext& context, GameStateManager& manager
         }
     }
 
-    if (!JustPressed(context.keys, DIK_F, interactWasDown)) return;
+    if (!JustPressed(context.keys, F_KEY, interactWasDown)) return;
 
     D3DXVECTOR2 pochiPos = context.pochi->GetPosition();
 

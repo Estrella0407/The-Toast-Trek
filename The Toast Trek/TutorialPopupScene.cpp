@@ -7,7 +7,7 @@
 #include "MapLibrary.h"
 #include "UiFill.h"
 #include <d3dx9.h>
-#include <dinput.h>
+#include "Keys.h"
 #include <string>
 #include <vector>
 
@@ -18,7 +18,7 @@ namespace {
         bool isDown = false;
         if (keys != NULL) {
             for (int i = 0; i < count; ++i) {
-                if ((keys[codes[i]] & 0x80) != 0) { isDown = true; break; }
+                if (KeyDown(keys, codes[i])) { isDown = true; break; }
             }
         }
         const bool pressed = isDown && !wasDown;
@@ -161,9 +161,9 @@ namespace {
         }
 
         void HandleInput(GameContext& context, GameStateManager& manager) override {
-            const int prevKeys[] = { DIK_A, DIK_LEFT };
-            const int nextKeys[] = { DIK_D, DIK_RIGHT };
-            const int advanceKeys[] = { DIK_RETURN, DIK_SPACE };
+            const int prevKeys[] = { A_KEY, LEFT_KEY };
+            const int nextKeys[] = { D_KEY, RIGHT_KEY };
+            const int advanceKeys[] = { RETURN_KEY, SPACE_KEY };
 
             const int lastPage = (int)pages.size() - 1;
 

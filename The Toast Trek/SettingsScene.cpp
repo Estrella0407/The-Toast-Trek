@@ -3,7 +3,7 @@
 #include "SoundManager.h"
 #include "UiFill.h"
 #include "Font.h"
-#include <dinput.h>
+#include "Keys.h"
 #include <algorithm>
 #include <string>
 
@@ -90,9 +90,9 @@ namespace {
 
         void Initialize(GameContext& context) override {
             sel = 0;
-            escWasDown = context.keys != NULL && (context.keys[DIK_ESCAPE] & 0x80) != 0;
-            eWasDown = context.keys != NULL && (context.keys[DIK_E] & 0x80) != 0;
-            enterWasDown = context.keys != NULL && (context.keys[DIK_RETURN] & 0x80) != 0;
+            escWasDown = KeyDown(context.keys, ESCAPE_KEY);
+            eWasDown = KeyDown(context.keys, E_KEY);
+            enterWasDown = KeyDown(context.keys, RETURN_KEY);
             mouseWasDown = context.mouseLeftDown;
 
             whiteTex = ui::MakeWhiteTexture(context.device);
@@ -103,16 +103,16 @@ namespace {
         void HandleInput(GameContext& context, GameStateManager& manager) override {
             BYTE* k = context.keys;
 
-            if (JustPressed(k, DIK_ESCAPE, escWasDown) || JustPressed(k, DIK_E, eWasDown)) {
+            if (JustPressed(k, ESCAPE_KEY, escWasDown) || JustPressed(k, E_KEY, eWasDown)) {
                 Persist(context);
                 manager.Pop();
                 return;
             }
-            if (JustPressed(k, DIK_UP, upWasDown))    sel = (sel + 3) % 4;
-            if (JustPressed(k, DIK_DOWN, downWasDown)) sel = (sel + 1) % 4;
-            if (JustPressed(k, DIK_LEFT, leftWasDown))  Adjust(context, -1);
-            if (JustPressed(k, DIK_RIGHT, rightWasDown)) Adjust(context, +1);
-            if (JustPressed(k, DIK_RETURN, enterWasDown) && sel == 3) Adjust(context, +1);
+            if (JustPressed(k, UP_KEY, upWasDown))    sel = (sel + 3) % 4;
+            if (JustPressed(k, DOWN_KEY, downWasDown)) sel = (sel + 1) % 4;
+            if (JustPressed(k, LEFT_KEY, leftWasDown))  Adjust(context, -1);
+            if (JustPressed(k, RIGHT_KEY, rightWasDown)) Adjust(context, +1);
+            if (JustPressed(k, RETURN_KEY, enterWasDown) && sel == 3) Adjust(context, +1);
 
             // --- Mouse -------------------------------------------------
             const float mx = context.mouseX, my = context.mouseY;

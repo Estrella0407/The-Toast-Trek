@@ -5,7 +5,7 @@
 #include "MenuSelectScene.h"
 #include "MainMenuScene.h"
 #include "EndingScene.h"
-#include <dinput.h>
+#include "Keys.h"
 
 namespace {
 
@@ -53,7 +53,7 @@ namespace {
 
         void HandleInput(GameContext& context, GameStateManager& manager) override {
             // Dev shortcut: jump straight to the ending screen
-            if (JustPressed(context.keys, DIK_F10, endingWasDown)) {
+            if (JustPressed(context.keys, F10_KEY, endingWasDown)) {
                 manager.Push(CreateEndingScene());
                 return;
             }
@@ -61,7 +61,7 @@ namespace {
             const bool click = context.mouseLeftDown && !mouseWasDown;
             mouseWasDown = context.mouseLeftDown;
 
-            if (JustPressed(context.keys, DIK_RETURN, enterWasDown) || click) {
+            if (JustPressed(context.keys, RETURN_KEY, enterWasDown) || click) {
                 manager.ClearAndPush(CreateMenuSelectScene());
             }
         }

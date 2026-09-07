@@ -1,4 +1,5 @@
 #include "InputManager.h"
+#include "Keys.h"
 
 InputManager::InputManager()
     : mouseX(0.0f), mouseY(0.0f), mouseLeftDown(false)
@@ -27,5 +28,5 @@ void InputManager::Update(HWND hWnd, int backBufferWidth, int backBufferHeight)
 
     mouseX = clientWidth > 0.0f ? cursor.x * backBufferWidth / clientWidth : 0.0f;
     mouseY = clientHeight > 0.0f ? cursor.y * backBufferHeight / clientHeight : 0.0f;
-    mouseLeftDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+    mouseLeftDown = KeyHeldAsync(VK_LBUTTON);
 }

@@ -4,7 +4,7 @@
 #include "ForestScene.h"
 #include "Font.h"
 #include "SoundManager.h"
-#include <dinput.h>
+#include "Keys.h"
 #include <cmath>
 
 namespace {
@@ -24,11 +24,11 @@ public:
     }
 
     void HandleInput(GameContext& context, GameStateManager& manager) override {
-        if (JustPressed(context.keys, DIK_R, retryWasDown)) {
+        if (JustPressed(context.keys, R_KEY, retryWasDown)) {
             ResetRunProgress(context);   // Fresh Pochi, empty pack, every map locked again
             manager.ClearAndPush(std::make_unique<ForestScene>());
         }
-        if (JustPressed(context.keys, DIK_M, menuWasDown)) {
+        if (JustPressed(context.keys, M_KEY, menuWasDown)) {
             manager.ClearAndPush(CreateMainMenuScene());
         }
     }

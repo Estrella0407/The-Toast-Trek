@@ -18,12 +18,9 @@ public:
     virtual void Render(GameContext& context) = 0;
     virtual D3DCOLOR ClearColor() const = 0;
 
-    // Shared keyboard helpers - every scene reads the same DirectInput key
-    // buffer (context.keys). `dikCode` is a DIK_* scancode. Static and public
-    // so scene-local helper functions can use them too.
-    static bool IsKeyDown(const BYTE* keys, int dikCode);
-
-    // True on the frame `dikCode` goes from up to down. `wasDown` is the
-    // caller's per-key latch, carried between frames.
-    static bool JustPressed(const BYTE* keys, int dikCode, bool& wasDown);
+    // True on the frame `key` goes from up to down. `wasDown` is the caller's
+    // per-key latch, carried between frames. `key` is a name from Keys.h
+    // (RETURN_KEY, ESCAPE_KEY, ...). For a plain held-state check use
+    // KeyDown(keys, key) from Keys.h.
+    static bool JustPressed(const BYTE* keys, int key, bool& wasDown);
 };

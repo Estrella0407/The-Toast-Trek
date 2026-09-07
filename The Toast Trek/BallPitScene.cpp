@@ -5,15 +5,16 @@
 #include "PhysicsManager.h"
 #include "UiFill.h"
 #include "SoundManager.h"
-#include <dinput.h>
+#include "Keys.h"
 #include <cmath>
 #include <memory>
 
 namespace {
 
-// Bounds the balls are clamped to (invisible - this screen is deliberately bare:
-// just the two balls and a Back button)
-constexpr float kL = 70.0f, kT = 150.0f, kR = 1210.0f, kB = 690.0f;
+// The balls bounce off the window edges - the whole 1280x720 screen is the
+// play area (this screen is deliberately bare: just the two balls and a
+// Back button)
+constexpr float kL = 0.0f, kT = 0.0f, kR = 1280.0f, kB = 720.0f;
 
 // One fixed simulation tick (the game loop is frame-locked ~60 fps, so
 // speeds/forces here are "per tick", not per second)
@@ -35,10 +36,10 @@ float Length(const D3DXVECTOR2& v) { return sqrtf(v.x * v.x + v.y * v.y); }
 
 D3DXVECTOR2 ReadDir(const BYTE* keys, int up, int down, int left, int right) {
     D3DXVECTOR2 d(0.0f, 0.0f);
-    if (GameScene::IsKeyDown(keys, left))  d.x -= 1.0f;
-    if (GameScene::IsKeyDown(keys, right)) d.x += 1.0f;
-    if (GameScene::IsKeyDown(keys, up))    d.y -= 1.0f;
-    if (GameScene::IsKeyDown(keys, down))  d.y += 1.0f;
+    if (KeyDown(keys, left))  d.x -= 1.0f;
+    if (KeyDown(keys, right)) d.x += 1.0f;
+    if (KeyDown(keys, up))    d.y -= 1.0f;
+    if (KeyDown(keys, down))  d.y += 1.0f;
     const float len = Length(d);
     if (len > 0.0f) d /= len;               // keep diagonals the same speed
     return d;
@@ -63,8 +64,8 @@ public:
                                D3DCOLOR_XRGB(150, 160, 190), D3DCOLOR_XRGB(232, 234, 240));
 
         // Whatever opened this screen may still be held
-        escWasDown = GameScene::IsKeyDown(context.keys, DIK_ESCAPE);
-        eWasDown   = GameScene::IsKeyDown(context.keys, DIK_E);
+        escWasDown = KeyDown(context.keys, ESCAPE_KEY);
+        eWasDown   = KeyDown(context.keys, E_KEY);
     }
 
     void HandleInput(GameContext& context, GameStateManager& manager) override {
@@ -72,8 +73,8 @@ public:
             backButton && backButton->Update(context.mouseX, context.mouseY, context.mouseLeftDown);
 
         if (clickedBack ||
-            JustPressed(context.keys, DIK_ESCAPE, escWasDown) ||
-            JustPressed(context.keys, DIK_E, eWasDown)) {
+            JustPressed(context.keys, ESCAPE_KEY, escWasDown) ||
+            JustPressed(context.keys, E_KEY, eWasDown)) {
             manager.Pop();               // back to the menu
         }
     }
@@ -82,8 +83,8 @@ public:
         const BYTE* k = context.keys;
 
         // Input -> force, then integrate the rigid body one tick
-        a->ApplyThrust(ReadDir(k, DIK_W, DIK_S, DIK_A, DIK_D),            kThrust);
-        b->ApplyThrust(ReadDir(k, DIK_UP, DIK_DOWN, DIK_LEFT, DIK_RIGHT), kThrust);
+        a->ApplyThrust(ReadDir(k, W_KEY, S_KEY, A_KEY, D_KEY),            kThrust);
+        b->ApplyThrust(ReadDir(k, UP_KEY, DOWN_KEY, LEFT_KEY, RIGHT_KEY), kThrust);
 
         a->Step(kDt);
         b->Step(kDt);

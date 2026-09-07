@@ -15,7 +15,7 @@
 #include "Inventory.h"
 #include "SoundManager.h"
 #include <Windows.h>
-#include <dinput.h>
+#include "Keys.h"
 
 namespace {
 
@@ -23,7 +23,7 @@ namespace {
     bool s_forestIntroShown = false;
 
     enum { OPT_NEW = 0, OPT_CONTINUE, OPT_PHYSICS, OPT_SETTINGS, OPT_QUIT, OPT_COUNT };
-    const char* kOptions[OPT_COUNT] = { "New Game", "Continue", "Physics Demo", "Settings", "Quit" };
+    const char* kOptions[OPT_COUNT] = { "New Game", "Continue", "Mini Game", "Settings", "Quit" };
 
     // A column of buttons, centred under the title
     constexpr int kBtnX = 470;
@@ -116,8 +116,8 @@ namespace {
             sel = hasSave ? OPT_CONTINUE : OPT_NEW;
 
             // Whatever opened this screen (Enter or a click) may still be held
-            enterWasDown = context.keys != NULL && (context.keys[DIK_RETURN] & 0x80) != 0;
-            escWasDown = context.keys != NULL && (context.keys[DIK_ESCAPE] & 0x80) != 0;
+            enterWasDown = KeyDown(context.keys, RETURN_KEY);
+            escWasDown = KeyDown(context.keys, ESCAPE_KEY);
 
             // Same placement as the title screen (MainMenuScene.cpp)
             titleFont = new Font(context.device, 0.0f, 180.0f, 1280, 80, 48, "Arial");
@@ -138,13 +138,13 @@ namespace {
         void HandleInput(GameContext& context, GameStateManager& manager) override {
             BYTE* k = context.keys;
 
-            if (JustPressed(k, DIK_ESCAPE, escWasDown)) {
+            if (JustPressed(k, ESCAPE_KEY, escWasDown)) {
                 manager.ClearAndPush(CreateMainMenuScene());
                 return;
             }
 
-            if (JustPressed(k, DIK_UP, upWasDown))   MoveSel(-1);
-            if (JustPressed(k, DIK_DOWN, downWasDown)) MoveSel(+1);
+            if (JustPressed(k, UP_KEY, upWasDown))   MoveSel(-1);
+            if (JustPressed(k, DOWN_KEY, downWasDown)) MoveSel(+1);
 
             // Mouse: hovering a button moves the cursor onto it, a click fires it
             for (int i = 0; i < OPT_COUNT; ++i) {
@@ -154,7 +154,7 @@ namespace {
                 if (clicked) { Activate(i, context, manager); return; }
             }
 
-            if (JustPressed(k, DIK_RETURN, enterWasDown)) Activate(sel, context, manager);
+            if (JustPressed(k, RETURN_KEY, enterWasDown)) Activate(sel, context, manager);
         }
 
         void Update(GameContext&, GameStateManager&) override {
@@ -163,15 +163,6 @@ namespace {
 
         void Render(GameContext& context) override {
             LPD3DXSPRITE b = context.spriteBrush;
-
-            if (context.pochi != NULL) {
-                context.pochi->GetSprite()->Draw(b);
-                // Sprite::Draw leaves a scale/translate matrix on the brush -
-                // reset it or the buttons' text/lines inherit it and vanish.
-                D3DXMATRIX identity;
-                D3DXMatrixIdentity(&identity);
-                b->SetTransform(&identity);
-            }
 
             for (int i = 0; i < OPT_COUNT; ++i) buttons[i]->Render(b);
 

@@ -11,7 +11,7 @@
 #include "MapLibrary.h"
 #include "UiFill.h"
 #include <d3dx9.h>
-#include <dinput.h>
+#include "Keys.h"
 #include <cstring>
 
 // The ending scene
@@ -173,7 +173,7 @@ namespace {
             BYTE* k = context.keys;
 
             if (phase == Phase::WalkIn) {
-                if (JustPressed(k, DIK_F, fWasDown) || JustPressed(k, DIK_RETURN, enterWasDown)) {
+                if (JustPressed(k, F_KEY, fWasDown) || JustPressed(k, RETURN_KEY, enterWasDown)) {
                     walkInAccum = kWalkInUpdates;   // Snap Denji to the meeting spot
                     denjiY = kDenjiMeetY;
                     phase = Phase::Dialogue;
@@ -182,7 +182,7 @@ namespace {
             }
 
             if (phase == Phase::Dialogue) {
-                if (JustPressed(k, DIK_F, fWasDown) || JustPressed(k, DIK_RETURN, enterWasDown)) {
+                if (JustPressed(k, F_KEY, fWasDown) || JustPressed(k, RETURN_KEY, enterWasDown)) {
                     ++dialogIndex;
                     if (context.sound != NULL) context.sound->PlaySfx("click");
                     if (dialogIndex >= kReunionLineCount) EnterCredits(context);
@@ -191,7 +191,7 @@ namespace {
             }
 
             // Phase::Credits - Enter / Esc returns to the main menu
-            if (JustPressed(k, DIK_RETURN, enterWasDown) || JustPressed(k, DIK_ESCAPE, escWasDown)) {
+            if (JustPressed(k, RETURN_KEY, enterWasDown) || JustPressed(k, ESCAPE_KEY, escWasDown)) {
                 manager.ClearAndPush(CreateMainMenuScene());
             }
         }

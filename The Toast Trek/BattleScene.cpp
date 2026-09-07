@@ -7,7 +7,7 @@
 #include "Pochi.h"
 #include "Enemy.h"
 #include "SoundManager.h"
-#include <dinput.h>
+#include "Keys.h"
 #include <memory>
 
 // The turn-based boss fight. Private to this file - the rest of the game only
@@ -91,7 +91,7 @@ void BattleScene::HandleInput(GameContext& context, GameStateManager&) {
     if (phase == PLAYER_TURN) {
         battleUI->UpdateMenuButtons(context);
         int action = battleUI->GetSelectButton(context);
-        const int actionKeys[4] = { DIK_1, DIK_2, DIK_3, DIK_4 };
+        const int actionKeys[4] = { NUM1_KEY, NUM2_KEY, NUM3_KEY, NUM4_KEY };
         for (int i = 0; i < 4; ++i) {
             if (JustPressed(context.keys, actionKeys[i], actionKeyWasDown[i])) action = i;
         }
@@ -107,20 +107,18 @@ void BattleScene::HandleInput(GameContext& context, GameStateManager&) {
             phase = ACT_MENU;
             battleUI->SetShowEncounterMessage(false);
             battleUI->SetShowActChoices(true);
-            const int choiceKeys[3] = { DIK_1, DIK_2, DIK_3 };
-            for (int i = 0; i < 3; ++i) {
-                actChoiceWasDown[i] = context.keys != nullptr &&
-                    (context.keys[choiceKeys[i]] & 0x80) != 0;
-            }
+            const int choiceKeys[3] = { NUM1_KEY, NUM2_KEY, NUM3_KEY };
+            for (int i = 0; i < 3; ++i)
+                actChoiceWasDown[i] = KeyDown(context.keys, choiceKeys[i]);
         }
         // Item
         else if (action == 2) {
 			phase = ITEM_MENU;
 			battleUI->SetShowEncounterMessage(false);
 			battleUI->SetShowItemChoices(true, context.inventory);
-			const int itemKeys[3] = { DIK_1, DIK_2, DIK_3 };
+			const int itemKeys[3] = { NUM1_KEY, NUM2_KEY, NUM3_KEY };
 			for (int i = 0; i < 3; ++i) itemChoiceWasDown[i] =
-				context.keys != nullptr && (context.keys[itemKeys[i]] & 0x80) != 0;
+				KeyDown(context.keys, itemKeys[i]);
         }
         // Mercy
         else if (action == 3) {
@@ -149,7 +147,7 @@ void BattleScene::HandleInput(GameContext& context, GameStateManager&) {
 			return;
 		}
 		int choice = battleUI->GetItemSelection(context);
-		const int itemKeys[3] = { DIK_1, DIK_2, DIK_3 };
+		const int itemKeys[3] = { NUM1_KEY, NUM2_KEY, NUM3_KEY };
 		for (int i = 0; i < 3; ++i) {
 			if (JustPressed(context.keys, itemKeys[i], itemChoiceWasDown[i])) choice = i;
 		}
@@ -186,7 +184,7 @@ void BattleScene::HandleInput(GameContext& context, GameStateManager&) {
 			return;
 		}
 		int choice = battleUI->GetActSelection(context);
-        const int choiceKeys[3] = { DIK_1, DIK_2, DIK_3 };
+        const int choiceKeys[3] = { NUM1_KEY, NUM2_KEY, NUM3_KEY };
         for (int i = 0; i < 3; ++i) {
             if (!actChoiceUsed[i] && JustPressed(context.keys, choiceKeys[i], actChoiceWasDown[i])) {
                 choice = i;
@@ -228,7 +226,7 @@ void BattleScene::Update(GameContext& context, GameStateManager& manager) {
     // --- Developer cheats (F5) -----------
     if (Cheats::enabled) {
         // K: win the fight immediately
-        if (JustPressed(context.keys, DIK_K, cheatWinWasDown)) {
+        if (JustPressed(context.keys, K_KEY, cheatWinWasDown)) {
             context.lastBattleOutcome = BattleOutcome::Victory;
             context.lastBattleBoss = bossId;
             manager.Pop();

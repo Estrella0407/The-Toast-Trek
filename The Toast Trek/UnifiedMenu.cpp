@@ -7,7 +7,7 @@
 #include "Pochi.h"
 #include "SoundManager.h"
 #include "SaveGame.h"
-#include <dinput.h>
+#include "Keys.h"
 #include <algorithm>
 #include <string>
 
@@ -306,40 +306,40 @@ namespace {
         void HandleInput(GameContext& context, GameStateManager& manager) override {
             BYTE* k = context.keys;
 
-            if (JustPressed(k, DIK_E, eWasDown) || JustPressed(k, DIK_ESCAPE, escWasDown)) {
+            if (JustPressed(k, E_KEY, eWasDown) || JustPressed(k, ESCAPE_KEY, escWasDown)) {
                 PersistSettings(context);
                 manager.Pop();
                 return;
             }
-            if (JustPressed(k, DIK_Q, qWasDown)) {
+            if (JustPressed(k, Q_KEY, qWasDown)) {
                 ExitToMainMenu(context, manager);
                 return;
             }
 
-            if (JustPressed(k, DIK_A, aWasDown)) { tab = (tab - 1 + TAB_COUNT) % TAB_COUNT; sel = 0; }
-            if (JustPressed(k, DIK_D, dWasDown)) { tab = (tab + 1) % TAB_COUNT; sel = 0; }
+            if (JustPressed(k, A_KEY, aWasDown)) { tab = (tab - 1 + TAB_COUNT) % TAB_COUNT; sel = 0; }
+            if (JustPressed(k, D_KEY, dWasDown)) { tab = (tab + 1) % TAB_COUNT; sel = 0; }
 
             const bool onMeter = (tab == TAB_SETTINGS && sel <= 2);
-            if (JustPressed(k, DIK_LEFT, leftWasDown)) {
+            if (JustPressed(k, LEFT_KEY, leftWasDown)) {
                 if (onMeter) NudgeVolume(context, -1);
                 else { tab = (tab - 1 + TAB_COUNT) % TAB_COUNT; sel = 0; }
             }
-            if (JustPressed(k, DIK_RIGHT, rightWasDown)) {
+            if (JustPressed(k, RIGHT_KEY, rightWasDown)) {
                 if (onMeter) NudgeVolume(context, +1);
                 else { tab = (tab + 1) % TAB_COUNT; sel = 0; }
             }
 
             const int rows = RowCount();
             if (rows > 0) {
-                if (JustPressed(k, DIK_UP, upWasDown))     sel = (sel - 1 + rows) % rows;
-                if (JustPressed(k, DIK_DOWN, downWasDown)) sel = (sel + 1) % rows;
+                if (JustPressed(k, UP_KEY, upWasDown))     sel = (sel - 1 + rows) % rows;
+                if (JustPressed(k, DOWN_KEY, downWasDown)) sel = (sel + 1) % rows;
             }
             else {
-                upWasDown = k != NULL && (k[DIK_UP] & 0x80) != 0;
-                downWasDown = k != NULL && (k[DIK_DOWN] & 0x80) != 0;
+                upWasDown = KeyDown(k, UP_KEY);
+                downWasDown = KeyDown(k, DOWN_KEY);
             }
 
-            if (JustPressed(k, DIK_RETURN, enterWasDown)) {
+            if (JustPressed(k, RETURN_KEY, enterWasDown)) {
                 if (tab == TAB_INVENTORY) UseSelectedItem(context);
                 else if (tab == TAB_SETTINGS && sel == 3) NudgeVolume(context, 1);
             }
