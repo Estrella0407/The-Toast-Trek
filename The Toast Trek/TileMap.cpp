@@ -7,7 +7,6 @@
 
 TileMap::TileMap(IDirect3DDevice9* d3dDevice, const char* tmxFilePath, const char* assetFolder) {
     device = d3dDevice;
-    debugForceSingleTile = false;
     mapWidthTiles = 0;
     mapHeightTiles = 0;
     tileWidth = 16;
@@ -99,8 +98,8 @@ TileMap::TileMap(IDirect3DDevice9* d3dDevice, const char* tmxFilePath, const cha
         }
     }
 
-    // No solid layers until SetSolidLayers() is called - nothing blocks
-    // movement by default.
+    // No solid layers until SetSolidLayers() is called
+    // nothing blocks movement by default
     solidGrid.assign((size_t)mapWidthTiles * (size_t)mapHeightTiles, false);
 }
 
@@ -136,9 +135,9 @@ void TileMap::BuildSolidGrid() {
         }
     }
 
-    // Inverse pass: anywhere NONE of the walkable layers has a tile becomes
-    // solid too (e.g. a lake that's only distinguishable by land tiles not
-    // being drawn there). Skipped entirely when no walkable layers are set.
+    // Inverse pass: anywhere NONE of the walkable layers has a tile becomes solid too
+    // (a lake that's only distinguishable by land tiles not being drawn there)
+    // skipped entirely when no walkable layers are set
     if (!walkableLayerNames.empty()) {
         std::vector<bool> hasLand(cellCount, false);
 
@@ -208,13 +207,6 @@ int TileMap::FindTilesetIndex(int gid) const {
     return bestIndex;
 }
 
-int TileMap::FindLayerIndex(const std::string& layerName) const {
-    for (size_t i = 0; i < layers.size(); ++i) {
-        if (layers[i].name == layerName) return (int)i;
-    }
-    return -1;
-}
-
 void TileMap::DrawLayers(LPD3DXSPRITE sharedBrush, const std::vector<size_t>& layerIndices) {
     if (sharedBrush == NULL) return;
 
@@ -269,41 +261,6 @@ void TileMap::DrawLayers(LPD3DXSPRITE sharedBrush, const std::vector<size_t>& la
 void TileMap::Draw(LPD3DXSPRITE sharedBrush) {
     if (sharedBrush == NULL) return;
 
-    if (debugForceSingleTile) {
-        const int debugGid = 738;
-        int tilesetIndex = FindTilesetIndex(debugGid);
-
-        if (tilesetIndex >= 0 && tilesets[tilesetIndex].texture != NULL) {
-            if (device != NULL) {
-                device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
-                device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
-                device->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
-            }
-            D3DXMATRIX identity;
-            D3DXMatrixIdentity(&identity);
-            sharedBrush->SetTransform(&identity);
-
-            const TilesetInfo& ts = tilesets[tilesetIndex];
-            int localId = debugGid - ts.firstGid;
-            int col = localId % ts.columns;
-            int row = localId / ts.columns;
-
-            RECT srcRect;
-            srcRect.left = col * ts.tileWidth;
-            srcRect.top = row * ts.tileHeight;
-            srcRect.right = srcRect.left + ts.tileWidth;
-            srcRect.bottom = srcRect.top + ts.tileHeight;
-
-            for (int y = 0; y < mapHeightTiles; ++y) {
-                for (int x = 0; x < mapWidthTiles; ++x) {
-                    D3DXVECTOR3 worldPos((float)(x * tileWidth), (float)(y * tileHeight), 0.0f);
-                    sharedBrush->Draw(ts.texture, &srcRect, NULL, &worldPos, D3DCOLOR_XRGB(255, 255, 255));
-                }
-            }
-        }
-        return;
-    }
-
     std::vector<size_t> allLayers;
     allLayers.reserve(layers.size());
     for (size_t i = 0; i < layers.size(); ++i) allLayers.push_back(i);
@@ -340,48 +297,3 @@ int TileMap::GetHeightPixels() const {
     return mapHeightTiles * tileHeight;
 }
 
-bool TileMap::HasLayer(const std::string& layerName) const {
-    return FindLayerIndex(layerName) >= 0;
-}
-
-void TileMap::SetDebugForceSingleTile(bool enabled) {
-    debugForceSingleTile = enabled;
-}
-
-void TileMap::PrintDiagnosticReport() const {
-    std::string report = "TileMap parsed:\n\n";
-    report += "Map: " + std::to_string(mapWidthTiles) + "x" + std::to_string(mapHeightTiles) + " tiles\n";
-    report += "Tile size: " + std::to_string(tileWidth) + "x" + std::to_string(tileHeight) + "\n\n";
-    report += "Tilesets (" + std::to_string(tilesets.size()) + "):\n";
-
-    for (size_t i = 0; i < tilesets.size(); ++i) {
-        report += "  firstGid=" + std::to_string(tilesets[i].firstGid) + " columns=" + std::to_string(tilesets[i].columns) + " image=" + tilesets[i].imageFile;
-        if (tilesets[i].texture == NULL) {
-            report += " [FAILED TO LOAD]";
-        }
-        report += "\n";
-    }
-
-    report += "\nLayers (" + std::to_string(layers.size()) + "):\n";
-    for (size_t i = 0; i < layers.size(); ++i) {
-        report += "  \"" + layers[i].name + "\" - " + std::to_string(layers[i].tileIds.size()) + " tiles\n";
-    }
-
-    int solidCount = 0;
-    for (size_t i = 0; i < solidGrid.size(); ++i) {
-        if (solidGrid[i]) ++solidCount;
-    }
-    report += "\nSolid layers: ";
-    if (solidLayerNames.empty()) {
-        report += "(none set)";
-    }
-    else {
-        for (size_t i = 0; i < solidLayerNames.size(); ++i) {
-            if (i > 0) report += ", ";
-            report += solidLayerNames[i];
-        }
-    }
-    report += "\nSolid tile cells: " + std::to_string(solidCount);
-
-    MessageBoxA(NULL, report.c_str(), "TileMap Diagnostic", MB_OK | MB_ICONINFORMATION);
-}

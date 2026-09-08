@@ -5,11 +5,12 @@
 enum class ProjectileType {
 	fire,
 	star,
-	bomb,
-	sparkle
+	aim,
+	bullet
 };
 
 class Sprite;
+struct AABB;
 class Projectile {
 private:
 	Sprite* sprite;
@@ -20,6 +21,7 @@ private:
 	float width;
 	float height;
 	bool active;
+	bool damageApplied;
 
 	int frameCounter;
 	int frameDelay;
@@ -37,6 +39,9 @@ public:
 
 	ProjectileType GetType() const;
 	Sprite* GetSprite() const;
+	AABB GetCollisionBounds() const;
 	bool IsActive() const;
 	void Deactivate();
+	bool HasAppliedDamage() const;
+	void MarkDamageApplied();
 };

@@ -1,6 +1,5 @@
 #pragma once
 #include <string>
-#include <map>
 
 // pulled into SoundManage.cpp.
 namespace FMOD {
@@ -11,13 +10,22 @@ namespace FMOD {
 
 class SoundManage {
 private:
+    static const int kMaxSounds = 16;
+
     FMOD::System* system;
-    std::map<std::string, FMOD::Sound*> sounds;
-    std::map<std::string, FMOD::Channel*> channels;
+    FMOD::Sound* sounds[kMaxSounds];        // Loaded sound data
+    std::string  soundNames[kMaxSounds];    // Name -> slot, parallel to sounds[]
+    int soundCount;
+
+    FMOD::Channel* musicChannel;            // The looping-music channel we keep a handle to
+    void* extraDriverData;                  // extra FMOD init data - none, so 0
+
     float masterVolume;
     float sfxVolume;
     float musicVolume;
-    bool muted;
+    bool  muted;
+
+    int FindSound(const std::string& name) const;   // Slot index, or -1
 
 public:
     SoundManage();
@@ -27,10 +35,11 @@ public:
     void Shutdown();
 
     // Load a sound file. Returns false if FMOD is down or the file can't be opened - callers can ignore the result.
+    // the file can't be opened - callers can ignore the result.
     bool LoadSound(const std::string& name, const std::string& filePath, bool isLooping = false);
-
     void PlaySfx(const std::string& name, float volume = 1.0f, float pitch = 1.0f); 
 	void PlayHitSfx(float volume = 1.0f, float pitch = 1.0f);
+
 
 
     void PlayMusic(const std::string& name, float volume = 1.0f);
@@ -46,7 +55,8 @@ public:
     float GetMasterVolume() const { return masterVolume; }
     float GetSFXVolume() const { return sfxVolume; }
     float GetMusicVolume() const { return musicVolume; }
-    bool IsMuted() const { return muted; }
-
+    bool  IsMuted() const { return muted; }
+    void Update();
+    // Call once per frame.
     void Update();
 };

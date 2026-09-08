@@ -10,9 +10,7 @@
 
 namespace {
 
-    // Edge-detect on a group of keys: true on the frame any of them goes
-    // from up to down. Matches the JustPressed pattern used across the
-    // other states, extended to "any of these keys".
+    // Edge-detect on a group of keys
     bool JustPressedAny(BYTE* keys, const int* codes, int count, bool& wasDown) {
         bool isDown = false;
         if (keys != NULL) {
@@ -30,9 +28,8 @@ namespace {
         std::vector<const char*> lines;
     };
 
-    // Authored, fixed-width lines (no runtime word-wrap - Font only draws a
-    // single line per call). Keep each line short enough to sit inside the
-    // panel at font size 21.
+    // Authored, fixed-width lines 
+    // keep each line short enough to sit inside the panel
     std::vector<TutorialPage> BuildPages() {
         return {
             { "Lost in the Woods", {
@@ -65,7 +62,7 @@ namespace {
                 "Stand over one until its label appears, then",
                 "press  F  to take it.",
                 "",
-                "Potions restore health; bones restore armor." } },
+                "Potions restore health; bones restore armor; Toast fully restore health & armor." } },
 
             { "Barred Paths", {
                 "Some ways out are chained shut by an iron gate.",
@@ -95,10 +92,9 @@ namespace {
         std::vector<TutorialPage> pages;
         int pageIndex;
 
-        // Assets/UI/white.png (a 1x1 white image), drawn stretched through
-        // the shared sprite brush for every solid rectangle. Using ID3DXLine
-        // here instead corrupts the active ID3DXSprite batch and makes this
-        // panel - and every font drawn after it - render invisibly.
+        // Drawn stretched through the shared sprite brush for every solid rectangle
+        // using ID3DXLine instead corrupts the active ID3DXSprite batch
+        // every font drawn after it - render invisibly
         IDirect3DTexture9* whiteTex;
 
         Font* headingFont;
@@ -109,7 +105,7 @@ namespace {
         bool nextWasDown;
         bool advanceWasDown;
 
-        // Panel rectangle (centred in the 1280x720 back buffer).
+        // Panel rectangle (centred in the back buffer)
         static constexpr float kPanelL = 220.0f;
         static constexpr float kPanelR = 1060.0f;
         static constexpr float kPanelT = 110.0f;
@@ -143,9 +139,8 @@ namespace {
             pages = BuildPages();
             pageIndex = 0;
 
-            // The Enter that opened this popup (from the main menu) is still
-            // held for the first frame or two - start "down" so it must be
-            // released before it counts as an advance.
+            // The Enter that opened this popup is still held for the first frame or two
+            // start "down" so it must be released before it counts again
             prevWasDown = false;
             nextWasDown = false;
             advanceWasDown = true;
@@ -155,7 +150,7 @@ namespace {
             const int innerWidth = (int)(kPanelR - kPanelL - 2.0f * kTextMargin);
             headingFont = new Font(context.device, kPanelL + kTextMargin, kPanelT + 34.0f,
                                    innerWidth, 44, 30, "Arial");
-            // Tall rects so per-line Draw() never leaves rect.bottom < rect.top.
+            // Tall rects so per-line Draw() never leaves rect.bottom < rect.top
             bodyFont = new Font(context.device, kPanelL + kTextMargin, kPanelT + 110.0f,
                                 innerWidth, 420, 21, "Arial");
             footerFont = new Font(context.device, kPanelL + kTextMargin, kPanelB - 46.0f,
@@ -182,40 +177,35 @@ namespace {
         }
 
         void Update(GameContext&, GameStateManager&) override {
-            // Nothing animates; the forest underneath is frozen by design.
         }
 
         void Render(GameContext& context) override {
             LPD3DXSPRITE brush = context.spriteBrush;
 
-            // 1. Static snapshot of the forest, drawn the same way
-            //    OverworldState draws it (Pochi between the map and its leaf
-            //    canopy).
+            // Static snapshot of the forest (background)
             const std::vector<std::string> leaf = { "Tree_Leaf" };
             if (context.forestMap != NULL) context.forestMap->DrawExcludingLayers(brush, leaf);
             if (context.pochi != NULL) context.pochi->Draw(brush);
             if (context.forestMap != NULL) context.forestMap->DrawOnlyLayers(brush, leaf);
 
-            // 2. Dim the whole screen, then an opaque-ish panel with a thin
-            //    border. All plain sprite-brush quads - no ID3DXLine.
+            // Dim the whole screen (overlay), then a panel with a thin border
             FillRect(brush, 0.0f, 0.0f, 1280.0f, 720.0f, D3DCOLOR_ARGB(200, 10, 10, 14));
             FillRect(brush, kPanelL, kPanelT, kPanelR - kPanelL, kPanelB - kPanelT,
                      D3DCOLOR_ARGB(245, 26, 22, 20));
 
             const D3DCOLOR gold = D3DCOLOR_ARGB(255, 216, 184, 128);
             const float bw = 3.0f;
-            FillRect(brush, kPanelL, kPanelT, kPanelR - kPanelL, bw, gold);              // top
+            FillRect(brush, kPanelL, kPanelT, kPanelR - kPanelL, bw, gold);              // Top
             FillRect(brush, kPanelL, kPanelB - bw, kPanelR - kPanelL, bw, gold);         // bottom
             FillRect(brush, kPanelL, kPanelT, bw, kPanelB - kPanelT, gold);              // left
             FillRect(brush, kPanelR - bw, kPanelT, bw, kPanelB - kPanelT, gold);         // right
 
-            // Leave the brush transform clean for anything that draws after.
+            // Leave the brush transform clean for anything that draws after
             D3DXMATRIX identity;
             D3DXMatrixIdentity(&identity);
             brush->SetTransform(&identity);
 
-            // 3. Page contents - drawn into the shared, already-open batch
-            //    (passing `brush`) so the glyphs actually land.
+            // Page contents
             const TutorialPage& page = pages[pageIndex];
             if (headingFont != NULL) {
                 headingFont->Draw(page.heading, kPanelL + kTextMargin, kPanelT + 34.0f,
@@ -230,7 +220,7 @@ namespace {
                 }
             }
 
-            // 4. Footer: navigation hint + page counter.
+            // Footer: navigation hint + page counter
             if (footerFont != NULL) {
                 const int lastPage = (int)pages.size() - 1;
                 std::string footer = "A / Left        Page " + std::to_string(pageIndex + 1) +
@@ -245,7 +235,7 @@ namespace {
         D3DCOLOR ClearColor() const override { return D3DCOLOR_XRGB(0, 0, 0); }
     };
 
-} // namespace
+} // Namespace
 
 std::unique_ptr<GameState> CreateForestIntroPopup() {
     return std::make_unique<TutorialPopupState>();

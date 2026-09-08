@@ -3,7 +3,7 @@
 class Pochi {
 private:
 	int level;
-	int savedLevel;       // level to return to when special mode ends
+	int savedLevel;       // Level to return to when special mode ends
 	bool specialMode;
 
 	int health;
@@ -16,20 +16,24 @@ private:
 public:
 	Pochi(int level = 1);
 
-	//Damage or healing
+	// Damage or healing
 	void TakeDamage(int damage);
 	void Heal(int amount);
 	void RecoverArmor(int amount);
 	void SetLevel(int newLevel);
+	// Special lvl
+	void SetMaxHealth(int maxHealth);
+	void SetHealth(int health);
+	void SetMaxArmor(int maxArmor);
+	void SetArmor(int armor);
+	void SetAttackDamage(int attackDamage);
 	void RestoreFull();
 
-	// The Mr Andrew fight: on -> HP 99 / armor 50 / AD 99 (refilled);
-	// off -> back to the level Pochi had before. Idempotent.
+	// The Mr Andrew fight:
+	// on -> HP 99 / armor 50 / AD 99 (refilled);
+	// off -> back to the level Pochi had before. Idempotent
 	void SetSpecialMode(bool on);
 	bool IsSpecialMode() const { return specialMode; }
-
-	void IncreaseMaxHealth(int amount);
-	void IncreaseMaxArmor(int amount);
 
 	int GetLevel() const;
 	int GetHealth() const;
@@ -38,5 +42,5 @@ public:
 	int GetMaxArmor() const;
 	int GetAttackDamage() const;
 
-	bool isAlive() const;
+	bool IsAlive() const;
 };

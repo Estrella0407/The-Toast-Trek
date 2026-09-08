@@ -9,11 +9,6 @@ Heart::Heart(IDirect3DDevice9* d3dDevice) {
 	shield = 10;
 	maxShield = 10;
 
-	boundaryLeft = 0.0f;
-	boundaryRight = 0.0f;
-	boundaryTop = 0.0f;
-	boundaryBottom = 0.0f;
-
 	sprite = new Sprite(d3dDevice, "Assets/characters/pochiHeart.png", 64, 64, 1, 1, 1, 0.0f, 0.0f);
 
 }
@@ -26,7 +21,7 @@ Heart::~Heart() {
 void Heart::Update(BYTE* keys) {
 	D3DXVECTOR2 position = sprite->GetPosition();
 
-	// Arrow keys and WASD both steer the heart.
+	// Arrow keys and WASD both steer the heart
 	if ((GetAsyncKeyState('A') & 0x8000) || (GetAsyncKeyState(VK_LEFT) & 0x8000))
 		position.x -= moveSpeed;
 
@@ -58,7 +53,7 @@ void Heart::SetPosition(float x, float y) {
 	sprite->SetPosition(x, y);
 }
 
-//heart collision
+// Heart collision
 void Heart::ClampToBoundary(float left, float top, float right, float bottom) {
 	D3DXVECTOR2 position = sprite->GetPosition();
 

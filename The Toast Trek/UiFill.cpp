@@ -4,8 +4,8 @@
 namespace ui {
 
     IDirect3DTexture9* MakeWhiteTexture(IDirect3DDevice9* device) {
-        // Just a 1x1 white image loaded from disk (Lecture 3 / Practical 3:
-        // D3DXCreateTextureFromFileEx). FillRect() stretches it to any size.
+        // A 1x1 white image
+        // FillRect() stretches it to any size
         return LoadTexture(device, "Assets/UI/white.png", 1, 1);
     }
 
@@ -96,9 +96,8 @@ namespace ui {
                             D3DCOLOR tint) {
         if (brush == NULL || tex == NULL || srcW == 0 || srcH == 0) return;
 
-        // Scale the srcW x srcH texture down to drawW x drawH (about the
-        // origin), rotate about the scaled quad's centre, then translate so
-        // that centre lands on (centreX, centreY).
+        // Scale the srcW x srcH texture down to drawW x drawH (about the origin)
+        // rotate about the scaled quad's centre, then translate so that centre lands on (centreX, centreY)
         D3DXVECTOR2 scale(drawW / (float)srcW, drawH / (float)srcH);
         D3DXVECTOR2 rotCentre(drawW * 0.5f, drawH * 0.5f);
         D3DXVECTOR2 translate(centreX - drawW * 0.5f, centreY - drawH * 0.5f);

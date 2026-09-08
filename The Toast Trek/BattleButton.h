@@ -24,7 +24,7 @@ private:
 public:
 	BattleButton(IDirect3DDevice9* d3dDevice, const char* buttonText, int x, int y, int width, int height);
 	~BattleButton();
-	bool IsHovered(int mouseX, int mouseY) const;
+	bool IsHovered(float mouseX, float mouseY) const;
 	void SetHovered(bool value);
 	void SetSelected(bool value);
 	bool IsHovered() const;

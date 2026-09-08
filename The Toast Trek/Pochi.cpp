@@ -19,12 +19,12 @@ void Pochi::SetSpecialMode(bool on) {
 	}
 	else {
 		specialMode = false;
-		SetLevel(savedLevel);   // restores stats and refills
+		SetLevel(savedLevel);   // Restores stats and refills
 	}
 }
 
 void Pochi::SetLevel(int newLevel) {
-	// An explicit level change always ends the Mr Andrew special boost.
+	// An explicit level change always ends Mr Andrew's special boost
 	specialMode = false;
 	level = newLevel;
 	switch (level) {
@@ -67,7 +67,7 @@ void Pochi::TakeDamage(int damage) {
 		armor -= absorbed;
 		damage -= absorbed;
 	}
-	//remaining damage go to heart
+	// Remaining damage go to heart
 	if (damage > 0) {
 		health -= damage;
 		if (health < 0)
@@ -85,16 +85,6 @@ void Pochi::RecoverArmor(int amount) {
 	armor += amount;
 	if (armor > maxArmor)
 		armor = maxArmor;
-}
-
-void Pochi::IncreaseMaxHealth(int amount) {
-	maxHealth += amount;
-	health += amount;
-}
-
-void Pochi::IncreaseMaxArmor(int amount) {
-	maxArmor += amount;
-	armor += amount;
 }
 
 int Pochi::GetLevel() const {
@@ -121,6 +111,27 @@ int Pochi::GetAttackDamage() const {
 	return attackDamage;
 }
 
-bool Pochi::isAlive() const {
+bool Pochi::IsAlive() const {
 	return health > 0;
+}
+
+// Special lvl
+void Pochi::SetHealth(int health) {
+	this->health = health;
+}
+
+void Pochi::SetMaxHealth(int maxHealth) {
+	this->maxHealth = maxHealth;
+}
+
+void Pochi::SetArmor(int armor) {
+	this->armor = armor;
+}
+
+void Pochi::SetMaxArmor(int maxArmor) {
+	this->maxArmor = maxArmor;
+}
+
+void Pochi::SetAttackDamage(int attackDamage) {
+	this->attackDamage = attackDamage;
 }

@@ -16,7 +16,5 @@ public:
     );
     ~Line();
 
-    void DrawClockFace(float centerX, float centerY, float outerRadius, float innerRadius);
-    void DrawTimeLines(float centerX, float centerY, float length, float angleDegrees, D3DCOLOR color = D3DCOLOR_XRGB(255, 255, 255));
     void Draw(D3DCOLOR colorTint = D3DCOLOR_XRGB(255, 255, 255));
 };

@@ -1,11 +1,8 @@
 #include "GameOverState.h"
 #include "GameState.h"
 #include "OverworldState.h"   // CreateForestState
-#include "Pochi.h"
 #include "SoundManage.h"
 #include <dinput.h>
-#include <string>
-#include <sstream>
 #include <cmath>
 
 namespace {
@@ -17,18 +14,13 @@ namespace {
     }
 }
 
-GameOverState::GameOverState(SoundManage* soundMgr, int score, int enemies, int time, const std::string& level)
+GameOverState::GameOverState(SoundManage* soundMgr)
     : titleFont(nullptr)
     , statsFont(nullptr)
     , promptFont(nullptr)
     , retryWasDown(false)
     , menuWasDown(false)
     , soundManage(soundMgr)
-    , score(score)
-    , enemiesDefeated(enemies)
-    , timeSurvived(time)
-    , levelName(level)
-    , animTimer(0.0f)
     , flashTimer(0.0f) {
 }
 
@@ -49,10 +41,10 @@ void GameOverState::Initialize(GameContext& context) {
 }
 
 void GameOverState::HandleInput(GameContext& context, GameStateManager& manager) {
-    // The game-over screen is the only state on the stack, so both choices
-    // rebuild it with ClearAndPush.
+    // The game-over screen is the only state on the stack
+    // Both choices rebuild it with ClearAndPush
     if (JustPressed(context.keys, DIK_R, retryWasDown)) {
-        ResetRunProgress(context);   // fresh Pochi, empty pack, every map locked again
+        ResetRunProgress(context);   // Fresh Pochi, empty pack, every map locked again
         manager.ClearAndPush(CreateForestState());
     }
     if (JustPressed(context.keys, DIK_M, menuWasDown)) {
@@ -61,8 +53,7 @@ void GameOverState::HandleInput(GameContext& context, GameStateManager& manager)
 }
 
 void GameOverState::Update(GameContext& context, GameStateManager& manager) {
-    animTimer += 0.016f; // ~60fps
-    flashTimer += 0.016f;
+    flashTimer += 0.016f;   // ~60 fps
 
     if (soundManage) {
         soundManage->Update();

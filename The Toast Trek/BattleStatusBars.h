@@ -14,8 +14,9 @@ public:
     explicit BattleStatusBars(IDirect3DDevice9* device);
     ~BattleStatusBars();
 
-    // enemyHpRatio in [0, 1].
-    void Draw(LPD3DXSPRITE brush, const Pochi& stats, float enemyHpRatio);
+    // enemyHpRatio in [0, 1]; enemyHp / enemyMaxHp drive the "x / y" readout.
+    void Draw(LPD3DXSPRITE brush, const Pochi& stats,
+              float enemyHpRatio, int enemyHp, int enemyMaxHp);
 
 private:
     FrameBar* healthBar;   // Assets/UI/health_strip.png    - frame = health

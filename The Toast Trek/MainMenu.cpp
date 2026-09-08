@@ -11,22 +11,15 @@ MainMenu::MainMenu(IDirect3DDevice9* d3dDevice, Sprite* sharedPochi) {
         pochi->CropToFrame(0);
     }
 
-    // Title Font ("THE TOAST TREK")
     titleFont = new Font(d3dDevice, 0.0f, 180.0f, 1280, 80, 48, "Arial");
-
-    // Prompt Font ("PRESS ENTER TO CONTINUE")
     promptFont = new Font(d3dDevice, 0.0f, 480.0f, 1280, 60, 24, "Arial");
 }
 
 MainMenu::~MainMenu() {
-    if (titleFont != nullptr) {
-        delete titleFont;
-        titleFont = nullptr;
-    }
-    if (promptFont != nullptr) {
-        delete promptFont;
-        promptFont = nullptr;
-    }
+    delete titleFont;
+    delete promptFont;
+    titleFont = nullptr;
+    promptFont = nullptr;
     pochi = nullptr;
 }
 
@@ -41,15 +34,24 @@ void MainMenu::Update() {
 }
 
 void MainMenu::Draw(LPD3DXSPRITE brush) {
-    if (titleFont != nullptr) {
-        titleFont->Draw("THE TOAST TREK", D3DCOLOR_XRGB(35, 35, 35));
-    }
-
     if (pochi != nullptr && brush != nullptr) {
         pochi->Draw(brush);
     }
 
+    if (brush != nullptr) {
+        // Sprite::Draw leaves its own scale/translate matrix on the brush -
+        // reset to identity or the text below inherits it and vanishes.
+        D3DXMATRIX identity;
+        D3DXMatrixIdentity(&identity);
+        brush->SetTransform(&identity);
+    }
+
+    // Text goes through the SHARED brush (not a NULL sprite) so it doesn't
+    // disturb the open batch for anything drawn afterwards.
+    if (titleFont != nullptr) {
+        titleFont->Draw("THE TOAST TREK", D3DCOLOR_XRGB(35, 35, 35), brush);
+    }
     if (promptFont != nullptr) {
-        promptFont->Draw("PRESS ENTER TO CONTINUE", D3DCOLOR_XRGB(70, 70, 70));
+        promptFont->Draw("PRESS ENTER TO CONTINUE", D3DCOLOR_XRGB(70, 70, 70), brush);
     }
 }

@@ -24,17 +24,17 @@ private:
 		ENEMY_ATTACK
 	};
 
-	//You have encounter Skullie!
+	// You have encounter Skullie!
 	bool showEncounterMessage;
-	//Player hit enemy sprite turn red color
+	// Player hit enemy sprite turn red color
 	float enemyFlashTimer;
 	int enemyHitFrames;
 	bool actionKeyWasDown[4];
 	bool actChoiceWasDown[3];
 	bool itemChoiceWasDown[3];
-	bool actChoiceUsed[3];	//After use one of the choices, the selected button will be gone
-	bool cheatWinWasDown;	//Dev cheat: F9 ends the fight in a win (see Cheats.h)
-	int lastPochiHealth;	//prev-frame heart+armour total; a drop triggers the "hurt" sfx
+	bool actChoiceUsed[3];	// After use one of the choices, the selected button will be gone
+	bool cheatWinWasDown;	// Dev cheat: K ends the fight in a win (see Cheats.h)
+	int lastPochiHealth;	// Prev-frame heart + armour total -> a drop triggers the "hurt" sfx
 
 public:
 	explicit BattleState(BossId bossId) : bossId(bossId), battlefield(nullptr), battleUI(nullptr), phase(ENCOUNTER), 
