@@ -228,7 +228,7 @@ void BattleState::Update(GameContext& context, GameStateManager& manager) {
         if (hpNow < lastPochiHealth && context.sound != nullptr) {
             float pitch = 0.7f + (rand() % 60) / 100.0f;
             float volume = 0.7f + (rand() % 30) / 100.0f;
-            context.sound->PlaySfx("hurt");
+            context.sound->PlaySfx("hurt", volume, pitch);
         }
         lastPochiHealth = hpNow;
     }

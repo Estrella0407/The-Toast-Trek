@@ -409,7 +409,6 @@ void Battlefield::Update(GameContext& context) {
 			(lastPlayerHitTime == 0 || GetTickCount64() - lastPlayerHitTime >= 1000) &&
 			Physics::CheckAABBCollision(heartBounds, projectileBounds)) {
 			pochi->TakeDamage(enemy->GetAttackDamage());
-			projectile->Deactivate();
 
 			if (context.sound != nullptr) { //change the sound pitch and volume of each attack type
 				float pitch = 1.0f;
@@ -440,17 +439,16 @@ void Battlefield::Update(GameContext& context) {
 						pitch = 0.9f + (rand() % 40) / 100.0f;  //0.9 - 1.3
 						volume = 0.8f + (rand() % 20) / 100.0f; //0.8 - 1.0
 						break;
-					}
+				}
 
 				pitch += (rand() % 20 - 10) / 200.0f;
-
 				context.sound->PlaySfx("hurt", volume, pitch); 
 
 			}
-		}
-	}
+
 			lastPlayerHitTime = GetTickCount64();
 			projectile->MarkDamageApplied();
+
 			// Keep the bullet visible for its short impact duration
 			// Moving projectiles disappear immediately after landing a hit
 			if (projectile->GetType() != ProjectileType::bullet) {
