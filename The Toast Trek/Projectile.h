@@ -1,6 +1,8 @@
 #pragma once
 #include <d3d9.h>
 #include <d3dx9.h>
+#include "GameObject.h"
+#include "PhysicsManager.h"
 
 enum class ProjectileType {
 	fire,
@@ -9,11 +11,11 @@ enum class ProjectileType {
 	bullet
 };
 
-class Sprite;
-struct AABB;
-class Projectile {
+// A single enemy bullet in the battle box. Sprite / position / bounds come
+// from GameObject; the per-frame motion keeps its own simple velocity add
+// (no dt) so the bullet-hell timing is unchanged.
+class Projectile : public GameObject {
 private:
-	Sprite* sprite;
 	ProjectileType type;
 
 	D3DXVECTOR2 velocity;
@@ -30,15 +32,12 @@ public:
 	Projectile(IDirect3DDevice9* d3dDevice, float startX, float startY, float velocityX, float velocityY, ProjectileType type);
 	~Projectile();
 	void Update();
-	void Render(LPD3DXSPRITE sharedBrush);
+	void Render(LPD3DXSPRITE sharedBrush, D3DCOLOR tint = D3DCOLOR_XRGB(255, 255, 255)) override;
 
-	D3DXVECTOR2 GetPosition() const;
-	void SetPosition(float x, float y);
 	D3DXVECTOR2 GetVelocity() const;
 	void SetVelocity(float velocityX, float velocityY);
 
 	ProjectileType GetType() const;
-	Sprite* GetSprite() const;
 	AABB GetCollisionBounds() const;
 	bool IsActive() const;
 	void Deactivate();

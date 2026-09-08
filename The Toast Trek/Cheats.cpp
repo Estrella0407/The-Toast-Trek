@@ -1,5 +1,5 @@
 #include "Cheats.h"
-#include <dinput.h>
+#include "Keys.h"
 
 namespace Cheats {
     bool enabled = false;
@@ -9,8 +9,8 @@ namespace Cheats {
     }
 
     void Update(BYTE* keys) {
-        // 0x80 bit = key held; compare with last frame for a one-shot press
-        const bool down = keys != nullptr && (keys[DIK_F5] & 0x80) != 0;
+        // Compare with last frame for a one-shot press (F5 toggles cheats)
+        const bool down = KeyDown(keys, F5_KEY);
         if (down && !toggleWasDown) {
             enabled = !enabled;
         }

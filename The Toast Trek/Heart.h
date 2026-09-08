@@ -2,11 +2,13 @@
 
 #include <d3d9.h>
 #include <d3dx9.h>
-#include "Sprite.h"
+#include "GameObject.h"
 
-class Heart {
+// The player's avatar in the bullet-hell battle box. Its Sprite, position
+// and bounds come from GameObject; this class adds the HP/shield and the
+// WASD/arrow steering.
+class Heart : public GameObject {
 private:
-	Sprite* sprite;
 	int health;
 	int maxHealth;
 	int shield;
@@ -18,7 +20,6 @@ public:
 	~Heart();
 
 	void Update(BYTE* keys);
-	void Render(LPD3DXSPRITE sharedBrush);
 
 	void TakeDamage(int damage);
 	void Heal(int amount);
@@ -27,9 +28,6 @@ public:
 	int GetMaxHealth() const;
 	int GetShield() const;
 	int GetMaxShield() const;
-	D3DXVECTOR2 GetPosition() const;
-	Sprite* GetSprite() const;
-	void SetPosition(float x, float y);
 
 	void ClampToBoundary(float left, float top, float right, float bottom);
 };

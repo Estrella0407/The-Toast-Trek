@@ -7,7 +7,7 @@
 #include "Projectile.h"
 #include "Enemy.h"
 #include "BattleUI.h"
-#include "GameState.h" // GameContext (mouse input)
+#include "GameScene.h" // GameContext (mouse input)
 #include "Inventory.h"
 
 class Pochi;

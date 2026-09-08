@@ -2,6 +2,7 @@
 #include <d3d9.h>
 #include <d3dx9.h>
 #include "Sprite.h"
+#include "GameObject.h"
 
 // Identifies which boss is being fought/represented
 // The maze and the battle screen can agree on a single sprite/health/scale definition
@@ -20,13 +21,11 @@ enum class AttackType {
 	SpecialAttack
 };
 
-class Enemy {
+class Enemy : public GameObject {
 private:
 	BossId bossId;
 	AttackType attackType;
-	Sprite* sprite;		// Static enemy image
 	Sprite* actSprite;	// Act button -> enemy blushing animation
-	Sprite* enemyHealthBar;
 
 	int health;
 	int maxHealth;
@@ -53,7 +52,7 @@ public:
 
 	AttackType GetAttackType() const;
 
-	void Render(LPD3DXSPRITE sharedBrush, D3DCOLOR tint = D3DCOLOR_XRGB(255, 255, 255));
+	void Render(LPD3DXSPRITE sharedBrush, D3DCOLOR tint = D3DCOLOR_XRGB(255, 255, 255)) override;
 	void StartActAnimation();
 	void UpdateActAnimation();
 	bool IsActAnimationFinished() const;
@@ -62,7 +61,6 @@ public:
 	int GetHealth() const;
 	int GetMaxHealth() const;
 	int GetAttackDamage() const;
-	Sprite* GetSprite() const;
 	bool IsAlive() const;
 
 };

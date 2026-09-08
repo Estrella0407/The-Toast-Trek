@@ -1,5 +1,5 @@
 #pragma once
-#include "GameState.h"
+#include "GameScene.h"
 #include <memory>
 
 // The E-key tab menu
@@ -13,4 +13,4 @@
 //  Enter            use the selected item / toggle mute
 //  mouse            hover to select, click a tab / row / volume bar
 //  E or Esc         close
-std::unique_ptr<GameState> CreateUnifiedMenuState(GameState* backdrop = nullptr);
+std::unique_ptr<GameScene> CreateUnifiedMenuScene(GameScene* backdrop = nullptr);

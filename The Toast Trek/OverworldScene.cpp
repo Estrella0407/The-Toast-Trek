@@ -1,0 +1,584 @@
+#include "OverworldScene.h"
+#include "ForestScene.h"
+#include "MazeScene.h"
+#include "RuinsExteriorScene.h"
+#include "RuinsInteriorScene.h"
+#include "TarumtScene.h"
+#include "BattleScene.h"
+#include "GameStateManager.h"
+#include "Item.h"
+#include "Cheats.h"
+#include "Enemy.h"
+#include "Font.h"
+#include "PhysicsManager.h"
+#include "Pochi.h"
+#include "PochiBadge.h"
+#include "SaveGame.h"
+#include "Sprite.h"
+#include "TileMap.h"
+#include "MapLibrary.h"
+#include "UiFill.h"
+#include "UnifiedMenu.h"
+#include <algorithm>
+#include <cstring>
+#include "Keys.h"
+
+namespace {
+
+
+    // Arrow keys and WASD both can move Pochi
+    struct MoveInput {
+        bool left, right, up, down;
+    };
+
+    MoveInput ReadMoveInput(BYTE* keys) {
+        MoveInput input;
+        input.left = KeyDown(keys, LEFT_KEY) || KeyDown(keys, A_KEY);
+        input.right = KeyDown(keys, RIGHT_KEY) || KeyDown(keys, D_KEY);
+        input.up = KeyDown(keys, UP_KEY) || KeyDown(keys, W_KEY);
+        input.down = KeyDown(keys, DOWN_KEY) || KeyDown(keys, S_KEY);
+        return input;
+    }
+
+    TileMap* ResolveMap(GameContext& context, MapId id) {
+        switch (id) {
+        case MapId::Maze: return context.maps->Maze();
+        case MapId::RuinsExterior: return context.maps->RuinsExterior();
+        case MapId::RuinsInterior: return context.maps->RuinsInterior();
+        case MapId::Tarumt: return context.maps->Tarumt();
+        case MapId::Forest:
+        default: return context.maps->Forest();
+        }
+    }
+
+    // Key for GameContext::collectedItems / clearedBosses (per map + index)
+    int SlotKey(MapId map, int index) { return (int)map * 16 + index; }
+
+    // Collide a smaller box at Pochi's feet
+    constexpr float kPochiFootWidthRatio = 0.5f;
+    constexpr float kPochiFootHeightRatio = 0.6f;
+
+    constexpr float kInteractRadius = 90.0f;
+
+    bool IsNear(const D3DXVECTOR2& a, const D3DXVECTOR2& b, float radius) {
+        float dx = a.x - b.x;
+        float dy = a.y - b.y;
+        return (dx * dx + dy * dy) <= (radius * radius);
+    }
+
+    // Pochi's foot box overlapping an item's sprite bounds
+    bool TouchingItem(Sprite* pochi, Sprite* item) {
+        if (pochi == NULL || item == NULL) return false;
+        return PhysicsManager::CheckAABBCollision(
+            PhysicsManager::GetFootBounds(pochi, kPochiFootWidthRatio, kPochiFootHeightRatio),
+            PhysicsManager::GetBounds(item));
+    }
+}
+
+OverworldScene::OverworldScene(OverworldConfig cfg)
+    : config(std::move(cfg)), map(NULL), interactWasDown(false), menuWasDown(false),
+      cheatClearWasDown(false), cheatWarpWasDown(false),
+      allClearedFired(false), exitsArmed(false), interactPrompt(NULL),
+      exclaimTex(NULL), hud(NULL),
+      levelUpFont(NULL), levelUpFrames(0), floatText("Leveled Up!"),
+      boostedStats(NULL),
+      gateSprite(NULL), whiteTex(NULL) {}
+
+OverworldScene::~OverworldScene() {
+    // Safety net if this scene is torn down (ClearAndPush on defeat)
+    // without going through a normal exit: never leave Pochi boosted
+    if (boostedStats != NULL && boostedStats->IsSpecialMode()) {
+        boostedStats->SetSpecialMode(false);
+    }
+    for (Enemy* enemy : bossEnemies) delete enemy;
+    for (Item* item : itemSprites) delete item;
+    delete interactPrompt;
+    if (exclaimTex != NULL) exclaimTex->Release();
+    delete hud;
+    delete levelUpFont;
+    delete gateSprite;
+    if (whiteTex != NULL) whiteTex->Release();
+}
+
+void OverworldScene::LeaveBoostedMap(GameContext& context) {
+    if (boostedStats != NULL && context.pochi == boostedStats &&
+        boostedStats->IsSpecialMode()) {
+        boostedStats->SetSpecialMode(false);
+    }
+}
+
+// Stash a forced spawn for the destination map
+// A y of OverworldConfig::kCarryY keeps his current y
+// OverworldConfig::kNoSpawn means "no override"
+void OverworldScene::StashSpawn(GameContext& context, const D3DXVECTOR2& s) {
+    if (s.x <= OverworldConfig::kNoSpawn) return;
+    D3DXVECTOR2 out = s;
+    if (s.y == OverworldConfig::kCarryY && context.pochi != NULL)
+        out.y = context.pochi->GetPosition().y;
+    context.pendingSpawn = out;
+    context.hasPendingSpawn = true;
+}
+
+void OverworldScene::TakeExit(GameContext& context, GameStateManager& manager,
+                              const D3DXVECTOR2& spawn,
+                              const std::function<std::unique_ptr<GameScene>()>& makeNext) {
+    LeaveBoostedMap(context);
+    StashSpawn(context, spawn);
+    std::unique_ptr<GameScene> next = makeNext();
+    if (next != NULL) manager.Push(std::move(next));
+}
+
+bool OverworldScene::HasGate() const {
+    return config.gateWidth > 0.0f && config.gateHeight > 0.0f;
+}
+
+// The locked exit gate (block Pochi from leaving before defeating all enemies)
+void OverworldScene::DrawGate(GameContext& context) {
+    if (gateSprite != NULL) { gateSprite->Draw(context.spriteBrush); return; }
+    if (whiteTex == NULL) return;
+
+    LPD3DXSPRITE b = context.spriteBrush;
+    const float x = config.gateX, y = config.gateY;
+    const float w = config.gateWidth, h = config.gateHeight;
+    const D3DCOLOR iron     = D3DCOLOR_ARGB(255, 84, 88, 100);
+    const D3DCOLOR ironDark = D3DCOLOR_ARGB(255, 44, 46, 56);
+
+    ui::FillRect(b, whiteTex, x + 5.0f, y + 6.0f, w, h, D3DCOLOR_ARGB(90, 0, 0, 0)); // Drop shadow
+    ui::FillRect(b, whiteTex, x, y, w, 12.0f, iron);              // top rail
+    ui::FillRect(b, whiteTex, x, y + h - 12.0f, w, 12.0f, iron);  // bottom rail
+
+    const int bars = 5;
+    for (int i = 0; i < bars; ++i) {
+        const float bx = x + (w - 6.0f) * (i / (float)(bars - 1));
+        ui::FillRect(b, whiteTex, bx, y, 6.0f, h, (i % 2) ? ironDark : iron);
+    }
+}
+
+void OverworldScene::Initialize(GameContext& context) {
+    map = ResolveMap(context, config.mapId);
+
+    if (whiteTex == NULL) whiteTex = ui::MakeWhiteTexture(context.device);
+
+    // Reset Pochi's pose
+    // A pending spawn from the map she just left
+    // (placing his on the connecting seam) wins over this map's own default spawn
+    if (context.pochi != NULL) {
+        if (context.hasPendingSpawn) {
+            context.pochi->SetPosition(context.pendingSpawn.x, context.pendingSpawn.y);
+            context.pochi->CropToFrame(0);
+            context.hasPendingSpawn = false;
+        }
+        else if (config.ComputeSpawnPosition) {
+            D3DXVECTOR2 spawn = config.ComputeSpawnPosition(context.pochi->GetPosition());
+            context.pochi->SetPosition(spawn.x, spawn.y);
+            context.pochi->CropToFrame(0);
+        }
+    }
+
+    // Don't let any exit fire until Pochi has first stepped clear of every trigger
+    // he may spawn right on a seam or in a doorway
+    exitsArmed = false;
+
+    // Restore per-slot progress: a whole cleared map, or individual
+    // bosses / items already dealt with this run (survives Continue).
+    const bool preCleared = context.clearedMaps.count(config.mapId) != 0;
+
+    bossEnemies.clear();
+    bossCleared.assign(config.bosses.size(), false);
+    for (size_t i = 0; i < config.bosses.size(); ++i) {
+        bossCleared[i] = preCleared ||
+            context.clearedBosses.count(SlotKey(config.mapId, (int)i)) != 0;
+        bossEnemies.push_back(CreateBossEnemy(context.device, config.bosses[i].id,
+            config.bosses[i].x, config.bosses[i].y));
+    }
+    allClearedFired = !config.bosses.empty() && AllBossesCleared();
+
+    if (!config.bosses.empty()) {
+        interactPrompt = new Font(context.device, 0.0f, 20.0f, 1280, 40, 20, "Arial");
+    }
+
+    for (Item* item : itemSprites) delete item;
+    itemSprites.clear();
+    itemCollected.assign(config.items.size(), false);
+    for (size_t i = 0; i < config.items.size(); ++i) {
+        const ItemSpawn& spawn = config.items[i];
+        Item* item = new Item(context.device, spawn.type, spawn.texture.c_str(),
+            spawn.texWidth, spawn.texHeight, spawn.x, spawn.y, spawn.scale);
+        itemSprites.push_back(item);
+        itemCollected[i] = context.collectedItems.count(SlotKey(config.mapId, (int)i)) != 0;
+    }
+
+    // The "!" bubble floats over Pochi when he can interact with something (items / enemies)
+    if (exclaimTex != NULL) { exclaimTex->Release(); exclaimTex = NULL; }
+    if (!config.items.empty() || !config.bosses.empty()) {
+        exclaimTex = ui::LoadTexture(context.device,
+            "Assets/Item/exclamationPoint.png", 1254, 1254);
+    }
+
+    delete hud;
+    hud = new PochiBadge(context.device);
+
+    delete levelUpFont;
+
+    levelUpFont = new Font(context.device, 0.0f, 0.0f, 1400, 40, 15, "Arial");
+    levelUpFrames = 0;
+    floatText = "Leveled Up!";
+
+    // Tarumt map: slam Pochi's stats up to the "special level"
+    // SetSpecialMode is cleared first so a stale flag
+    // (after a Game Over -> retry) can't make the boost a no-op
+    boostedStats = NULL;
+    if (config.mapId == MapId::Tarumt && !preCleared && map != NULL && context.pochi != NULL) {
+        boostedStats = context.pochi;
+        boostedStats->SetSpecialMode(false);
+        boostedStats->SetSpecialMode(true);
+        floatText = "Stats boosted to max!";
+        levelUpFrames = 180;
+    }
+
+    // Exit gate
+    delete gateSprite;
+    gateSprite = NULL;
+    if (HasGate() && !config.gateTexture.empty()) {
+        gateSprite = new Sprite(context.device, config.gateTexture.c_str(),
+            config.gateTexWidth, config.gateTexHeight, 1, 1, 1,
+            config.gateX, config.gateY);
+    }
+
+    // Checkpoint on entering the map. Also saved on item pickup and
+    // battle win (below), and on Exit to Main Menu (UnifiedMenu).
+    context.currentMapId = config.mapId;
+    SaveCurrentRun(context);
+}
+
+void OverworldScene::HandleInput(GameContext& context, GameStateManager& manager) {
+    if (context.pochi == NULL) return;
+
+    // E opens the tab menu (Inventory / Status / Settings)
+    if (JustPressed(context.keys, E_KEY, menuWasDown)) {
+        manager.Push(CreateUnifiedMenuScene(this));
+        return;
+    }
+
+    // --- Developer cheats (F5) -----------
+    if (Cheats::enabled) {
+        // K: clear the nearest un-cleared boss without fighting
+        if (JustPressed(context.keys, K_KEY, cheatClearWasDown)) {
+            D3DXVECTOR2 pochiPos = context.pochi->GetPosition();
+            int best = -1;
+            float bestDistSq = 0.0f;
+            for (size_t i = 0; i < bossEnemies.size(); ++i) {
+                if (bossCleared[i]) continue;
+                D3DXVECTOR2 bp = bossEnemies[i]->GetSprite()->GetPosition();
+                float dsq = (pochiPos.x - bp.x) * (pochiPos.x - bp.x) +
+                            (pochiPos.y - bp.y) * (pochiPos.y - bp.y);
+                if (best < 0 || dsq < bestDistSq) { best = (int)i; bestDistSq = dsq; }
+            }
+            if (best >= 0) bossCleared[best] = true;
+            if (!config.bosses.empty() && AllBossesCleared()) {
+                context.clearedMaps.insert(config.mapId);
+            }
+            return;
+        }
+        // L: jump straight to this map's exit
+        if (JustPressed(context.keys, L_KEY, cheatWarpWasDown)) {
+            LeaveBoostedMap(context);
+            std::unique_ptr<GameScene> next;
+            if (config.OnReachRightEdge) { next = config.OnReachRightEdge(); StashSpawn(context, config.rightEdgeSpawn); }
+            else if (config.OnEnterDoorway) { next = config.OnEnterDoorway(); StashSpawn(context, config.doorwaySpawn); }
+            if (next != NULL) manager.Push(std::move(next));
+            return;
+        }
+    }
+
+    if (!JustPressed(context.keys, F_KEY, interactWasDown)) return;
+
+    D3DXVECTOR2 pochiPos = context.pochi->GetPosition();
+
+    // Items first: standing on one and pressing F picks it up
+    for (size_t i = 0; i < itemSprites.size(); ++i) {
+        if (itemCollected[i]) continue;
+        if (TouchingItem(context.pochi->GetSprite(), itemSprites[i]->GetSprite())) {
+            itemCollected[i] = true;
+            context.collectedItems.insert(SlotKey(config.mapId, (int)i));
+            if (context.inventory != NULL) context.inventory->Add(config.items[i].type);
+            context.currentMapId = config.mapId;
+            SaveCurrentRun(context);   // checkpoint the pickup
+            return;
+        }
+    }
+
+    for (size_t i = 0; i < bossEnemies.size(); ++i) {
+        if (bossCleared[i]) continue;
+        // Sequence lock: can't fight this one until the earlier ones fall
+        // (god mode ignores the order)
+        if (!Cheats::enabled && config.bossesInOrder && i > 0 && !bossCleared[i - 1]) continue;
+        if (IsNear(pochiPos, bossEnemies[i]->GetSprite()->GetPosition(), kInteractRadius)) {
+            manager.Push(CreateBattleScene(config.bosses[i].id));
+            return;
+        }
+    }
+}
+
+// True once every boss on this map is down (also true if there are none)
+bool OverworldScene::AllBossesCleared() const {
+    for (bool cleared : bossCleared) if (!cleared) return false;
+    return true;
+}
+
+// The map's exit is sealed while it still has enemies to clear
+// god mode (cheats) opens every seal
+bool OverworldScene::ExitLocked() const {
+    if (Cheats::enabled) return false;
+    return config.requireBossesCleared && !bossCleared.empty() && !AllBossesCleared();
+}
+
+void OverworldScene::Update(GameContext& context, GameStateManager& manager) {
+    // Map failed to resolve
+    // bounce straight back instead of stranding the player on a black screen
+    if (map == NULL) { manager.Pop(); return; }
+
+    // Pick up the result of whichever battle we just returned from
+    // BattleScene sets this right before popping itself
+    if (context.lastBattleOutcome == BattleOutcome::Victory) {
+        for (size_t i = 0; i < config.bosses.size(); ++i) {
+            if (config.bosses[i].id == context.lastBattleBoss) {
+                bossCleared[i] = true;
+                context.clearedBosses.insert(SlotKey(config.mapId, (int)i));
+            }
+        }
+        // Remember a fully-cleared map for the rest of the run
+        // walking back into it later doesn't respawn its enemies
+        if (!config.bosses.empty() && AllBossesCleared()) {
+            context.clearedMaps.insert(config.mapId);
+        }
+        // Beating an enemy levels Pochi up (fully heals too) and floats "Leveled Up!"
+        // Mr Andrew (Tarumt) is outside the 3-level progression
+        if (context.pochi != NULL && config.mapId != MapId::Tarumt) {
+            const int lv = context.pochi->GetLevel();
+            if (lv < 3) {
+                context.pochi->SetLevel(lv + 1);
+                levelUpFrames = 150;
+                floatText = "Leveled Up!";
+            }
+        }
+        context.currentMapId = config.mapId;
+        SaveCurrentRun(context);   // checkpoint the win
+    }
+    context.lastBattleOutcome = BattleOutcome::None;
+
+    if (levelUpFrames > 0) --levelUpFrames;
+
+    // Every boss on this map down -> fire the once-only hook
+    // (the final map uses it to roll the ending; Tarumt lands Pochi back on
+    // the forest's top-left seam, hence rightEdgeSpawn)
+    if (!allClearedFired && config.OnAllCleared && !bossCleared.empty() && AllBossesCleared()) {
+        allClearedFired = true;
+        TakeExit(context, manager, config.rightEdgeSpawn, config.OnAllCleared);
+        return;
+    }
+
+    if (context.pochi == NULL) return;
+
+    MoveInput input = ReadMoveInput(context.keys);
+    // Cheat mode: walk 3x faster to cross maps quickly
+    const int moveSpeed = Cheats::enabled ? context.moveSpeed * 3 : context.moveSpeed;
+    bool isMoving = false;
+    if (input.left) {
+        context.pochi->Move((float)-moveSpeed, 0.0f);
+        context.pochi->AnimateWalk(LEFT);
+        isMoving = true;
+    }
+    else if (input.right) {
+        context.pochi->Move((float)moveSpeed, 0.0f);
+        context.pochi->AnimateWalk(RIGHT);
+        isMoving = true;
+    }
+    if (input.up) {
+        context.pochi->Move(0.0f, (float)-moveSpeed);
+        context.pochi->AnimateWalk();
+        isMoving = true;
+    }
+    else if (input.down) {
+        context.pochi->Move(0.0f, (float)moveSpeed);
+        context.pochi->AnimateWalk();
+        isMoving = true;
+    }
+    if (!isMoving) context.pochi->SetIdlePose();
+
+    if (map == NULL) return;
+
+    PhysicsManager::ClampToBounds(context.pochi->GetSprite(), 0.0f, 0.0f,
+        (float)map->GetWidthPixels(), (float)map->GetHeightPixels());
+
+    // Cheat mode: no collision
+    if (!Cheats::enabled) {
+        PhysicsManager::ResolveCollisionShapes(context.pochi->GetSprite(), map, kPochiFootWidthRatio, kPochiFootHeightRatio);
+
+        // Invisible top/bottom fence: keep Pochi's feet inside the maze boundary
+        if (config.fenceBottom > config.fenceTop) {
+            AABB feet = PhysicsManager::GetFootBounds(context.pochi->GetSprite(), kPochiFootWidthRatio, kPochiFootHeightRatio);
+            D3DXVECTOR2 p = context.pochi->GetPosition();
+            if (feet.top < config.fenceTop)       p.y += config.fenceTop - feet.top;
+            if (feet.bottom > config.fenceBottom) p.y -= feet.bottom - config.fenceBottom;
+            context.pochi->SetPosition(p.x, p.y);
+        }
+
+        // Closed exit gate: a solid wall at gateX until the map is cleared
+        if (HasGate() && ExitLocked()) {
+            AABB pb = PhysicsManager::GetBounds(context.pochi->GetSprite());
+            if (pb.right > config.gateX) {
+                D3DXVECTOR2 p = context.pochi->GetPosition();
+                context.pochi->SetPosition(p.x - (pb.right - config.gateX), p.y);
+            }
+        }
+    }
+
+    // --- Map exits ---------------------------------------------------
+    const AABB pb = PhysicsManager::GetBounds(context.pochi->GetSprite());
+    const D3DXVECTOR2 pcentre = context.pochi->GetPosition();
+    const bool atRight = config.OnReachRightEdge &&
+        pb.right >= (float)map->GetWidthPixels() - 5.0f;
+    const bool atLeft = config.OnReachLeftEdge && pb.left <= 8.0f;
+    const bool atDoor = config.OnEnterDoorway &&
+        IsNear(pcentre, config.doorwayPosition, config.doorwayRadius);
+
+    // Arm exits only once Pochi is clear of all of them
+    // never transition on the same frame the latch arms
+    if (!exitsArmed) {
+        if (!atRight && !atLeft && !atDoor) exitsArmed = true;
+        return;
+    }
+
+    // Forward exits (right edge / doorway) stay sealed while this map still has bosses to beat
+    const bool exitLocked = ExitLocked();
+
+    if (atRight && !exitLocked) { TakeExit(context, manager, config.rightEdgeSpawn, config.OnReachRightEdge); return; }
+    if (atDoor  && !exitLocked) { TakeExit(context, manager, config.doorwaySpawn,   config.OnEnterDoorway);   return; }
+    // Backtracking out the left edge - allowed even while sealed
+    if (atLeft)                 { TakeExit(context, manager, config.leftEdgeSpawn,   config.OnReachLeftEdge);  return; }
+}
+
+void OverworldScene::Render(GameContext& context) {
+    if (map == NULL) return;
+
+    bool hasForeground = !config.foregroundLayers.empty();
+    if (hasForeground) map->DrawExcludingLayers(context.spriteBrush, config.foregroundLayers);
+    else map->Draw(context.spriteBrush);
+
+    // Items sit on the ground - drawn before Pochi/bosses so they walk over them
+    for (size_t i = 0; i < itemSprites.size(); ++i) {
+        if (!itemCollected[i]) itemSprites[i]->Render(context.spriteBrush);
+    }
+
+    for (size_t i = 0; i < bossEnemies.size(); ++i) {
+        if (!bossCleared[i]) bossEnemies[i]->Render(context.spriteBrush);
+    }
+
+    // The exit gate stands until the map is cleared
+    // Pochi draws in front of it
+    if (HasGate() && ExitLocked()) DrawGate(context);
+
+    if (context.pochi != NULL) context.pochi->Render(context.spriteBrush);
+
+    if (context.pochi != NULL) {
+        const D3DXVECTOR2 pp = context.pochi->GetPosition();
+        const float headX = pp.x + 25.0f;
+        const float headTop = pp.y - 12.0f;
+
+        // "!" bubble over Pochi's head near an item or fightable enemy
+        if (exclaimTex != NULL) {
+            bool nearInteractable = false;
+            for (size_t i = 0; i < itemSprites.size() && !nearInteractable; ++i)
+                if (!itemCollected[i] && TouchingItem(context.pochi->GetSprite(), itemSprites[i]->GetSprite()))
+                    nearInteractable = true;
+            for (size_t i = 0; i < bossEnemies.size() && !nearInteractable; ++i) {
+                if (bossCleared[i]) continue;
+                if (!Cheats::enabled && config.bossesInOrder && i > 0 && !bossCleared[i - 1]) continue;
+                if (IsNear(pp, bossEnemies[i]->GetSprite()->GetPosition(), kInteractRadius))
+                    nearInteractable = true;
+            }
+            if (nearInteractable) {
+                const float sz = 40.0f;
+                ui::DrawTexture(context.spriteBrush, exclaimTex, 1254, 1254,
+                    headX - sz * 0.5f, headTop - sz - 6.0f,
+                    sz / 1254.0f, sz / 1254.0f);
+            }
+        }
+
+        // Floating "Leveled Up!" centred over Pochi's head
+        if (levelUpFrames > 0 && levelUpFont != NULL && floatText != NULL) {
+            D3DXMATRIX ident;
+            D3DXMatrixIdentity(&ident);
+            context.spriteBrush->SetTransform(&ident);
+
+            const float rise = (150 - levelUpFrames) * 0.10f;
+            // ~7px per glyph at this font size - centre the string on
+            // Pochi's head rather than a fixed offset (the boost text
+            // is much longer than "Leveled Up!")
+            const float tx = headX - (float)strlen(floatText) * 3.5f;
+            const float ty = headTop - 24.0f - rise;
+            levelUpFont->Draw(floatText, tx + 1.0f, ty + 1.0f, D3DCOLOR_XRGB(20, 15, 0), context.spriteBrush);
+            levelUpFont->Draw(floatText, tx, ty, D3DCOLOR_XRGB(255, 232, 120), context.spriteBrush);
+        }
+    }
+
+    // Layers like the forest's leaf canopy draw last
+    // in front of both Pochi and any enemies
+    if (hasForeground) map->DrawOnlyLayers(context.spriteBrush, config.foregroundLayers);
+
+    if (context.pochi != NULL && interactPrompt != NULL) {
+        D3DXVECTOR2 pochiPos = context.pochi->GetPosition();
+
+        auto DrawPrompt = [&](const char* text) {
+            const float tx = 640.0f - (float)strlen(text) * 5.2f;
+            const float ty = 26.0f;
+            interactPrompt->Draw(text, tx + 1.0f, ty + 1.0f, D3DCOLOR_XRGB(20, 15, 0), context.spriteBrush);
+            interactPrompt->Draw(text, tx, ty, D3DCOLOR_XRGB(255, 232, 120), context.spriteBrush);
+        };
+
+        // At a sealed exit: tell the player why they can't leave yet
+        bool shownExitLock = false;
+        if (ExitLocked()) {
+            AABB pb = PhysicsManager::GetBounds(context.pochi->GetSprite());
+            const bool atRightEdge = config.OnReachRightEdge &&
+                pb.right >= (float)map->GetWidthPixels() - 40.0f;
+            const bool atDoorway = config.OnEnterDoorway &&
+                IsNear(pochiPos, config.doorwayPosition, config.doorwayRadius + 40.0f);
+            if (atRightEdge || atDoorway) {
+                DrawPrompt("DEFEAT ALL ENEMIES FIRST");
+                shownExitLock = true;
+            }
+        }
+
+        for (size_t i = 0; !shownExitLock && i < bossEnemies.size(); ++i) {
+            if (bossCleared[i]) continue;
+            if (!IsNear(pochiPos, bossEnemies[i]->GetSprite()->GetPosition(), kInteractRadius)) continue;
+
+            if (!Cheats::enabled && config.bossesInOrder && i > 0 && !bossCleared[i - 1])
+                DrawPrompt("DEFEAT THE OTHER ENEMY FIRST");
+            else
+                DrawPrompt("PRESS F TO FIGHT");
+            break;
+        }
+    }
+
+    if (hud != NULL && context.pochi != NULL) {
+        hud->Draw(context.spriteBrush, *context.pochi);
+    }
+}
+
+D3DCOLOR OverworldScene::ClearColor() const { return D3DCOLOR_XRGB(0, 0, 0); }
+
+// Rebuilds the overworld scene for a given map - used by "Continue" to drop
+// the player back on the map their save was taken in
+std::unique_ptr<GameScene> CreateOverworldSceneForMap(MapId id) {
+    switch (id) {
+    case MapId::Maze:          return std::make_unique<MazeScene>();
+    case MapId::RuinsExterior: return std::make_unique<RuinsExteriorScene>();
+    case MapId::RuinsInterior: return std::make_unique<RuinsInteriorScene>();
+    case MapId::Tarumt:        return std::make_unique<TarumtScene>();
+    case MapId::Forest:
+    default:                   return std::make_unique<ForestScene>();
+    }
+}

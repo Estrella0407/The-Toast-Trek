@@ -1,10 +1,23 @@
 #include "Pochi.h"
+#include "Sprite.h"
 #include <algorithm>
 
-Pochi::Pochi(int level) : level(level), savedLevel(level), specialMode(false),
+Pochi::Pochi(IDirect3DDevice9* device, int level)
+	: GameObject(new Sprite(device, "Assets/Characters/Pochi.png", 250, 60, 5, 2, 10, 100.0f, 380.0f)),
+	level(level), savedLevel(level), specialMode(false),
 	health(0), maxHealth(0), armor(0), maxArmor(0), attackDamage(0) {
+	if (sprite != nullptr) {
+		sprite->CropToFrame(0);
+		sprite->SetScale(2.0f);
+	}
 	SetLevel(level);
 }
+
+void Pochi::Move(float dx, float dy) { if (sprite != nullptr) sprite->Move(dx, dy); }
+void Pochi::CropToFrame(int frame) { if (sprite != nullptr) sprite->CropToFrame(frame); }
+void Pochi::AnimateWalk(animationState dir) { if (sprite != nullptr) sprite->AnimateWalk(dir); }
+void Pochi::AnimateWalk() { if (sprite != nullptr) sprite->AnimateWalk(); }
+void Pochi::SetIdlePose() { if (sprite != nullptr) sprite->SetIdlePose(); }
 
 void Pochi::SetSpecialMode(bool on) {
 	if (on == specialMode) return;

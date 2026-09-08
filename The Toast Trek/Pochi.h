@@ -1,6 +1,13 @@
 #pragma once
+#include <d3d9.h>
+#include <d3dx9.h>
+#include "GameObject.h"
 
-class Pochi {
+// Pochi - the player character. Owns her sprite sheet (through GameObject)
+// and her RPG stats (level / health / armor / attack). One instance lives
+// for the whole run: the overworld drives her movement, the battle reads
+// her stats.
+class Pochi : public GameObject {
 private:
 	int level;
 	int savedLevel;       // Level to return to when special mode ends
@@ -13,10 +20,18 @@ private:
 	int maxArmor;
 
 	int attackDamage;
-public:
-	Pochi(int level = 1);
 
-	// Damage or healing
+public:
+	explicit Pochi(IDirect3DDevice9* device, int level = 1);
+
+	// --- Movement / pose (delegates to the owned sprite) ---
+	void Move(float dx, float dy);
+	void CropToFrame(int frame = 0);
+	void AnimateWalk(animationState dir);
+	void AnimateWalk();
+	void SetIdlePose();
+
+	// --- Damage or healing ---
 	void TakeDamage(int damage);
 	void Heal(int amount);
 	void RecoverArmor(int amount);

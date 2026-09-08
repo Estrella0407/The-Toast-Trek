@@ -1,56 +1,30 @@
 #include "Heart.h"
 #include "Sprite.h"
-#include <Windows.h>
+#include "Keys.h"
 
-Heart::Heart(IDirect3DDevice9* d3dDevice) {
+Heart::Heart(IDirect3DDevice9* d3dDevice)
+	: GameObject(new Sprite(d3dDevice, "Assets/characters/pochiHeart.png", 64, 64, 1, 1, 1, 0.0f, 0.0f)) {
 	moveSpeed = 3.0f;
 	health = 20;
 	maxHealth = 20;
 	shield = 10;
 	maxShield = 10;
-
-	sprite = new Sprite(d3dDevice, "Assets/characters/pochiHeart.png", 64, 64, 1, 1, 1, 0.0f, 0.0f);
-
 }
 
 Heart::~Heart() {
-	delete sprite;
-	sprite = nullptr;
+	// GameObject deletes the sprite
 }
 
 void Heart::Update(BYTE* keys) {
 	D3DXVECTOR2 position = sprite->GetPosition();
 
 	// Arrow keys and WASD both steer the heart
-	if ((GetAsyncKeyState('A') & 0x8000) || (GetAsyncKeyState(VK_LEFT) & 0x8000))
-		position.x -= moveSpeed;
-
-	if ((GetAsyncKeyState('D') & 0x8000) || (GetAsyncKeyState(VK_RIGHT) & 0x8000))
-		position.x += moveSpeed;
-
-	if ((GetAsyncKeyState('W') & 0x8000) || (GetAsyncKeyState(VK_UP) & 0x8000))
-		position.y -= moveSpeed;
-
-	if ((GetAsyncKeyState('S') & 0x8000) || (GetAsyncKeyState(VK_DOWN) & 0x8000))
-		position.y += moveSpeed;
+	if (KeyHeldAsync('A') || KeyHeldAsync(VK_LEFT))  position.x -= moveSpeed;
+	if (KeyHeldAsync('D') || KeyHeldAsync(VK_RIGHT)) position.x += moveSpeed;
+	if (KeyHeldAsync('W') || KeyHeldAsync(VK_UP))    position.y -= moveSpeed;
+	if (KeyHeldAsync('S') || KeyHeldAsync(VK_DOWN))  position.y += moveSpeed;
 
 	sprite->SetPosition(position.x, position.y);
-}
-
-void Heart::Render(LPD3DXSPRITE sharedBrush) {
-	sprite->Draw(sharedBrush);
-}
-
-D3DXVECTOR2 Heart::GetPosition() const {
-	return sprite->GetPosition();
-}
-
-Sprite* Heart::GetSprite() const {
-	return sprite;
-}
-
-void Heart::SetPosition(float x, float y) {
-	sprite->SetPosition(x, y);
 }
 
 // Heart collision

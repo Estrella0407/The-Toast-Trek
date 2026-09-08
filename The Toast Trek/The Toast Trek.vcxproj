@@ -19,71 +19,107 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BattleButton.cpp" />
+    <ClCompile Include="Ball.cpp" />
+    <ClCompile Include="BallPitScene.cpp" />
+    <ClCompile Include="Button.cpp" />
     <ClCompile Include="Battlefield.cpp" />
-    <ClCompile Include="BattleState.cpp" />
+    <ClCompile Include="BattleScene.cpp" />
     <ClCompile Include="BattleStatusBars.cpp" />
     <ClCompile Include="BattleUI.cpp" />
     <ClCompile Include="Cheats.cpp" />
-    <ClCompile Include="EndingState.cpp" />
+    <ClCompile Include="CheatOverlay.cpp" />
+    <ClCompile Include="Direct3D.cpp" />
+    <ClCompile Include="DirectInput.cpp" />
+    <ClCompile Include="EndingScene.cpp" />
     <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="Font.cpp" />
+    <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="FrameBar.cpp" />
     <ClCompile Include="FrameTimer.cpp" />
-    <ClCompile Include="GameOverState.cpp" />
-    <ClCompile Include="GameState.cpp" />
+    <ClCompile Include="GameOverScene.cpp" />
+    <ClCompile Include="GameScene.cpp" />
+    <ClCompile Include="GameStateManager.cpp" />
+    <ClCompile Include="GameContext.cpp" />
     <ClCompile Include="Heart.cpp" />
 	<ClCompile Include="Inventory.cpp" />
     <ClCompile Include="Line.cpp" />
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="MainMenu.cpp" />
-    <ClCompile Include="MainMenuState.cpp" />
-    <ClCompile Include="MenuSelectState.cpp" />
-    <ClCompile Include="OverworldState.cpp" />
-    <ClCompile Include="Physics.cpp" />
+    <ClCompile Include="MapLibrary.cpp" />
+    <ClCompile Include="MainMenuScene.cpp" />
+    <ClCompile Include="MenuSelectScene.cpp" />
+    <ClCompile Include="InputManager.cpp" />
+    <ClCompile Include="OverworldScene.cpp" />
+    <ClCompile Include="ForestScene.cpp" />
+    <ClCompile Include="MazeScene.cpp" />
+    <ClCompile Include="RuinsExteriorScene.cpp" />
+    <ClCompile Include="RuinsInteriorScene.cpp" />
+    <ClCompile Include="TarumtScene.cpp" />
+    <ClCompile Include="PhysicsManager.cpp" />
+    <ClCompile Include="Item.cpp" />
+    <ClCompile Include="RigidBody.cpp" />
+    <ClCompile Include="Window.cpp" />
     <ClCompile Include="Pochi.cpp" />
     <ClCompile Include="PochiBadge.cpp" />
     <ClCompile Include="Projectile.cpp" />
     <ClCompile Include="UiFill.cpp" />
     <ClCompile Include="SaveGame.cpp" />
-    <ClCompile Include="SettingsState.cpp" />
-    <ClCompile Include="SoundManage.cpp" />
+    <ClCompile Include="SettingsScene.cpp" />
+    <ClCompile Include="SoundManager.cpp" />
     <ClCompile Include="Sprite.cpp" />
     <ClCompile Include="TileMap.cpp" />
-    <ClCompile Include="TutorialPopupState.cpp" />
+    <ClCompile Include="TutorialPopupScene.cpp" />
     <ClCompile Include="UnifiedMenu.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BattleButton.h" />
+    <ClInclude Include="Ball.h" />
+    <ClInclude Include="BallPitScene.h" />
+    <ClInclude Include="Button.h" />
     <ClInclude Include="Battlefield.h" />
-    <ClInclude Include="BattleState.h" />
+    <ClInclude Include="BattleScene.h" />
     <ClInclude Include="BattleStatusBars.h" />
     <ClInclude Include="BattleUI.h" />
     <ClInclude Include="Cheats.h" />
-    <ClInclude Include="EndingState.h" />
+    <ClInclude Include="CheatOverlay.h" />
+    <ClInclude Include="Direct3D.h" />
+    <ClInclude Include="DirectInput.h" />
+    <ClInclude Include="EndingScene.h" />
     <ClInclude Include="Enemy.h" />
     <ClInclude Include="Font.h" />
+    <ClInclude Include="GameObject.h" />
     <ClInclude Include="FrameBar.h" />
     <ClInclude Include="FrameTimer.h" />
-    <ClInclude Include="GameOverState.h" />
-    <ClInclude Include="GameState.h" />
+    <ClInclude Include="GameOverScene.h" />
+    <ClInclude Include="GameScene.h" />
+    <ClInclude Include="Keys.h" />
+    <ClInclude Include="GameContext.h" />
+    <ClInclude Include="GameStateManager.h" />
+    <ClInclude Include="MainMenuScene.h" />
     <ClInclude Include="Heart.h" />
 	<ClInclude Include="Inventory.h" />
+    <ClInclude Include="InputManager.h" />
     <ClInclude Include="Line.h" />
-    <ClInclude Include="MainMenu.h" />
-    <ClInclude Include="MenuSelectState.h" />
-    <ClInclude Include="OverworldState.h" />
-    <ClInclude Include="Physics.h" />
+    <ClInclude Include="MapLibrary.h" />
+    <ClInclude Include="MenuSelectScene.h" />
+    <ClInclude Include="OverworldScene.h" />
+    <ClInclude Include="ForestScene.h" />
+    <ClInclude Include="MazeScene.h" />
+    <ClInclude Include="RuinsExteriorScene.h" />
+    <ClInclude Include="RuinsInteriorScene.h" />
+    <ClInclude Include="TarumtScene.h" />
+    <ClInclude Include="PhysicsManager.h" />
+    <ClInclude Include="Item.h" />
+    <ClInclude Include="RigidBody.h" />
+    <ClInclude Include="Window.h" />
     <ClInclude Include="Pochi.h" />
     <ClInclude Include="PochiBadge.h" />
     <ClInclude Include="Projectile.h" />
     <ClInclude Include="UiFill.h" />
     <ClInclude Include="SaveGame.h" />
-    <ClInclude Include="SettingsState.h" />
-    <ClInclude Include="SoundManage.h" />
+    <ClInclude Include="SettingsScene.h" />
+    <ClInclude Include="SoundManager.h" />
     <ClInclude Include="Sprite.h" />
     <ClInclude Include="TileMap.h" />
-    <ClInclude Include="TutorialPopupState.h" />
+    <ClInclude Include="TutorialPopupScene.h" />
     <ClInclude Include="UnifiedMenu.h" />
   </ItemGroup>
   <ItemGroup>
@@ -157,13 +193,13 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include;C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Lib\x86;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>NotSet</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>fmod_vc.lib;d3d9.lib;d3dx9.lib;dinput8.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -181,12 +217,12 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Manifest>
@@ -197,12 +233,12 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>fmod_vc.lib;d3d9.lib;d3dx9.lib;dxguid.lib;dinput8.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -216,12 +252,12 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Manifest>

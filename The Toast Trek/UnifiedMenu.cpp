@@ -1,23 +1,18 @@
 #include "UnifiedMenu.h"
+#include "GameStateManager.h"
+#include "MainMenuScene.h"
 #include "UiFill.h"
 #include "Font.h"
 #include "Inventory.h"
 #include "Pochi.h"
-#include "SoundManage.h"
+#include "SoundManager.h"
 #include "SaveGame.h"
-#include <dinput.h>
+#include "Keys.h"
 #include <algorithm>
 #include <string>
 
 namespace {
 
-    //DirectInput key checking
-    bool JustPressed(BYTE* keys, int key, bool& wasDown) {
-        const bool isDown = keys != NULL && (keys[key] & 0x80) != 0;
-        const bool pressed = isDown && !wasDown;
-        wasDown = isDown;
-        return pressed;
-    }
 
     //hit-testing for UI elements
     bool IsPointInRect(float x, float y, float left, float top, float right, float bottom) {
@@ -86,13 +81,11 @@ namespace {
     float GetRowTop(int index) { return bodyY + index * rowHeight - 8.0f; }
     float GetRowBottom(int index) { return GetRowTop(index) + rowHeight - 4.0f; }
 
-    //UI Class
-    class UnifiedMenuState : public GameState {
+    class UnifiedMenuScene : public GameScene {
     private:
-
-        GameState* backdrop;
-        int currentTab;
-        int selectedRow;
+        GameScene* backdrop;
+        int tab;
+        int sel;
 
         IDirect3DTexture9* whiteTexture;
         Font* titleFont;
@@ -130,11 +123,11 @@ namespace {
                                  context.sound->IsMuted() });
         }
 
-        void ReturnToMainMenu(GameContext& context, GameStateManager& manager) {
-            SaveSettingsToFile(context);
-            PlayUISound(context);
-            SaveCurrentRun(context);
-            manager.ClearAndPush(CreateMainMenuState());
+        // Save where we are, then go back to the title screen.
+        void ExitToMainMenu(GameContext& context, GameStateManager& manager) {
+            PersistSettings(context);
+            SaveCurrentRun(context);   // so "Continue" resumes right here
+            manager.ClearAndPush(CreateMainMenuScene());
         }
 
         int GetRowCount() const {
@@ -159,17 +152,9 @@ namespace {
 
         //item usage
         void UseSelectedItem(GameContext& context) {
-            if (context.inventory == NULL || context.playerStats == NULL) return;
-
-            const ItemType type = items[selectedRow].type;
-
-            if (context.inventory->GetCount(type) <= 0) {
-                if (context.sound != NULL) {
-                    context.sound->PlaySfx("click", 0.3f, 0.5f);
-                }
-                return;
-            }
-
+            if (context.inventory == NULL || context.pochi == NULL) return;
+            const ItemType type = kItems[sel].type;
+            if (context.inventory->GetCount(type) <= 0) return;
             if (!context.inventory->Consume(type)) return;
 
             if (context.sound != NULL) {
@@ -177,27 +162,27 @@ namespace {
             }
 
             if (type == ItemType::HealthPotion) {
-                context.playerStats->Heal(3);
+                context.pochi->Heal(3);
             }
             else if (type == ItemType::Bone) {
-                context.playerStats->RecoverArmor(2);
+                context.pochi->RecoverArmor(2);
             }
             else {
-                context.playerStats->Heal(context.playerStats->GetMaxHealth());
-                context.playerStats->RecoverArmor(context.playerStats->GetMaxArmor());
+                context.pochi->Heal(context.pochi->GetMaxHealth());
+                context.pochi->RecoverArmor(context.pochi->GetMaxArmor());
             }
         }
 
         //control volume
         void AdjustVolume(GameContext& context, int direction) {
             if (context.sound == NULL) return;
-
-            const float stepSize = 0.1f * direction;
-            SoundManage* soundManager = context.sound;
-
-            if (context.sound != NULL) {
-                float pitch = 0.8f + (direction > 0 ? 0.2f : -0.2f);
-                context.sound->PlaySfx("click", 0.3f, pitch);
+            const float step = 0.1f * dir;
+            SoundManager* s = context.sound;
+            switch (sel) {
+            case 0: s->SetMasterVolume(s->GetMasterVolume() + step); break;
+            case 1: s->SetMusicVolume(s->GetMusicVolume() + step); break;
+            case 2: s->SetSFXVolume(s->GetSFXVolume() + step); break;
+            case 3: if (dir != 0) s->ToggleMute(); break;
             }
 
             switch (selectedRow) {
@@ -267,14 +252,12 @@ namespace {
                 bodyTextX, bodyY + 3 * rowHeight + 12.0f, textDim, sprite);
         }
 
-        void RenderStatusTab(LPD3DXSPRITE sprite, GameContext& context) {
-            headingFont->Draw("Pochi", bodyTextX, headingY, headingColor, sprite);
-
-            const Pochi* player = context.playerStats;
-
-            auto DrawStatLine = [&](const char* label, const std::string& value, int row) {
-                bodyFont->Draw(label, bodyTextX, bodyY + row * rowHeight, textDim, sprite);
-                bodyFont->Draw(value.c_str(), bodyTextX + 220.0f, bodyY + row * rowHeight, textColor, sprite);
+        void RenderStatus(LPD3DXSPRITE b, GameContext& context) {
+            headFont->Draw("Pochi", kBodyX, kHeadingY, kHeading, b);
+            const Pochi* p = context.pochi;
+            auto Line = [&](const char* label, const std::string& val, int row) {
+                bodyFont->Draw(label, kBodyX, kBodyY + row * kRowH, kTextDim, b);
+                bodyFont->Draw(val.c_str(), kBodyX + 220.0f, kBodyY + row * kRowH, kText, b);
                 };
 
             if (player != NULL) {
@@ -288,12 +271,11 @@ namespace {
                 bodyTextX, bodyY + 5 * rowHeight, textDim, sprite);
         }
 
-        void RenderSettingsTab(LPD3DXSPRITE sprite, GameContext& context) {
-            headingFont->Draw("Sound", bodyTextX, headingY, headingColor, sprite);
-
-            SoundManage* soundManager = context.sound;
-            if (soundManager == NULL) {
-                bodyFont->Draw("Audio unavailable.", bodyTextX, bodyY, textDim, sprite);
+        void RenderSettings(LPD3DXSPRITE b, GameContext& context) {
+            headFont->Draw("Sound", kBodyX, kHeadingY, kHeading, b);
+            SoundManager* s = context.sound;
+            if (s == NULL) {
+                bodyFont->Draw("Audio unavailable.", kBodyX, kBodyY, kTextDim, b);
                 return;
             }
 
@@ -402,33 +384,15 @@ namespace {
         }
 
     public:
-        explicit UnifiedMenuState(GameState* bg)
-            : backdrop(bg),
-            currentTab(0),
-            selectedRow(0),
-            whiteTexture(NULL),
-            titleFont(NULL),
-            tabFont(NULL),
-            headingFont(NULL),
-            bodyFont(NULL),
-            hintFont(NULL),
-            eKeyWasDown(true),
-            escapeKeyWasDown(false),
-            aKeyWasDown(false),
-            dKeyWasDown(false),
-            qKeyWasDown(false),
-            leftKeyWasDown(false),
-            rightKeyWasDown(false),
-            upKeyWasDown(false),
-            downKeyWasDown(false),
-            enterKeyWasDown(false),
-            mouseWasDown(true),
-            previousMouseX(-1.0f),
-            previousMouseY(-1.0f) {
-        }
+        explicit UnifiedMenuScene(GameScene* under)
+            : backdrop(under), tab(0), sel(0), whiteTex(NULL),
+              titleFont(NULL), tabFont(NULL), headFont(NULL), bodyFont(NULL), hintFont(NULL),
+              eWasDown(true), escWasDown(false), aWasDown(false), dWasDown(false), qWasDown(false),
+              leftWasDown(false), rightWasDown(false), upWasDown(false), downWasDown(false),
+              enterWasDown(false), mouseWasDown(true), prevMouseX(-1.0f), prevMouseY(-1.0f) {}
 
-        ~UnifiedMenuState() override {
-            if (whiteTexture != NULL) whiteTexture->Release();
+        ~UnifiedMenuScene() override {
+            if (whiteTex != NULL) whiteTex->Release();
             delete titleFont;
             delete tabFont;
             delete headingFont;
@@ -457,15 +421,13 @@ namespace {
         void HandleInput(GameContext& context, GameStateManager& manager) override {
             BYTE* keys = context.keys;
 
-            if (JustPressed(keys, DIK_E, eKeyWasDown) || JustPressed(keys, DIK_ESCAPE, escapeKeyWasDown)) {
-                SaveSettingsToFile(context);
-                PlayUISound(context);
+            if (JustPressed(k, E_KEY, eWasDown) || JustPressed(k, ESCAPE_KEY, escWasDown)) {
+                PersistSettings(context);
                 manager.Pop();
                 return;
             }
-
-            if (JustPressed(keys, DIK_Q, qKeyWasDown)) {
-                ReturnToMainMenu(context, manager);
+            if (JustPressed(k, Q_KEY, qWasDown)) {
+                ExitToMainMenu(context, manager);
                 return;
             }
 
@@ -481,54 +443,32 @@ namespace {
                 PlayUISound(context);
             }
 
-            const bool onVolumeMeter = (currentTab == TAB_SETTINGS && selectedRow <= 2);
+            if (JustPressed(k, A_KEY, aWasDown)) { tab = (tab - 1 + TAB_COUNT) % TAB_COUNT; sel = 0; }
+            if (JustPressed(k, D_KEY, dWasDown)) { tab = (tab + 1) % TAB_COUNT; sel = 0; }
 
-            if (JustPressed(keys, DIK_LEFT, leftKeyWasDown)) {
-                if (onVolumeMeter) {
-                    AdjustVolume(context, -1);
-                }
-                else {
-                    currentTab = (currentTab - 1 + TAB_COUNT) % TAB_COUNT;
-                    selectedRow = 0;
-                    PlayUISound(context);
-                }
+            const bool onMeter = (tab == TAB_SETTINGS && sel <= 2);
+            if (JustPressed(k, LEFT_KEY, leftWasDown)) {
+                if (onMeter) NudgeVolume(context, -1);
+                else { tab = (tab - 1 + TAB_COUNT) % TAB_COUNT; sel = 0; }
+            }
+            if (JustPressed(k, RIGHT_KEY, rightWasDown)) {
+                if (onMeter) NudgeVolume(context, +1);
+                else { tab = (tab + 1) % TAB_COUNT; sel = 0; }
             }
 
-            if (JustPressed(keys, DIK_RIGHT, rightKeyWasDown)) {
-                if (onVolumeMeter) {
-                    AdjustVolume(context, +1);
-                }
-                else {
-                    currentTab = (currentTab + 1) % TAB_COUNT;
-                    selectedRow = 0;
-                    PlayUISound(context);
-                }
-            }
-
-            const int rowCount = GetRowCount();
-            if (rowCount > 0) {
-                if (JustPressed(keys, DIK_UP, upKeyWasDown)) {
-                    selectedRow = (selectedRow - 1 + rowCount) % rowCount;
-                    PlayUISound(context);
-                }
-                if (JustPressed(keys, DIK_DOWN, downKeyWasDown)) {
-                    selectedRow = (selectedRow + 1) % rowCount;
-                    PlayUISound(context);
-                }
+            const int rows = RowCount();
+            if (rows > 0) {
+                if (JustPressed(k, UP_KEY, upWasDown))     sel = (sel - 1 + rows) % rows;
+                if (JustPressed(k, DOWN_KEY, downWasDown)) sel = (sel + 1) % rows;
             }
             else {
-                upKeyWasDown = keys != NULL && (keys[DIK_UP] & 0x80) != 0;
-                downKeyWasDown = keys != NULL && (keys[DIK_DOWN] & 0x80) != 0;
+                upWasDown = KeyDown(k, UP_KEY);
+                downWasDown = KeyDown(k, DOWN_KEY);
             }
 
-            if (JustPressed(keys, DIK_RETURN, enterKeyWasDown)) {
-                if (currentTab == TAB_INVENTORY) {
-                    UseSelectedItem(context);
-                }
-                else if (currentTab == TAB_SETTINGS && selectedRow == 3) {
-                    AdjustVolume(context, 1);
-                }
-                PlayUISound(context);
+            if (JustPressed(k, RETURN_KEY, enterWasDown)) {
+                if (tab == TAB_INVENTORY) UseSelectedItem(context);
+                else if (tab == TAB_SETTINGS && sel == 3) NudgeVolume(context, 1);
             }
 
             HandleMouseInput(context, manager);
@@ -598,6 +538,6 @@ namespace {
 
 } // Namespace
 
-std::unique_ptr<GameState> CreateUnifiedMenuState(GameState* backdrop) {
-    return std::make_unique<UnifiedMenuState>(backdrop);
+std::unique_ptr<GameScene> CreateUnifiedMenuScene(GameScene* backdrop) {
+    return std::make_unique<UnifiedMenuScene>(backdrop);
 }

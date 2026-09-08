@@ -4,7 +4,8 @@
 #include "BattleStatusBars.h"
 #include "Pochi.h"
 #include "Heart.h"
-#include "Physics.h"
+#include "PhysicsManager.h"
+#include "SoundManager.h"   // full type needed for context.sound->PlaySfx
 #include <algorithm>
 #include <string>
 #include <cmath>
@@ -300,7 +301,7 @@ void Battlefield::Update(GameContext& context) {
 	heart->Update(context.keys);
 
 	heart->ClampToBoundary(posX, posY, posX + width, posY + height);
-	AABB heartBounds = Physics::GetHeartBounds(heart->GetSprite());
+	AABB heartBounds = PhysicsManager::GetHeartBounds(heart->GetSprite());
 
 	if (!showProjectiles) return;
 
@@ -407,7 +408,7 @@ void Battlefield::Update(GameContext& context) {
 		if (projectile->GetType() != ProjectileType::aim &&
 			!projectile->HasAppliedDamage() &&
 			(lastPlayerHitTime == 0 || GetTickCount64() - lastPlayerHitTime >= 1000) &&
-			Physics::CheckAABBCollision(heartBounds, projectileBounds)) {
+			PhysicsManager::CheckAABBCollision(heartBounds, projectileBounds)) {
 			pochi->TakeDamage(enemy->GetAttackDamage());
 
 			if (context.sound != nullptr) { //change the sound pitch and volume of each attack type
@@ -423,16 +424,6 @@ void Battlefield::Update(GameContext& context) {
 					case ProjectileType::fire:
 						pitch = 0.9f + (rand() % 30) / 100.0f;  //0.9 - 1.2
 						volume = 0.8f + (rand() % 20) / 100.0f; //0.8 - 1.0
-						break;
-
-					case ProjectileType::bomb:
-						pitch = 0.6f + (rand() % 25) / 100.0f;  //0.6 - 0.85
-						volume = 0.9f + (rand() % 10) / 100.0f; //0.9 - 1.0
-						break;
-
-					case ProjectileType::sparkle:
-						pitch = 1.4f + (rand() % 30) / 100.0f;  //1.4 - 1.7
-						volume = 0.6f + (rand() % 20) / 100.0f; //0.6 - 0.8
 						break;
 
 					default:
