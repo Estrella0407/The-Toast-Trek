@@ -224,6 +224,8 @@ void BattleState::Update(GameContext& context, GameStateManager& manager) {
     if (pochi != nullptr) {
         const int hpNow = pochi->GetHealth() + pochi->GetArmor();
         if (hpNow < lastPochiHealth && context.sound != nullptr) {
+            float pitch = 0.7f + (rand() % 60) / 100.0f;
+            float volume = 0.7f + (rand() % 30) / 100.0f;
             context.sound->PlaySfx("hurt");
         }
         lastPochiHealth = hpNow;
@@ -232,8 +234,7 @@ void BattleState::Update(GameContext& context, GameStateManager& manager) {
     if (battlefield->IsPlayerDefeated()) {
         context.lastBattleOutcome = BattleOutcome::Defeat;
         context.lastBattleBoss = bossId;
-        // Pochi is out of health -> game over screen (replaces the whole
-        // stack; the ruins/forest run doesn't continue).
+        // Pochi is out of health -> game over screen (replaces the whole stack; the ruins/forest run doesn't continue).
         manager.ClearAndPush(CreateGameOverState(context.sound));
     }
     else if (phase != ENEMY_HIT && battlefield->IsEnemyDefeated()) {
