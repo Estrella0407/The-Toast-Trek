@@ -195,6 +195,7 @@ void BattleScene::HandleInput(GameContext& context, GameStateManager&) {
 			// All three ACT choices intentionally share this outcome
             actChoiceUsed[choice] = true;
             battleUI->SetActChoiceUsed(choice, true);
+            PlayAttackSfx(context);   // ACT uses the same swing sfx as FIGHT
             battlefield->PerformAct();
             battleUI->SetShowActChoices(false);
 			phase = ACT_ANIMATION;
@@ -261,7 +262,9 @@ void BattleScene::Update(GameContext& context, GameStateManager& manager) {
     if (pochi != nullptr) {
         const int hpNow = pochi->GetHealth() + pochi->GetArmor();
         if (hpNow < lastPochiHealth && context.sound != nullptr) {
-            context.sound->PlaySfx("hurt");
+            float pitch = 0.7f + (rand() % 60) / 100.0f;
+            float volume = 0.7f + (rand() % 30) / 100.0f;
+            context.sound->PlaySfx("hurt", volume, pitch);
         }
         lastPochiHealth = hpNow;
     }

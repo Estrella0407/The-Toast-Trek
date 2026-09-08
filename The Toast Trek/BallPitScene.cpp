@@ -10,14 +10,9 @@
 #include <memory>
 
 namespace {
-
-// The balls bounce off the window edges - the whole 1280x720 screen is the
-// play area (this screen is deliberately bare: just the two balls and a
-// Back button)
 constexpr float kL = 0.0f, kT = 0.0f, kR = 1280.0f, kB = 720.0f;
 
-// One fixed simulation tick (the game loop is frame-locked ~60 fps, so
-// speeds/forces here are "per tick", not per second)
+// One fixed simulation tick
 constexpr float kDt          = 1.0f;
 
 constexpr float kThrust      = 0.85f;   // steering force while a key is held (a = F / mass)

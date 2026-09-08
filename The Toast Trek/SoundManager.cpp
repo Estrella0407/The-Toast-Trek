@@ -7,7 +7,7 @@
 // looping background track. Loading a missing file is a safe no-op.
 void SoundManager::LoadGameSounds() {
     LoadSound("click", "Assets/Sounds/click.wav");
-    LoadSound("gameover", "Assets/Sounds/gameover.wav");
+    LoadSound("gameover", "Assets/Sounds/gameover.mp3");
     LoadSound("levelcomplete", "Assets/Sounds/levelcomplete.wav");
     LoadSound("background", "Assets/Sounds/background.wav", true);
     LoadSound("battle", "Assets/Sounds/battle.wav", true);
@@ -91,7 +91,7 @@ bool SoundManager::LoadSound(const std::string& name, const std::string& filePat
     return true;
 }
 
-void SoundManager::PlaySfx(const std::string& name, float volume) {
+void SoundManager::PlaySfx(const std::string& name, float volume, float pitch) {
     if (!system || muted) return;
     const int i = FindSound(name);
     if (i < 0) return;
@@ -101,7 +101,13 @@ void SoundManager::PlaySfx(const std::string& name, float volume) {
     FMOD_RESULT result = system->playSound(sounds[i], 0, false, &channel);
     if (result == FMOD_OK && channel) {
         channel->setVolume(volume * masterVolume * sfxVolume);
+        channel->setPitch(pitch);
+        channels[name] = channel;
     }
+}
+
+void SoundManager::PlayHitSfx(float volume, float pitch) {
+    PlaySfx("hurt", volume, pitch);
 }
 
 void SoundManager::PlayMusic(const std::string& name, float volume) {

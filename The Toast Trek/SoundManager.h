@@ -1,27 +1,28 @@
 #pragma once
 #include <string>
+#include <map>
 
-// FMOD Core forward declarations - keeps <fmod.hpp> out of every file that
-// only needs to trigger a sound
 namespace FMOD {
     class System;
     class Sound;
     class Channel;
 }
 
-// Thin wrapper over FMOD. Every call is safe even if FMOD failed to start
-// or a sound file is missing - it just does nothing
+// Thin wrapper over FMOD
+// Every call is safe even if FMOD failed to start or a sound file is missing - it just does nothing
 class SoundManager {
 private:
     static const int kMaxSounds = 16;
 
     FMOD::System* system;
-    FMOD::Sound* sounds[kMaxSounds];        // Loaded sound data
-    std::string  soundNames[kMaxSounds];    // Name -> slot, parallel to sounds[]
+    FMOD::Sound* sounds[kMaxSounds];        // loaded sound data
+    std::string  soundNames[kMaxSounds];    // name -> slot, parallel to sounds[]
     int soundCount;
 
-    FMOD::Channel* musicChannel;            // The looping-music channel we keep a handle to
-    void* extraDriverData;                  // extra FMOD init data - none, so 0
+    FMOD::Channel* musicChannel;            // keep a handle to looping-music channel
+    void* extraDriverData;                  // extra FMOD init data - none, so 0 
+
+    std::map<std::string, FMOD::Channel*> channels; // for sfx channel with pitch
 
     float masterVolume;
     float sfxVolume;
@@ -44,8 +45,11 @@ public:
     // start the background music. Call once after Initialize().
     void LoadGameSounds();
 
-    // Named PlaySfx (not PlaySound) so it can't clash with the PlaySound macro from <Windows.h>
-    void PlaySfx(const std::string& name, float volume = 1.0f);
+    // Named PlaySfx (not PlaySound) so it can't clash with the PlaySound macro from <Windows.h>.
+    // pitch multiplies playback speed/frequency (1.0 = normal).
+    void PlaySfx(const std::string& name, float volume = 1.0f, float pitch = 1.0f);
+    void PlayHitSfx(float volume = 1.0f, float pitch = 1.0f);
+
     void PlayMusic(const std::string& name, float volume = 1.0f);
     void StopMusic();
     void PauseMusic(bool pause);
@@ -60,6 +64,6 @@ public:
     float GetSFXVolume() const { return sfxVolume; }
     float GetMusicVolume() const { return musicVolume; }
     bool  IsMuted() const { return muted; }
+    void Update();
 
-    void Update();   // Call once per frame
 };

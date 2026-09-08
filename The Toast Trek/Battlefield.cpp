@@ -5,6 +5,7 @@
 #include "Pochi.h"
 #include "Heart.h"
 #include "PhysicsManager.h"
+#include "SoundManager.h"   // full type needed for context.sound->PlaySfx
 #include <algorithm>
 #include <string>
 #include <cmath>
@@ -409,8 +410,36 @@ void Battlefield::Update(GameContext& context) {
 			(lastPlayerHitTime == 0 || GetTickCount64() - lastPlayerHitTime >= 1000) &&
 			PhysicsManager::CheckAABBCollision(heartBounds, projectileBounds)) {
 			pochi->TakeDamage(enemy->GetAttackDamage());
+
+			if (context.sound != nullptr) { //change the sound pitch and volume of each attack type
+				float pitch = 1.0f;
+				float volume = 0.9f;
+
+				switch (projectile->GetType()) {
+					case ProjectileType::star:
+						pitch = 1.2f + (rand() % 30) / 100.0f;  //1.2 - 1.5
+						volume = 0.7f + (rand() % 20) / 100.0f; //0.7 - 0.9
+						break;
+
+					case ProjectileType::fire:
+						pitch = 0.9f + (rand() % 30) / 100.0f;  //0.9 - 1.2
+						volume = 0.8f + (rand() % 20) / 100.0f; //0.8 - 1.0
+						break;
+
+					default:
+						pitch = 0.9f + (rand() % 40) / 100.0f;  //0.9 - 1.3
+						volume = 0.8f + (rand() % 20) / 100.0f; //0.8 - 1.0
+						break;
+				}
+
+				pitch += (rand() % 20 - 10) / 200.0f;
+				context.sound->PlaySfx("hurt", volume, pitch); 
+
+			}
+
 			lastPlayerHitTime = GetTickCount64();
 			projectile->MarkDamageApplied();
+
 			// Keep the bullet visible for its short impact duration
 			// Moving projectiles disappear immediately after landing a hit
 			if (projectile->GetType() != ProjectileType::bullet) {
