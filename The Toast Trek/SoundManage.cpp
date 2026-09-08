@@ -63,17 +63,25 @@ bool SoundManage::LoadSound(const std::string& name, const std::string& filePath
     return true;
 }
 
-void SoundManage::PlaySfx(const std::string& name, float volume) {
-    if (!system || muted) return;
+void SoundManage::PlaySfx(const std::string& name, float volume, float pitch) { 
+    if (!system || muted) 
+        return;
     auto it = sounds.find(name);
-    if (it == sounds.end()) return;
+    if (it == sounds.end()) 
+        return;
 
     FMOD::Channel* channel = nullptr;
     if (system->playSound(it->second, nullptr, false, &channel) == FMOD_OK && channel) {
         channel->setVolume(volume * masterVolume * sfxVolume);
+        channel->setPitch(pitch); 
         channels[name] = channel;
     }
 }
+
+void SoundManage::PlayHitSfx(float volume, float pitch) {
+	PlaySfx("hurt", volume, pitch);
+} 
+
 
 void SoundManage::PlayMusic(const std::string& name, float volume) {
     if (!system || muted) return;

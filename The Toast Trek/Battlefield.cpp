@@ -51,7 +51,6 @@ Battlefield::Battlefield(IDirect3DDevice9* d3dDevice, BattleUI* battleUI, Enemy*
 	itemHealAmount = 5;
 
 
-	//enemyHealthBar = new Sprite(d3dDevice, ....);
 }
 
 
@@ -380,6 +379,43 @@ void Battlefield::Update(GameContext& context) {
 		if (Physics::CheckAABBCollision(heartBounds, projectileBounds)) {
 			pochi->TakeDamage(enemy->GetAttackDamage());
 			projectile->Deactivate();
+
+			if (context.sound != nullptr) { //change the sound pitch and volume of each attack type
+				float pitch = 1.0f;
+				float volume = 0.9f;
+
+				switch (projectile->GetType()) {
+					case ProjectileType::star:
+						pitch = 1.2f + (rand() % 30) / 100.0f;  //1.2 - 1.5
+						volume = 0.7f + (rand() % 20) / 100.0f; //0.7 - 0.9
+						break;
+
+					case ProjectileType::fire:
+						pitch = 0.9f + (rand() % 30) / 100.0f;  //0.9 - 1.2
+						volume = 0.8f + (rand() % 20) / 100.0f; //0.8 - 1.0
+						break;
+
+					case ProjectileType::bomb:
+						pitch = 0.6f + (rand() % 25) / 100.0f;  //0.6 - 0.85
+						volume = 0.9f + (rand() % 10) / 100.0f; //0.9 - 1.0
+						break;
+
+					case ProjectileType::sparkle:
+						pitch = 1.4f + (rand() % 30) / 100.0f;  //1.4 - 1.7
+						volume = 0.6f + (rand() % 20) / 100.0f; //0.6 - 0.8
+						break;
+
+					default:
+						pitch = 0.9f + (rand() % 40) / 100.0f;  //0.9 - 1.3
+						volume = 0.8f + (rand() % 20) / 100.0f; //0.8 - 1.0
+						break;
+					}
+
+				pitch += (rand() % 20 - 10) / 200.0f;
+
+				context.sound->PlaySfx("hurt", volume, pitch); 
+
+			}
 		}
 	}
 

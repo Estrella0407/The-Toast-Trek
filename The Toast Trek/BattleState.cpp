@@ -26,8 +26,6 @@ const char* BossDisplayName(BossId id) {
 }
 }
 
-// Defined here (not =default in the header) so Battlefield / BattleUI are
-// complete types when the unique_ptr members are destroyed.
 BattleState::~BattleState() = default;
 
 void BattleState::Initialize(GameContext& context) {
