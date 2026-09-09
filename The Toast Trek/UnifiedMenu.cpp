@@ -13,7 +13,6 @@
 
 namespace {
 
-
     //hit-testing for UI elements
     bool IsPointInRect(float x, float y, float left, float top, float right, float bottom) {
         return x >= left && x <= right && y >= top && y <= bottom;
@@ -84,8 +83,8 @@ namespace {
     class UnifiedMenuScene : public GameScene {
     private:
         GameScene* backdrop;
-        int tab;
-        int sel;
+        int tab;          // Current tab: 0=Inventory, 1=Status, 2=Settings
+        int sel;          // Selected row within the tab
 
         IDirect3DTexture9* whiteTexture;
         Font* titleFont;
@@ -123,15 +122,15 @@ namespace {
                                  context.sound->IsMuted() });
         }
 
-        // Save where we are, then go back to the title screen.
+        //save where we are, then go back to the title screen.
         void ExitToMainMenu(GameContext& context, GameStateManager& manager) {
-            PersistSettings(context);
+            SaveSettingsToFile(context);
             SaveCurrentRun(context);   // so "Continue" resumes right here
             manager.ClearAndPush(CreateMainMenuScene());
         }
 
         int GetRowCount() const {
-            switch (currentTab) {
+            switch (tab) {
             case TAB_INVENTORY: return 3;
             case TAB_SETTINGS:  return 4;
             default:            return 0;
@@ -153,7 +152,7 @@ namespace {
         //item usage
         void UseSelectedItem(GameContext& context) {
             if (context.inventory == NULL || context.pochi == NULL) return;
-            const ItemType type = kItems[sel].type;
+            const ItemType type = items[sel].type;
             if (context.inventory->GetCount(type) <= 0) return;
             if (!context.inventory->Consume(type)) return;
 
@@ -176,32 +175,22 @@ namespace {
         //control volume
         void AdjustVolume(GameContext& context, int direction) {
             if (context.sound == NULL) return;
-            const float step = 0.1f * dir;
+            const float stepSize = 0.1f * direction;
             SoundManager* s = context.sound;
+
             switch (sel) {
-            case 0: s->SetMasterVolume(s->GetMasterVolume() + step); break;
-            case 1: s->SetMusicVolume(s->GetMusicVolume() + step); break;
-            case 2: s->SetSFXVolume(s->GetSFXVolume() + step); break;
-            case 3: if (dir != 0) s->ToggleMute(); break;
-            }
-
-            switch (selectedRow) {
-                case 0: 
-                    soundManager->SetMasterVolume(soundManager->GetMasterVolume() + stepSize); 
-                    break;
-
-                case 1: 
-                    soundManager->SetMusicVolume(soundManager->GetMusicVolume() + stepSize); 
-                    break;
-
-                case 2: 
-                    soundManager->SetSFXVolume(soundManager->GetSFXVolume() + stepSize);
-                    break;
-
-                default: 
-                    if (direction != 0) soundManager->ToggleMute(); 
-                    break;
-
+            case 0:
+                s->SetMasterVolume(s->GetMasterVolume() + stepSize);
+                break;
+            case 1:
+                s->SetMusicVolume(s->GetMusicVolume() + stepSize);
+                break;
+            case 2:
+                s->SetSFXVolume(s->GetSFXVolume() + stepSize);
+                break;
+            default:
+                if (direction != 0) s->ToggleMute();
+                break;
             }
         }
 
@@ -210,23 +199,18 @@ namespace {
             value = std::clamp(value, 0.0f, 1.0f);
 
             switch (volumeIndex) {
-                case 0:
-                    context.sound->SetMasterVolume(value);
-                    break;
-
-                case 1:
-                    context.sound->SetMusicVolume(value);
-                    break;
-
-                case 2:
-                    context.sound->SetSFXVolume(value);
-                    break;
-
-                default:
-                    break;
-
+            case 0:
+                context.sound->SetMasterVolume(value);
+                break;
+            case 1:
+                context.sound->SetMusicVolume(value);
+                break;
+            case 2:
+                context.sound->SetSFXVolume(value);
+                break;
+            default:
+                break;
             }
-
         }
 
         void RenderInventoryTab(LPD3DXSPRITE sprite, GameContext& context) {
@@ -235,7 +219,7 @@ namespace {
             for (int i = 0; i < 3; ++i) {
                 const float y = bodyY + i * rowHeight;
 
-                if (i == selectedRow) {
+                if (i == sel) {
                     DrawFilledRect(sprite, panelLeft + 24.0f, GetRowTop(i),
                         panelRight - panelLeft - 48.0f, rowHeight - 4.0f, selectionBar);
                 }
@@ -252,12 +236,12 @@ namespace {
                 bodyTextX, bodyY + 3 * rowHeight + 12.0f, textDim, sprite);
         }
 
-        void RenderStatus(LPD3DXSPRITE b, GameContext& context) {
-            headFont->Draw("Pochi", kBodyX, kHeadingY, kHeading, b);
-            const Pochi* p = context.pochi;
-            auto Line = [&](const char* label, const std::string& val, int row) {
-                bodyFont->Draw(label, kBodyX, kBodyY + row * kRowH, kTextDim, b);
-                bodyFont->Draw(val.c_str(), kBodyX + 220.0f, kBodyY + row * kRowH, kText, b);
+        void RenderStatusTab(LPD3DXSPRITE sprite, GameContext& context) {
+            headingFont->Draw("Pochi", bodyTextX, headingY, headingColor, sprite);
+            const Pochi* player = context.pochi;
+            auto DrawStatLine = [&](const char* label, const std::string& val, int row) {
+                bodyFont->Draw(label, bodyTextX, bodyY + row * rowHeight, textDim, sprite);
+                bodyFont->Draw(val.c_str(), bodyTextX + 220.0f, bodyY + row * rowHeight, textColor, sprite);
                 };
 
             if (player != NULL) {
@@ -271,25 +255,25 @@ namespace {
                 bodyTextX, bodyY + 5 * rowHeight, textDim, sprite);
         }
 
-        void RenderSettings(LPD3DXSPRITE b, GameContext& context) {
-            headFont->Draw("Sound", kBodyX, kHeadingY, kHeading, b);
+        void RenderSettingsTab(LPD3DXSPRITE sprite, GameContext& context) {
+            headingFont->Draw("Sound", bodyTextX, headingY, headingColor, sprite);
             SoundManager* s = context.sound;
             if (s == NULL) {
-                bodyFont->Draw("Audio unavailable.", kBodyX, kBodyY, kTextDim, b);
+                bodyFont->Draw("Audio unavailable.", bodyTextX, bodyY, textDim, sprite);
                 return;
             }
 
             const char* volumeLabels[3] = { "Master", "Music", "SFX" };
             const float volumes[3] = {
-                soundManager->GetMasterVolume(),
-                soundManager->GetMusicVolume(),
-                soundManager->GetSFXVolume()
+                s->GetMasterVolume(),
+                s->GetMusicVolume(),
+                s->GetSFXVolume()
             };
 
             for (int i = 0; i < 3; ++i) {
                 const float y = bodyY + i * rowHeight;
 
-                if (i == selectedRow) {
+                if (i == sel) {
                     DrawFilledRect(sprite, panelLeft + 24.0f, GetRowTop(i),
                         panelRight - panelLeft - 48.0f, rowHeight - 4.0f, selectionBar);
                 }
@@ -307,19 +291,19 @@ namespace {
             }
 
             const float muteY = bodyY + 3 * rowHeight;
-            if (selectedRow == 3) {
+            if (sel == 3) {
                 DrawFilledRect(sprite, panelLeft + 24.0f, GetRowTop(3),
                     panelRight - panelLeft - 48.0f, rowHeight - 4.0f, selectionBar);
             }
 
             bodyFont->Draw("Mute", bodyTextX, muteY, textColor, sprite);
-            bodyFont->Draw(soundManager->IsMuted() ? "ON" : "OFF", meterX, muteY, textColor, sprite);
+            bodyFont->Draw(s->IsMuted() ? "ON" : "OFF", meterX, muteY, textColor, sprite);
 
             hintFont->Draw("Left / Right or drag the bar: adjust    Enter / click: toggle mute",
                 bodyTextX, bodyY + 4 * rowHeight + 12.0f, textDim, sprite);
         }
 
-        //nouse input handling
+        //mouse input handling
         void HandleMouseInput(GameContext& context, GameStateManager& manager) {
             const float mouseX = context.mouseX;
             const float mouseY = context.mouseY;
@@ -333,16 +317,16 @@ namespace {
 
             if (mouseClicked && IsPointInRect(mouseX, mouseY, exitButtonLeft, exitButtonTop,
                 exitButtonRight, exitButtonBottom)) {
-                ReturnToMainMenu(context, manager);
+                ExitToMainMenu(context, manager);
                 return;
             }
 
             for (int i = 0; i < TAB_COUNT; ++i) {
                 const float tabLeft = tabAreaLeft + i * GetTabWidth();
                 if (IsPointInRect(mouseX, mouseY, tabLeft, tabTop, tabLeft + GetTabWidth(), tabTop + tabHeight)) {
-                    if (mouseClicked && currentTab != i) {
-                        currentTab = i;
-                        selectedRow = 0;
+                    if (mouseClicked && tab != i) {
+                        tab = i;
+                        sel = 0;
                         PlayUISound(context);
                     }
                 }
@@ -353,15 +337,15 @@ namespace {
                 if (!IsPointInRect(mouseX, mouseY, panelLeft + 24.0f, GetRowTop(i),
                     panelRight - 24.0f, GetRowBottom(i))) continue;
 
-                if (mouseMoved) selectedRow = i;
+                if (mouseMoved) sel = i;
                 if (!mouseClicked) continue;
 
-                if (currentTab == TAB_INVENTORY) {
-                    selectedRow = i;
+                if (tab == TAB_INVENTORY) {
+                    sel = i;
                     UseSelectedItem(context);
                 }
-                else if (currentTab == TAB_SETTINGS) {
-                    selectedRow = i;
+                else if (tab == TAB_SETTINGS) {
+                    sel = i;
                     if (i <= 2) {
                         const float y = bodyY + i * rowHeight;
                         if (IsPointInRect(mouseX, mouseY, meterX, y, meterX + meterWidth, y + meterHeight + 8.0f)) {
@@ -375,24 +359,42 @@ namespace {
                 }
             }
 
-            if (context.mouseLeftDown && currentTab == TAB_SETTINGS && selectedRow <= 2) {
-                const float y = bodyY + selectedRow * rowHeight;
+            if (context.mouseLeftDown && tab == TAB_SETTINGS && sel <= 2) {
+                const float y = bodyY + sel * rowHeight;
                 if (IsPointInRect(mouseX, mouseY, meterX, y - 4.0f, meterX + meterWidth, y + meterHeight + 10.0f)) {
-                    SetVolumeValue(context, selectedRow, (mouseX - meterX) / meterWidth);
+                    SetVolumeValue(context, sel, (mouseX - meterX) / meterWidth);
                 }
             }
         }
 
     public:
         explicit UnifiedMenuScene(GameScene* under)
-            : backdrop(under), tab(0), sel(0), whiteTex(NULL),
-              titleFont(NULL), tabFont(NULL), headFont(NULL), bodyFont(NULL), hintFont(NULL),
-              eWasDown(true), escWasDown(false), aWasDown(false), dWasDown(false), qWasDown(false),
-              leftWasDown(false), rightWasDown(false), upWasDown(false), downWasDown(false),
-              enterWasDown(false), mouseWasDown(true), prevMouseX(-1.0f), prevMouseY(-1.0f) {}
+            : backdrop(under),
+            tab(0),
+            sel(0),
+            whiteTexture(NULL),
+            titleFont(NULL),
+            tabFont(NULL),
+            headingFont(NULL),
+            bodyFont(NULL),
+            hintFont(NULL),
+            eKeyWasDown(true),
+            escapeKeyWasDown(false),
+            aKeyWasDown(false),
+            dKeyWasDown(false),
+            qKeyWasDown(false),
+            leftKeyWasDown(false),
+            rightKeyWasDown(false),
+            upKeyWasDown(false),
+            downKeyWasDown(false),
+            enterKeyWasDown(false),
+            mouseWasDown(true),
+            previousMouseX(-1.0f),
+            previousMouseY(-1.0f) {
+        }
 
         ~UnifiedMenuScene() override {
-            if (whiteTex != NULL) whiteTex->Release();
+            if (whiteTexture != NULL) whiteTexture->Release();
             delete titleFont;
             delete tabFont;
             delete headingFont;
@@ -401,8 +403,8 @@ namespace {
         }
 
         void Initialize(GameContext& context) override {
-            currentTab = 0;
-            selectedRow = 0;
+            tab = 0;
+            sel = 0;
             eKeyWasDown = true;
             mouseWasDown = true;
             escapeKeyWasDown = aKeyWasDown = dKeyWasDown = qKeyWasDown = false;
@@ -421,54 +423,78 @@ namespace {
         void HandleInput(GameContext& context, GameStateManager& manager) override {
             BYTE* keys = context.keys;
 
-            if (JustPressed(k, E_KEY, eWasDown) || JustPressed(k, ESCAPE_KEY, escWasDown)) {
-                PersistSettings(context);
+            if (JustPressed(keys, E_KEY, eKeyWasDown) || JustPressed(keys, ESCAPE_KEY, escapeKeyWasDown)) {
+                SaveSettingsToFile(context);
+                PlayUISound(context);
                 manager.Pop();
                 return;
             }
-            if (JustPressed(k, Q_KEY, qWasDown)) {
+
+            if (JustPressed(keys, Q_KEY, qKeyWasDown)) {
                 ExitToMainMenu(context, manager);
                 return;
             }
 
-            if (JustPressed(keys, DIK_A, aKeyWasDown)) {
-                currentTab = (currentTab - 1 + TAB_COUNT) % TAB_COUNT;
-                selectedRow = 0;
+            if (JustPressed(keys, A_KEY, aKeyWasDown)) {
+                tab = (tab - 1 + TAB_COUNT) % TAB_COUNT;
+                sel = 0;
                 PlayUISound(context);
             }
 
-            if (JustPressed(keys, DIK_D, dKeyWasDown)) {
-                currentTab = (currentTab + 1) % TAB_COUNT;
-                selectedRow = 0;
+            if (JustPressed(keys, D_KEY, dKeyWasDown)) {
+                tab = (tab + 1) % TAB_COUNT;
+                sel = 0;
                 PlayUISound(context);
             }
 
-            if (JustPressed(k, A_KEY, aWasDown)) { tab = (tab - 1 + TAB_COUNT) % TAB_COUNT; sel = 0; }
-            if (JustPressed(k, D_KEY, dWasDown)) { tab = (tab + 1) % TAB_COUNT; sel = 0; }
+            const bool onVolumeMeter = (tab == TAB_SETTINGS && sel <= 2);
 
-            const bool onMeter = (tab == TAB_SETTINGS && sel <= 2);
-            if (JustPressed(k, LEFT_KEY, leftWasDown)) {
-                if (onMeter) NudgeVolume(context, -1);
-                else { tab = (tab - 1 + TAB_COUNT) % TAB_COUNT; sel = 0; }
-            }
-            if (JustPressed(k, RIGHT_KEY, rightWasDown)) {
-                if (onMeter) NudgeVolume(context, +1);
-                else { tab = (tab + 1) % TAB_COUNT; sel = 0; }
+            if (JustPressed(keys, LEFT_KEY, leftKeyWasDown)) {
+                if (onVolumeMeter) {
+                    AdjustVolume(context, -1);
+                }
+                else {
+                    tab = (tab - 1 + TAB_COUNT) % TAB_COUNT;
+                    sel = 0;
+                    PlayUISound(context);
+                }
             }
 
-            const int rows = RowCount();
-            if (rows > 0) {
-                if (JustPressed(k, UP_KEY, upWasDown))     sel = (sel - 1 + rows) % rows;
-                if (JustPressed(k, DOWN_KEY, downWasDown)) sel = (sel + 1) % rows;
+            if (JustPressed(keys, RIGHT_KEY, rightKeyWasDown)) {
+                if (onVolumeMeter) {
+                    AdjustVolume(context, +1);
+                }
+                else {
+                    tab = (tab + 1) % TAB_COUNT;
+                    sel = 0;
+                    PlayUISound(context);
+                }
+            }
+
+            const int rowCount = GetRowCount();
+            if (rowCount > 0) {
+                if (JustPressed(keys, UP_KEY, upKeyWasDown)) {
+                    sel = (sel - 1 + rowCount) % rowCount;
+                    PlayUISound(context);
+                }
+                if (JustPressed(keys, DOWN_KEY, downKeyWasDown)) {
+                    sel = (sel + 1) % rowCount;
+                    PlayUISound(context);
+                }
             }
             else {
-                upWasDown = KeyDown(k, UP_KEY);
-                downWasDown = KeyDown(k, DOWN_KEY);
+                upKeyWasDown = KeyDown(keys, UP_KEY);
+                downKeyWasDown = KeyDown(keys, DOWN_KEY);
             }
 
-            if (JustPressed(k, RETURN_KEY, enterWasDown)) {
-                if (tab == TAB_INVENTORY) UseSelectedItem(context);
-                else if (tab == TAB_SETTINGS && sel == 3) NudgeVolume(context, 1);
+            if (JustPressed(keys, RETURN_KEY, enterKeyWasDown)) {
+                if (tab == TAB_INVENTORY) {
+                    UseSelectedItem(context);
+                }
+                else if (tab == TAB_SETTINGS && sel == 3) {
+                    AdjustVolume(context, 1);
+                }
+                PlayUISound(context);
             }
 
             HandleMouseInput(context, manager);
@@ -497,18 +523,18 @@ namespace {
                     tabLeft + tabWidth, tabTop + tabHeight);
 
                 DrawFilledRect(sprite, tabLeft + 3.0f, tabTop, tabWidth - 6.0f, tabHeight,
-                    (i == currentTab) ? tabActive : (isHovering ? tabHover : tabIdle));
+                    (i == tab) ? tabActive : (isHovering ? tabHover : tabIdle));
 
                 tabFont->Draw(TAB_NAMES[i], tabLeft + 28.0f, tabTop + 8.0f,
-                    (i == currentTab) ? headingColor : textDim, sprite);
+                    (i == tab) ? headingColor : textDim, sprite);
             }
 
             DrawFilledRect(sprite, tabAreaLeft, dividerY, tabAreaWidth, 2.0f, goldBorder);
 
-            if (currentTab == TAB_INVENTORY) {
+            if (tab == TAB_INVENTORY) {
                 RenderInventoryTab(sprite, context);
             }
-            else if (currentTab == TAB_STATUS) {
+            else if (tab == TAB_STATUS) {
                 RenderStatusTab(sprite, context);
             }
             else {
