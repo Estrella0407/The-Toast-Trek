@@ -246,8 +246,7 @@ void PhysicsManager::ResolveCircleCollision(D3DXVECTOR2& posA, D3DXVECTOR2& velA
 
 namespace {
     // [min, max] of a polygon projected onto a (unit) axis - the dot products
-    void ProjectPolygon(const D3DXVECTOR2* v, int n, const D3DXVECTOR2& axis,
-                        float& outMin, float& outMax) {
+    void ProjectPolygon(const D3DXVECTOR2* v, int n, const D3DXVECTOR2& axis, float& outMin, float& outMax) {
         outMin = outMax = v[0].x * axis.x + v[0].y * axis.y;
         for (int i = 1; i < n; ++i) {
             const float p = v[i].x * axis.x + v[i].y * axis.y;
@@ -264,8 +263,7 @@ namespace {
     }
 }
 
-void PhysicsManager::BoxCorners(const D3DXVECTOR2& centre, float halfWidth, float halfHeight,
-                                float angleRad, D3DXVECTOR2 outCorners[4]) {
+void PhysicsManager::BoxCorners(const D3DXVECTOR2& centre, float halfWidth, float halfHeight, float angleRad, D3DXVECTOR2 outCorners[4]) {
     const float c = cosf(angleRad), s = sinf(angleRad);
     const D3DXVECTOR2 local[4] = {
         D3DXVECTOR2(-halfWidth, -halfHeight),
@@ -280,9 +278,7 @@ void PhysicsManager::BoxCorners(const D3DXVECTOR2& centre, float halfWidth, floa
     }
 }
 
-bool PhysicsManager::SatOverlap(const D3DXVECTOR2* polyA, int countA,
-                                const D3DXVECTOR2* polyB, int countB,
-                                D3DXVECTOR2* outAxis, float* outDepth) {
+bool PhysicsManager::SatOverlap(const D3DXVECTOR2* polyA, int countA, const D3DXVECTOR2* polyB, int countB, D3DXVECTOR2* outAxis, float* outDepth) {
     if (countA < 3 || countB < 3) return false;
 
     float bestDepth = 1e30f;
@@ -315,9 +311,7 @@ bool PhysicsManager::SatOverlap(const D3DXVECTOR2* polyA, int countA,
     return true;
 }
 
-bool PhysicsManager::SatCircleVsPolygon(const D3DXVECTOR2& centre, float radius,
-                                        const D3DXVECTOR2* poly, int count,
-                                        D3DXVECTOR2* outAxis, float* outDepth) {
+bool PhysicsManager::SatCircleVsPolygon(const D3DXVECTOR2& centre, float radius, const D3DXVECTOR2* poly, int count, D3DXVECTOR2* outAxis, float* outDepth) {
     if (count < 3) return false;
 
     float bestDepth = 1e30f;
@@ -338,13 +332,13 @@ bool PhysicsManager::SatCircleVsPolygon(const D3DXVECTOR2& centre, float radius,
         return true;
     };
 
-    // 1. polygon edge normals
+    // 1. Polygon edge normals
     for (int i = 0; i < count; ++i) {
         const D3DXVECTOR2 edge = poly[(i + 1) % count] - poly[i];
         if (!testAxis(D3DXVECTOR2(-edge.y, edge.x))) return false;
     }
 
-    // 2. closest polygon vertex -> circle centre (the axis SAT alone misses)
+    // 2. Closest polygon vertex -> circle centre (the axis SAT alone misses)
     int closest = 0;
     float bestD2 = 1e30f;
     for (int i = 0; i < count; ++i) {

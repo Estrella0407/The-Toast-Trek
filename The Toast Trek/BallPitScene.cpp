@@ -87,8 +87,8 @@ public:
         BounceWalls(*a);
         BounceWalls(*b);
 
-        // Ball-to-ball: non-axis-aligned elastic resolution (impulse along the
-        // contact normal, split by mass)
+        // Ball-to-ball: non-axis-aligned elastic resolution
+        // (impulse along the contact normal, split by mass)
         const bool overlapping = PhysicsManager::CirclesOverlap(
             a->GetPosition(), a->Radius(), b->GetPosition(), b->Radius());
         if (overlapping) {

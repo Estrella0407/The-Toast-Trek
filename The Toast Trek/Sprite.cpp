@@ -23,10 +23,6 @@ Sprite::Sprite(
     frameDelay = 5;
     currentState = RIGHT;
 
-    // Pass the EXACT source size, not D3DX_DEFAULT: D3DX_DEFAULT can round a
-    // non-power-of-two image (e.g. Pochi's 250x60) up to the next power of
-    // two, which throws every CropToFrame() rect off. No colour key - use
-    // the PNG's own alpha channel
     D3DXCreateTextureFromFileEx(
         d3dDevice, filePath, texWidth, texHeight, 1, 0,
         D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT,

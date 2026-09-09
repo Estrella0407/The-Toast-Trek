@@ -1,16 +1,10 @@
 #include "Ball.h"
 #include <cmath>
 
-// football.png is 1330 x 1183 with a wide transparent margin; the ball itself
-// only occupies this sub-rectangle. Drawing the whole image at 2*radius made
-// the visible ball far smaller than its collision circle, so contacts fired
-// with a big gap. Draw ONLY this region, scaled so its diameter == 2*radius.
-static const RECT kBallSrc = { 303, 198, 1024, 931 };   // opaque bbox (721 x 733)
+static const RECT kBallSrc = { 303, 198, 1024, 931 };
 
-Ball::Ball(IDirect3DTexture9* sharedTex, float x, float y,
-           float radius, float mass, float maxSpeed, float drag)
-    : radius(radius), maxSpeed(maxSpeed), drag(drag),
-      angle(0.0f), spin(0.0f), tex(sharedTex)
+Ball::Ball(IDirect3DTexture9* sharedTex, float x, float y, float radius, float mass, float maxSpeed, float drag)
+    : radius(radius), maxSpeed(maxSpeed), drag(drag), angle(0.0f), spin(0.0f), tex(sharedTex)
 {
     position = D3DXVECTOR2(x, y);
     body.mass = mass;
@@ -25,13 +19,13 @@ void Ball::Step(float dt)
 {
     body.Integrate(dt);             // velocity += acceleration * dt; acceleration cleared
 
-    // Cap the speed (Lecture 6 slide 7: acceleration limited by max speed)
+    // Cap the speed: acceleration limited by max speed
     const float sp = sqrtf(body.velocity.x * body.velocity.x +
                            body.velocity.y * body.velocity.y);
     if (sp > maxSpeed && sp > 0.0f)
         body.velocity *= (maxSpeed / sp);
 
-    // Friction (Lecture 6/9): always slows a moving body
+    // Friction: always slows a moving body
     body.velocity *= drag;
 
     position += body.velocity * dt;

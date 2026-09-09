@@ -15,8 +15,6 @@ void InputManager::Update(HWND hWnd, int backBufferWidth, int backBufferHeight)
 {
     directInput.Poll();
 
-    // The DirectInput mouse reports relative motion, not an absolute
-    // position, so read the cursor directly and map it into back-buffer space.
     POINT cursor;
     GetCursorPos(&cursor);
     ScreenToClient(hWnd, &cursor);

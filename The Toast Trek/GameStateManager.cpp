@@ -95,8 +95,6 @@ void GameStateManager::Shutdown()
         sound = nullptr;
     }
 
-    // Reverse order of creation: DirectInput (created last) released first,
-    // then Direct3D (sprite brush -> device -> D3D9, inside Cleanup), then the window
     input.Cleanup();
     d3d.Cleanup();
     window.Destroy();
