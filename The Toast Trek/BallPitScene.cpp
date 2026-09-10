@@ -24,6 +24,13 @@ constexpr float kBallBounce  = 0.98f;   // restitution ball-to-ball
 constexpr float kMassHeavy   = 3.0f;
 constexpr float kMassLight   = 1.0f;
 
+// A slowly-rotating rectangular bumper in the arena centre
+constexpr float kBumperHalfW  = 135.0f;
+constexpr float kBumperHalfH  = 15.0f;
+constexpr float kBumperSpin   = 0.0075f;  // radians per tick
+constexpr float kBumperBounce = 0.85f;    // restitution off the bumper
+const D3DCOLOR  kBumperColour = D3DCOLOR_ARGB(255, 200, 90, 90);
+
 const D3DCOLOR kTintA = D3DCOLOR_XRGB(150, 200, 255);   // heavy ball (WASD)
 const D3DCOLOR kTintB = D3DCOLOR_XRGB(255, 190, 120);   // light ball (arrows)
 
@@ -43,16 +50,21 @@ D3DXVECTOR2 ReadDir(const BYTE* keys, int up, int down, int left, int right) {
 class BallPitScene : public GameScene {
 public:
     ~BallPitScene() override {
-        if (ballTex) ballTex->Release();
+        if (ballTex)  ballTex->Release();
+        if (whiteTex) whiteTex->Release();
     }
 
     void Initialize(GameContext& context) override {
-        ballTex = ui::LoadTexture(context.device, "Assets/Characters/football.png", 1330, 1183);
+        ballTex  = ui::LoadTexture(context.device, "Assets/Characters/football.png", 1330, 1183);
+        whiteTex = ui::MakeWhiteTexture(context.device);
 
         // Heavy + big vs light + small, so the mass term shows in both the
         // steering (F = m a) and the collision response
         a = std::make_unique<Ball>(ballTex, 360.0f, 420.0f, 54.0f, kMassHeavy, kMaxSpeed, kDrag);
         b = std::make_unique<Ball>(ballTex, 900.0f, 420.0f, 32.0f, kMassLight, kMaxSpeed, kDrag);
+
+        bumperCentre = D3DXVECTOR2((kL + kR) * 0.5f, (kT + kB) * 0.5f);
+        bumperAngle  = 0.35f;
 
         backButton = std::make_unique<Button>(context.device, "Back", 1078, 90, 132, 36, 18);
         backButton->SetColours(D3DCOLOR_XRGB(40, 44, 56), D3DCOLOR_XRGB(72, 84, 108),
@@ -87,6 +99,11 @@ public:
         BounceWalls(*a);
         BounceWalls(*b);
 
+        // Rotating bumper: Separating Axis Theorem (circle vs oriented box) per ball
+        bumperAngle += kBumperSpin;
+        BounceBumper(*a);
+        BounceBumper(*b);
+
         // Ball-to-ball: non-axis-aligned elastic resolution
         // (impulse along the contact normal, split by mass)
         const bool overlapping = PhysicsManager::CirclesOverlap(
@@ -107,6 +124,12 @@ public:
 
     void Render(GameContext& context) override {
         LPD3DXSPRITE brush = context.spriteBrush;
+
+        // Rotating bumper, drawn behind the balls
+        ui::DrawTextureRotated(brush, whiteTex, 1, 1,
+                               bumperCentre.x, bumperCentre.y,
+                               kBumperHalfW * 2.0f, kBumperHalfH * 2.0f,
+                               bumperAngle, kBumperColour);
 
         a->Render(brush, kTintA);
         b->Render(brush, kTintB);
@@ -129,10 +152,41 @@ private:
         ball.Body().velocity = v;
     }
 
+    // SAT vs the oriented bumper: detect (circle vs oriented box), push the ball
+    // out along the minimum translation vector, then reflect its velocity about
+    // that same normal - so it leaves a tilted face at the surface angle
+    void BounceBumper(Ball& ball) {
+        D3DXVECTOR2 corners[4];
+        PhysicsManager::BoxCorners(bumperCentre, kBumperHalfW, kBumperHalfH,
+                                   bumperAngle, corners);
+
+        const D3DXVECTOR2 c = ball.GetPosition();
+        D3DXVECTOR2 axis;
+        float depth = 0.0f;
+        if (!PhysicsManager::SatCircleVsPolygon(c, ball.Radius(), corners, 4, &axis, &depth))
+            return;
+
+        // Point the minimum-translation axis from the bumper toward the ball
+        const D3DXVECTOR2 away = c - bumperCentre;
+        if (away.x * axis.x + away.y * axis.y < 0.0f) axis = -axis;
+
+        ball.SetPosition(c.x + axis.x * depth, c.y + axis.y * depth);   // push out
+
+        D3DXVECTOR2 v = ball.Body().velocity;
+        const float vn = v.x * axis.x + v.y * axis.y;                   // speed into the face
+        if (vn < 0.0f) {
+            v -= axis * ((1.0f + kBumperBounce) * vn);                  // reflect about the normal
+            ball.Body().velocity = v;
+        }
+    }
+
     std::unique_ptr<Ball> a;   // WASD, heavy
     std::unique_ptr<Ball> b;   // arrows, light
     std::unique_ptr<Button> backButton;
-    IDirect3DTexture9* ballTex = nullptr;
+    D3DXVECTOR2 bumperCentre { 0.0f, 0.0f };
+    float bumperAngle = 0.0f;
+    IDirect3DTexture9* ballTex  = nullptr;
+    IDirect3DTexture9* whiteTex = nullptr;
     bool escWasDown = false;
     bool eWasDown = false;
     bool wasOverlapping = false;
