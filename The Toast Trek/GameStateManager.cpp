@@ -34,8 +34,6 @@ void GameStateManager::Init()
 
     LoadAssets();
 
-    timer.Init(10);
-
     // Run the scene(s) pushed before Init()
     ApplyPendingChanges();
 }

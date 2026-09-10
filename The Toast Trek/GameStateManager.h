@@ -6,7 +6,6 @@
 #include "Window.h"
 #include "Direct3D.h"
 #include "InputManager.h"
-#include "FrameTimer.h"
 #include "MapLibrary.h"
 #include "CheatOverlay.h"
 
@@ -26,7 +25,6 @@ private:
     Window window;
     Direct3D d3d;
     InputManager input;
-    FrameTimer timer;
     SoundManager* sound;
 
     MapLibrary maps;             // owns the overworld tilemaps
